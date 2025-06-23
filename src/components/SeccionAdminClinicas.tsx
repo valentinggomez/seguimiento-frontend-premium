@@ -394,8 +394,9 @@ export default function SeccionAdminClinicas() {
                     variant="outline"
                     onClick={() => {
                       setSelected(clinica)
-                      if (clinica.spreadsheet_id) {
-                        fetchHojas(clinica.spreadsheet_id)
+                      const cleanId = clinica?.spreadsheet_id?.trim()
+                      if (cleanId && /^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
+                        fetchHojas(cleanId)
                       }
                     }}
                   >
