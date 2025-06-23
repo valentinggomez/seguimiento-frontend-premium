@@ -117,10 +117,10 @@ export default function Inicio() {
 
       {/* Accesos rápidos */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link href="/paciente" className="bg-[#003466] text-white rounded-lg px-5 py-4 text-center font-medium hover:bg-[#002244] transition">
+        <Link href="/panel/paciente" className="bg-[#003466] text-white rounded-lg px-5 py-4 text-center font-medium hover:bg-[#002244] transition">
           ➕ Registrar paciente
         </Link>
-        <Link href="/respuestas" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
+        <Link href="/panel/respuestas" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
           📊 Ver respuestas clínicas
         </Link>
         <Link href="#" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
