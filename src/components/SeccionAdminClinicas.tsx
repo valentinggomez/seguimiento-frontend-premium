@@ -375,13 +375,15 @@ export default function SeccionAdminClinicas() {
                 <h3 className="text-xl font-semibold text-[#003366] mt-8">📊 Columnas exportables</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {[...new Set([
-                    // Campos fijos del paciente
-                    "fecha_respuesta", "paciente_id", "nombre", "edad", "sexo", "peso", "altura", "imc", "telefono",
-                    "cirugia", "fecha_cirugia", "nombre_medico",
-                    // Campos del formulario dinámico
+                    // 🧷 Campos fijos del paciente
+                    'fecha_respuesta', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono',
+                    'cirugia', 'fecha_cirugia', 'nombre_medico',
+
+                    // ⚕️ Campos clínicos avanzados configurables por clínica
+                    ...camposAvanzados.split(',').map(c => c.trim()).filter(Boolean),
+
+                    // 📄 Campos del formulario que completa el paciente
                     ...camposForm.map(c => c.nombre),
-                    // Campos avanzados
-                    ...camposAvanzados.split(',').map(c => c.trim()).filter(Boolean)
                   ])].map(campo => (
                     <TooltipProvider key={campo}>
                       <TooltipWrapper>
@@ -590,35 +592,42 @@ export default function SeccionAdminClinicas() {
                       </div>
 
                       <h3 className="text-xl font-semibold text-[#003366] mt-8">📊 Columnas exportables</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {[...new Set([
-                            ...camposForm.map(c => c.nombre),
-                            ...camposAvanzados.split(',').map(c => c.trim()).filter(c => !!c)
-                          ])].map(campo => (
-                            <TooltipProvider key={campo}>
-                              <TooltipWrapper>
-                                <TooltipTrigger asChild>
-                                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                    <Checkbox
-                                      checked={(selected?.columnas_exportables || []).includes(campo)}
-                                      onChange={(e) => {
-                                        const checked = e.target.checked
-                                        const columnas = new Set(selected?.columnas_exportables || [])
-                                        if (checked) columnas.add(campo)
-                                        else columnas.delete(campo)
-                                        setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
-                                      }}
-                                    />
-                                    {campo}
-                                  </label>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  Incluir esta columna al exportar respuestas.
-                                </TooltipContent>
-                              </TooltipWrapper>
-                            </TooltipProvider>
-                          ))}
-                        </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {[...new Set([
+                          // 🧷 Campos fijos del paciente
+                          'fecha_respuesta', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono',
+                          'cirugia', 'fecha_cirugia', 'nombre_medico',
+
+                          // ⚕️ Campos clínicos avanzados configurables por clínica
+                          ...camposAvanzados.split(',').map(c => c.trim()).filter(Boolean),
+
+                          // 📄 Campos del formulario que completa el paciente
+                          ...camposForm.map(c => c.nombre),
+                        ])].map(campo => (
+                          <TooltipProvider key={campo}>
+                            <TooltipWrapper>
+                              <TooltipTrigger asChild>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <Checkbox
+                                    checked={(selected?.columnas_exportables || []).includes(campo)}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked
+                                      const columnas = new Set(selected?.columnas_exportables || [])
+                                      if (checked) columnas.add(campo)
+                                      else columnas.delete(campo)
+                                      setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
+                                    }}
+                                  />
+                                  {campo}
+                                </label>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Incluir esta columna al exportar respuestas.
+                              </TooltipContent>
+                            </TooltipWrapper>
+                          </TooltipProvider>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 {mostrarConfirmacion && (
