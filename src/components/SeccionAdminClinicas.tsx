@@ -150,6 +150,9 @@ export default function SeccionAdminClinicas() {
   const handleSave = async () => {
     if (!selected || !validarCampos()) return
 
+    if (!selected?.columnas_exportables) {
+      selected.columnas_exportables = []
+    }
     const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`)
 
     try {
@@ -168,10 +171,10 @@ export default function SeccionAdminClinicas() {
           campos_formulario,
           campos_avanzados: camposAvanzados,
           telefono: selected.telefono || "",
-          columnas_exportacion: Array.isArray(selected.columnas_exportables)
+         columnas_exportacion: Array.isArray(selected.columnas_exportables)
           ? selected.columnas_exportables
-          : typeof selected.columnas_exportables === "string"
-            ? (selected.columnas_exportables as string).split(",").map((s: string) => s.trim())
+          : typeof selected.columnas_exportables === "string" && selected.columnas_exportables.length > 0
+            ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
             : [],
         })
       })
