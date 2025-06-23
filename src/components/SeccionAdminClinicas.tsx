@@ -392,11 +392,13 @@ export default function SeccionAdminClinicas() {
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setSelected(clinica)
+                    onClick={async () => {
                       const cleanId = clinica?.spreadsheet_id?.trim()
+                      setSelected(clinica)
                       if (cleanId && /^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
-                        fetchHojas(cleanId)
+                        await fetchHojas(cleanId)
+                      } else {
+                        setHojasDisponibles([])
                       }
                     }}
                   >
