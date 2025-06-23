@@ -42,15 +42,30 @@ export default function SeccionAdminClinicas() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
 
   useEffect(() => {
-    fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
-      headers: {
-        "x-clinica-host": window.location.hostname,
-        "rol": localStorage.getItem("rol") || ""
+    const cargarClinicas = async () => {
+      try {
+        const res = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
+          headers: {
+            "x-clinica-host": window.location.hostname,
+            "rol": localStorage.getItem("rol") || ""
+          }
+        });
+        const json = await res.json();
+        if (res.ok && Array.isArray(json.data)) {
+          setClinicas(json.data);
+        } else {
+          console.error("❌ Error al cargar clínicas:", json);
+          toast.error("Error al cargar clínicas");
+        }
+      } catch (e) {
+        console.error("❌ Error inesperado al cargar clínicas:", e);
+        toast.error("Error inesperado al cargar clínicas");
       }
-    })
-      .then(res => res.json())
-      .then(data => setClinicas(data))
-  }, [])
+    };
+
+    cargarClinicas();
+  }, []);
+
 
   useEffect(() => {
     if (!selected) return
@@ -140,7 +155,6 @@ export default function SeccionAdminClinicas() {
         toast.success("Clínica guardada correctamente")
         setSelected(null)
 
-        // ✅ ACÁ estaba el problema: faltaba /api/clinicas
         const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
           headers: {
             "x-clinica-host": window.location.hostname,
