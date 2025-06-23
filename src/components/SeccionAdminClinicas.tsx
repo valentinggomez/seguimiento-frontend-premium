@@ -148,59 +148,60 @@ export default function SeccionAdminClinicas() {
   }
 
   const handleSave = async () => {
-    if (!selected || !validarCampos()) return
+    if (!selected || !validarCampos()) return;
 
-    if (!selected?.columnas_exportables) {
-      selected.columnas_exportables = []
+    // 🔒 Seguridad extra: normalizamos columnas_exportables si viene mal
+    if (!Array.isArray(selected.columnas_exportables)) {
+      selected.columnas_exportables = typeof selected.columnas_exportables === "string"
+        ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
+        : [];
     }
-    const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`)
+
+    const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
 
     try {
       const endpoint = selected?.id
         ? "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/editar"
-        : "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/nueva"
+        : "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/nueva";
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-clinica-host": window.location.hostname
+          "x-clinica-host": window.location.hostname,
         },
         body: JSON.stringify({
           ...selected,
           campos_formulario,
           campos_avanzados: camposAvanzados,
           telefono: selected.telefono || "",
-         columnas_exportacion: Array.isArray(selected.columnas_exportables)
-          ? selected.columnas_exportables
-          : typeof selected.columnas_exportables === "string" && selected.columnas_exportables.length > 0
-            ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
-            : [],
-        })
-      })
+          columnas_exportables: selected.columnas_exportables,
+        }),
+      });
 
       if (res.ok) {
-        toast.success("Clínica guardada correctamente")
-        setSelected(null)
+        toast.success("Clínica guardada correctamente");
+        setSelected(null);
 
         const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
           headers: {
             "x-clinica-host": window.location.hostname,
             "rol": localStorage.getItem("rol") || ""
           }
-        }).then(r => r.json())
+        }).then(r => r.json());
 
-        setClinicas(nuevas)
+        setClinicas(nuevas);
       } else {
-        const data = await res.json()
-        toast.error(`Error: ${data.error || "No se pudo guardar"}`)
-        console.error("Error al guardar:", data)
+        const data = await res.json();
+        toast.error(`Error: ${data.error || "No se pudo guardar"}`);
+        console.error("Error al guardar:", data);
       }
     } catch (err) {
-      toast.error("Error inesperado al guardar")
-      console.error("Error inesperado:", err)
+      toast.error("Error inesperado al guardar");
+      console.error("Error inesperado:", err);
     }
-  }
+  };
+
 
   const InputValidado = ({ name, ...props }: any) => (
     <div className="relative">
