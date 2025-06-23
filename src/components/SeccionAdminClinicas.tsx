@@ -42,7 +42,7 @@ export default function SeccionAdminClinicas() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
 
   useEffect(() => {
-    fetch("/api/clinicas", {
+    fetch("https://seguimiento-backend-premium-production.up.railway.app", {
       headers: {
         "x-clinica-host": window.location.hostname,
         "rol": localStorage.getItem("rol") || ""
@@ -133,7 +133,7 @@ export default function SeccionAdminClinicas() {
       if (res.ok) {
         toast.success("Clínica guardada correctamente")
         setSelected(null)
-        const nuevas = await fetch("/api/clinicas", {
+        const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app", {
           headers: {
             "x-clinica-host": window.location.hostname,
             "rol": localStorage.getItem("rol") || ""
