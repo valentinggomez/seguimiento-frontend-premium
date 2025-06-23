@@ -107,7 +107,7 @@ export default function ResponderPage() {
   useEffect(() => {
     const fetchPaciente = async () => {
       try {
-        const res = await fetch(`/api/pacientes/${id}`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${id}`)
         if (!res.ok) throw new Error()
         const data = await res.json()
         setPaciente(data)

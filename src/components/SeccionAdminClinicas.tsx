@@ -91,7 +91,7 @@ export default function SeccionAdminClinicas() {
     const fetchHojas = async () => {
       setCargandoHojas(true)
       try {
-        const res = await fetch(`/api/hojas?spreadsheet_id=${selected.spreadsheet_id}`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${selected.spreadsheet_id}`)
         const data = await res.json()
         if (Array.isArray(data.hojas)) {
           setHojasDisponibles(data.hojas)
