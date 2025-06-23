@@ -374,7 +374,13 @@ export default function SeccionAdminClinicas() {
 
                 <h3 className="text-xl font-semibold text-[#003366] mt-8">📊 Columnas exportables</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {CAMPOS_DISPONIBLES.map(campo => (
+                  {[
+                    ...new Set([
+                      "fecha", "paciente_id", "nombre", "edad", "sexo", "peso", "altura", "imc", "telefono", "cirugia", "fecha_cirugia", "nombre_medico",
+                      ...camposForm.map(c => c.nombre),
+                      ...camposAvanzados.split(',').map(c => c.trim()).filter(c => !!c)
+                    ])
+                  ].map(campo => (
                     <TooltipProvider key={campo}>
                       <TooltipWrapper>
                         <TooltipTrigger asChild>
