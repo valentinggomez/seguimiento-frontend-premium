@@ -84,16 +84,18 @@ export default function SeccionAdminClinicas() {
   }, [selected])
 
   useEffect(() => {
-    if (!selected?.spreadsheet_id || !/^[a-zA-Z0-9-_]{30,}$/.test(selected.spreadsheet_id)) {
+    const cleanId = selected?.spreadsheet_id?.trim()
+    if (!cleanId || !/^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
       setHojasDisponibles([])
       return
     }
     const fetchHojas = async () => {
       setCargandoHojas(true)
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${selected.spreadsheet_id}`)
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${cleanId}`)
         const data = await res.json()
         if (Array.isArray(data.hojas)) {
+          console.log("✅ Hojas recibidas:", data.hojas)
           setHojasDisponibles(data.hojas)
         } else {
           setHojasDisponibles([])
