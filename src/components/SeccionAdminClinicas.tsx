@@ -24,10 +24,20 @@ import { toast } from "sonner"
 import { Plus, Trash2, X, Info, Save } from "lucide-react"
 
 const CAMPOS_DISPONIBLES = [
-  "fecha", "nombre_paciente", "edad", "sexo", "peso", "altura", "imc",
-  "dolor", "dolor_6h", "dolor_24h", "nausea", "vomitos", "somnolencia",
-  "satisfaccion", "observaciones", "extremidades_horas"
+  "fecha",
+  "paciente_id",
+  "nombre",
+  "edad",
+  "sexo",
+  "peso",
+  "altura",
+  "imc",
+  "telefono",
+  "cirugia",
+  "fecha_cirugia",
+  "nombre_medico"
 ]
+
 
 const OPCIONES_TIPO_CAMPO = ["text", "number", "select", "textarea"]
 
