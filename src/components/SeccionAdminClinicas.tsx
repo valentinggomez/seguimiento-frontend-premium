@@ -82,6 +82,20 @@ export default function SeccionAdminClinicas() {
     setCamposAvanzados(selected.campos_avanzados || "")
     setErrores({})
   }, [selected])
+  
+  useEffect(() => {
+    if (selected && !Array.isArray(selected.columnas_exportables)) {
+      const corregido = typeof selected.columnas_exportables === "string"
+        ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
+        : []
+
+      setSelected((prev: typeof selected) => ({
+        ...prev!,
+        columnas_exportables: corregido
+      }))
+    }
+  }, [selected])
+
 
   const fetchHojas = async (spreadsheetId: string) => {
     setCargandoHojas(true)
@@ -404,11 +418,15 @@ export default function SeccionAdminClinicas() {
                       const cleanId = clinica?.spreadsheet_id?.trim()
 
                       // Aseguramos que columnas_exportables siempre sea array
-                      const columnasExportables = Array.isArray(clinica.columnas_exportables)
-                        ? clinica.columnas_exportables
-                        : typeof clinica.columnas_exportables === "string"
-                          ? clinica.columnas_exportables.split(",").map((s: string) => s.trim())
-                          : []
+                      let columnasExportables: string[] = []
+
+                      if (Array.isArray(clinica.columnas_exportables)) {
+                        columnasExportables = clinica.columnas_exportables
+                      } else if (typeof clinica.columnas_exportables === "string") {
+                        columnasExportables = (clinica.columnas_exportables as string).split(",").map((s: string) => s.trim())
+                      } else {
+                        columnasExportables = []
+                      }
 
                       setSelected({ ...clinica, columnas_exportables: columnasExportables })
 

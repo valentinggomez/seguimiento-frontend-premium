@@ -7,6 +7,7 @@ type Clinica = {
   nombre_clinica: string
   logo_url?: string
   color_primario?: string
+  columnas_exportables?: string[]
   [key: string]: any
 }
 
@@ -23,9 +24,25 @@ export const ClinicaProvider = ({
   children: React.ReactNode
   clinicaInicial?: Clinica | null
 }) => {
-  const [clinica, setClinica] = useState<Clinica | null>(clinicaInicial)
-  console.log('📦 clinicaInicial recibida en Provider:', clinicaInicial)
+  const [clinica, setClinica] = useState<Clinica | null>(null)
 
+  // Validar y normalizar columnas_exportables al iniciar
+  useEffect(() => {
+    if (clinicaInicial) {
+      const normalizada = { ...clinicaInicial }
+
+      if (!Array.isArray(normalizada.columnas_exportables)) {
+        if (typeof normalizada.columnas_exportables === "string") {
+          const str = normalizada.columnas_exportables as string
+          normalizada.columnas_exportables = str.split(",").map((s: string) => s.trim())
+        } else {
+          normalizada.columnas_exportables = []
+        }
+      }
+
+      setClinica(normalizada)
+    }
+  }, [clinicaInicial])
 
   // fallback opcional si clinicaInicial no llegó
   useEffect(() => {
