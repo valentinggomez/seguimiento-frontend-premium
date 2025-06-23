@@ -401,7 +401,16 @@ export default function SeccionAdminClinicas() {
                     variant="outline"
                     onClick={async () => {
                       const cleanId = clinica?.spreadsheet_id?.trim()
-                      setSelected(clinica)
+
+                      // Aseguramos que columnas_exportables siempre sea array
+                      const columnasExportables = Array.isArray(clinica.columnas_exportables)
+                        ? clinica.columnas_exportables
+                        : typeof clinica.columnas_exportables === "string"
+                          ? clinica.columnas_exportables.split(",").map((s: string) => s.trim())
+                          : []
+
+                      setSelected({ ...clinica, columnas_exportables: columnasExportables })
+
                       if (cleanId && /^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
                         await fetchHojas(cleanId)
                       } else {
