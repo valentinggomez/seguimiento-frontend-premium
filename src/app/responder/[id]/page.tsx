@@ -143,7 +143,7 @@ export default function ResponderPage() {
     }
 
     try {
-      const res = await fetch('/api/respuestas', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
