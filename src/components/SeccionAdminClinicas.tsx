@@ -168,7 +168,11 @@ export default function SeccionAdminClinicas() {
           campos_formulario,
           campos_avanzados: camposAvanzados,
           telefono: selected.telefono || "",
-          columnas_exportacion: selected.columnas_exportables || []
+          columnas_exportacion: Array.isArray(selected.columnas_exportables)
+          ? selected.columnas_exportables
+          : typeof selected.columnas_exportables === "string"
+            ? (selected.columnas_exportables as string).split(",").map((s: string) => s.trim())
+            : [],
         })
       })
 
