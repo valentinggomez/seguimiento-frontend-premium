@@ -54,6 +54,7 @@ export default function SeccionAdminClinicas() {
         if (res.ok && Array.isArray(json.data)) {
           setClinicas(json.data);
         } else {
+          setClinicas([]); // ← defensa extra
           console.error("❌ Error al cargar clínicas:", json);
           toast.error("Error al cargar clínicas");
         }
@@ -403,7 +404,7 @@ export default function SeccionAdminClinicas() {
           </DialogContent>
         </Dialog>
       </div>
-        {clinicas.map(clinica => (
+        {Array.isArray(clinicas) && clinicas.map(clinica => (
           <Card key={clinica.id} className="shadow-xl border border-gray-300">
             <CardContent className="p-5 flex justify-between items-center">
               <div>
