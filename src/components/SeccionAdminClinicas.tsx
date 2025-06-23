@@ -83,6 +83,25 @@ export default function SeccionAdminClinicas() {
     setErrores({})
   }, [selected])
 
+  const fetchHojas = async (spreadsheetId: string) => {
+    setCargandoHojas(true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${spreadsheetId}`)
+      const data = await res.json()
+      if (Array.isArray(data.hojas)) {
+        console.log("✅ Hojas recibidas:", data.hojas)
+        setHojasDisponibles(data.hojas)
+      } else {
+        setHojasDisponibles([])
+      }
+    } catch (error) {
+      console.error("Error al obtener hojas:", error)
+      setHojasDisponibles([])
+    } finally {
+      setCargandoHojas(false)
+    }
+  }
+
   useEffect(() => {
     const cleanId = selected?.spreadsheet_id?.trim()
     if (!cleanId || !/^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
@@ -371,7 +390,17 @@ export default function SeccionAdminClinicas() {
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" onClick={() => setSelected(clinica)}>✏️ Editar</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelected(clinica)
+                      if (clinica.spreadsheet_id) {
+                        fetchHojas(clinica.spreadsheet_id)
+                      }
+                    }}
+                  >
+                    ✏️ Editar
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="fixed top-1/2 left-1/2 z-50 w-full max-w-3xl transform -translate-x-1/2 -translate-y-1/2 rounded-2xl shadow-2xl bg-white overflow-hidden max-h-[95vh]">
                   <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 p-1.5 bg-white shadow-md rounded-full hover:bg-gray-100">
