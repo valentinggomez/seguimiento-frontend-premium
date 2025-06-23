@@ -42,7 +42,7 @@ export default function SeccionAdminClinicas() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
 
   useEffect(() => {
-    fetch("https://seguimiento-backend-premium-production.up.railway.app", {
+    fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
       headers: {
         "x-clinica-host": window.location.hostname,
         "rol": localStorage.getItem("rol") || ""
@@ -113,9 +113,14 @@ export default function SeccionAdminClinicas() {
 
   const handleSave = async () => {
     if (!selected || !validarCampos()) return
+
     const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`)
+
     try {
-      const endpoint = selected?.id ? "/api/clinicas/editar" : "/api/clinicas/nueva"
+      const endpoint = selected?.id
+        ? "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/editar"
+        : "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/nueva"
+
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -130,18 +135,21 @@ export default function SeccionAdminClinicas() {
           columnas_exportacion: selected.columnas_exportables || []
         })
       })
+
       if (res.ok) {
         toast.success("Clínica guardada correctamente")
         setSelected(null)
-        const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app", {
+
+        // ✅ ACÁ estaba el problema: faltaba /api/clinicas
+        const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
           headers: {
             "x-clinica-host": window.location.hostname,
             "rol": localStorage.getItem("rol") || ""
           }
         }).then(r => r.json())
+
         setClinicas(nuevas)
-      }
-      else {
+      } else {
         const data = await res.json()
         toast.error(`Error: ${data.error || "No se pudo guardar"}`)
         console.error("Error al guardar:", data)
