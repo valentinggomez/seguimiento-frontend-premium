@@ -198,7 +198,7 @@ export default function SeccionAdminClinicas() {
         body: JSON.stringify({
           ...selected,
           campos_formulario,
-          campos_avanzados: camposAvanzados,
+          campos_avanzados: camposAvanzados.split(',').map(c => c.trim()).filter(Boolean).join(','),
           telefono: selected.telefono || "",
           columnas_exportables: selected.columnas_exportables,
         }),
@@ -598,7 +598,6 @@ export default function SeccionAdminClinicas() {
                         <Button variant="outline" className="mt-2" onClick={() => setCamposForm([...camposForm, { nombre: "", tipo: "text" }])}>
                           <Plus size={16} className="mr-1" /> Agregar campo
                         </Button>
-                        <h3 className="text-xl font-semibold text-[#003366] mt-8">🔎 Previsualización del formulario</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-blue-100 rounded-xl p-4 bg-white shadow-inner">
                           {camposForm.length === 0 ? (
