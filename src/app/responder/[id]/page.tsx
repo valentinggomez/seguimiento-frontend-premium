@@ -68,6 +68,8 @@ export default function ResponderPage() {
   const [form, setForm] = useState<any>({})
 
   const camposBase = [
+    { name: "telefono", label: "Teléfono de contacto", type: "text" },
+    { name: "nombre_medico", label: "Nombre del médico", type: "text" },
     { name: "dolor_6h", label: "🤕 Nivel de dolor a las 6h", type: "text", numeric: true },
     { name: "dolor_24h", label: "🔥 Nivel de dolor a las 24h", type: "text", numeric: true },
     { name: "dolor_mayor_7", label: "📈 ¿Dolor mayor a 7?", type: "select" },
