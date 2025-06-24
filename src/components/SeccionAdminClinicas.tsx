@@ -41,16 +41,6 @@ const CAMPOS_DISPONIBLES = [
 
 const OPCIONES_TIPO_CAMPO = ["text", "number", "select", "textarea"]
 
-function normalizarClave(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // elimina tildes
-    .replace(/[^\w]/g, "_") // reemplaza todo lo no alfanumérico por _
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "")
-}
-
 export default function SeccionAdminClinicas() {
   const [clinicas, setClinicas] = useState<any[]>([])
   const [selected, setSelected] = useState<any | null>(null)
@@ -100,12 +90,7 @@ export default function SeccionAdminClinicas() {
       return { nombre: nombre.trim(), tipo: tipo.trim() }
     })
     setCamposForm(convertidos)
-    setCamposAvanzados(
-      Array.isArray(selected.campos_avanzados)
-        ? selected.campos_avanzados.map((c: any) => c.label).join(", ")
-        : selected.campos_avanzados || ""
-    )
-
+    setCamposAvanzados(selected.campos_avanzados || "")
     setErrores({})
   }, [selected])
   
@@ -213,17 +198,9 @@ export default function SeccionAdminClinicas() {
         body: JSON.stringify({
           ...selected,
           campos_formulario,
-          campos_avanzados: camposAvanzados
-            .split(',')
-            .map(label => label.trim())
-            .filter(Boolean)
-            .map(label => ({ key: normalizarClave(label), label })),
+          campos_avanzados: camposAvanzados.split(',').map(c => c.trim()).filter(Boolean).join(','),
           telefono: selected.telefono || "",
-          columnas_exportables: Array.isArray(selected.columnas_exportables)
-            ? selected.columnas_exportables
-                .filter((c: any) => typeof c === "string" || typeof c === "number")
-                .map((c: any) => String(c).trim())
-            : [],
+          columnas_exportables: selected.columnas_exportables,
         }),
       });
 
