@@ -41,6 +41,16 @@ const CAMPOS_DISPONIBLES = [
 
 const OPCIONES_TIPO_CAMPO = ["text", "number", "select", "textarea"]
 
+function normalizarClave(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // elimina tildes
+    .replace(/[^\w]/g, "_") // reemplaza todo lo no alfanumérico por _
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+}
+
 export default function SeccionAdminClinicas() {
   const [clinicas, setClinicas] = useState<any[]>([])
   const [selected, setSelected] = useState<any | null>(null)
@@ -198,9 +208,16 @@ export default function SeccionAdminClinicas() {
         body: JSON.stringify({
           ...selected,
           campos_formulario,
-          campos_avanzados: camposAvanzados.split(',').map(c => c.trim()).filter(Boolean).join(','),
+          campos_avanzados: camposAvanzados
+            .split(',')
+            .map(label => label.trim())
+            .filter(Boolean)
+            .map(label => ({ key: normalizarClave(label), label })),
           telefono: selected.telefono || "",
-          columnas_exportables: selected.columnas_exportables,
+          columnas_exportables: (selected.columnas_exportables || []).map((label: string) => ({
+            key: normalizarClave(label),
+            label: label.trim()
+          })),
         }),
       });
 
