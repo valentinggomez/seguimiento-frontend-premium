@@ -20,6 +20,7 @@ export default function RegistroPaciente() {
 
     // Validación básica
     const campos = Object.entries(form)
+    console.log("🧾 Datos form frontend antes de enviar:", form)
     const vacios = campos.filter(([_, val]) => val === '')
     if (vacios.length > 0) {
       setMensajeError('Por favor, completá todos los campos obligatorios.')
@@ -67,7 +68,7 @@ export default function RegistroPaciente() {
       fecha_cirugia: `${y}-${m}-${d}`,
       clinica_id: clinica.id
     }
-    console.log("🧾 Datos enviados al backend:", paciente)
+    console.log("📦 Objeto final paciente:", paciente)
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
         method: 'POST',
