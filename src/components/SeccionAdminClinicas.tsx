@@ -214,10 +214,7 @@ export default function SeccionAdminClinicas() {
             .filter(Boolean)
             .map(label => ({ key: normalizarClave(label), label })),
           telefono: selected.telefono || "",
-          columnas_exportables: (selected.columnas_exportables || []).map((label: string) => ({
-            key: normalizarClave(label),
-            label: label.trim()
-          })),
+          columnas_exportables: (selected.columnas_exportables || []).map((label: string) => label.trim())
         }),
       });
 
