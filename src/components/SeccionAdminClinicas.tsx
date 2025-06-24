@@ -100,7 +100,12 @@ export default function SeccionAdminClinicas() {
       return { nombre: nombre.trim(), tipo: tipo.trim() }
     })
     setCamposForm(convertidos)
-    setCamposAvanzados(selected.campos_avanzados || "")
+    setCamposAvanzados(
+      Array.isArray(selected.campos_avanzados)
+        ? selected.campos_avanzados.map((c: any) => c.label).join(", ")
+        : selected.campos_avanzados || ""
+    )
+
     setErrores({})
   }, [selected])
   
@@ -214,7 +219,11 @@ export default function SeccionAdminClinicas() {
             .filter(Boolean)
             .map(label => ({ key: normalizarClave(label), label })),
           telefono: selected.telefono || "",
-          columnas_exportables: (selected.columnas_exportables || []).map((label: string) => label.trim())
+          columnas_exportables: Array.isArray(selected.columnas_exportables)
+            ? selected.columnas_exportables
+                .filter((c: any) => typeof c === "string" || typeof c === "number")
+                .map((c: any) => String(c).trim())
+            : [],
         }),
       });
 
