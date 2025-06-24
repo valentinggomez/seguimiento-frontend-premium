@@ -568,7 +568,7 @@ export default function SeccionAdminClinicas() {
                       <Textarea value={camposAvanzados} onChange={e => setCamposAvanzados(e.target.value)} placeholder="Ej: frecuencia_respiratoria, presion_sistolica" />
 
                       <h3 className="text-xl font-semibold text-[#003366] mt-8">🧾 Campos del paciente (formulario)</h3>
-                      <h3 className="text-xl font-semibold text-[#003366] mt-8">🔎 Previsualización del formulario</h3>
+                      
                       <div className="space-y-4">
                         {camposForm.map((campo, index) => (
                           <div key={index} className="grid grid-cols-12 gap-2 items-center">
@@ -598,7 +598,7 @@ export default function SeccionAdminClinicas() {
                         <Button variant="outline" className="mt-2" onClick={() => setCamposForm([...camposForm, { nombre: "", tipo: "text" }])}>
                           <Plus size={16} className="mr-1" /> Agregar campo
                         </Button>
-
+                        <h3 className="text-xl font-semibold text-[#003366] mt-8">🔎 Previsualización del formulario</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-blue-100 rounded-xl p-4 bg-white shadow-inner">
                           {camposForm.length === 0 ? (
                             <p className="text-gray-500">Agregá campos al formulario para ver la vista previa.</p>

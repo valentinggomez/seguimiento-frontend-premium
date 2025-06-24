@@ -34,7 +34,7 @@ export default function RegistroPaciente() {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     const fechaIngresada = new Date(`${anio}-${mes}-${dia}`)
-
+    
     if (
       isNaN(dia) || isNaN(mes) || isNaN(anio) ||
       dia < 1 || dia > 31 ||
@@ -347,24 +347,28 @@ export default function RegistroPaciente() {
             <h3 className="text-[#004080] font-semibold mb-3 text-sm">
                 Datos clínicos avanzados
             </h3>
-
+              
             {camposPersonalizados.length > 0 ? (
-              camposPersonalizados.map((campo: string) => (
-                <div key={campo} className="relative mb-4">
-                  <input
-                    type="text"
-                    name={campo}
-                    value={form[campo] || ''}
-                    onChange={(e) => setForm({ ...form, [campo]: e.target.value })}
-                    placeholder=" "
-                    autoComplete="off"
-                    className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-                  />
-                  <label className="absolute left-3 top-2.5 text-sm capitalize text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                    {campo.replace(/_/g, ' ')}
-                  </label>
-                </div>
-              ))
+              camposPersonalizados.map((campo: string, index: number) => {
+                const campoKey = campo.trim()
+
+                return (
+                  <div key={index} className="relative">
+                    <input
+                      type="text"
+                      name={campoKey}
+                      value={form[campoKey] || ''}
+                      onChange={(e) => setForm({ ...form, [campoKey]: e.target.value })}
+                      placeholder=" "
+                      autoComplete="off"
+                      className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                    />
+                    <label className="absolute left-3 top-2 text-sm text-gray-500 peer-focus:text-[#004080] transition-all">
+                      {campoKey}
+                    </label>
+                  </div>
+                )
+              })
             ) : (
               <div className="text-gray-500 text-sm italic">
                 (Esta sección puede personalizarse con los campos que desee la clínica)
