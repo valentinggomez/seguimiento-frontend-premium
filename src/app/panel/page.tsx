@@ -43,6 +43,25 @@ export default function Inicio() {
       })
   }, [clinica?.id])
 
+  useEffect(() => {
+    if (!clinica?.id) return;
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
+      headers: {
+        'x-clinica-host': window.location.hostname
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setStats(data)
+      })
+      .catch(err => {
+        console.error('Error al cargar estadísticas del dashboard:', err)
+        setErrorStats(true)
+      })
+  }, [clinica?.id])
+
+
   if (!clinica) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">
