@@ -168,20 +168,31 @@ export default function PanelRespuestas() {
             </div>
 
             {expandedId === r.id && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
-              >
-                <div><strong>Dolor 6h:</strong> {r.dolor_6h}</div>
-                <div><strong>Dolor 24h:</strong> {r.dolor_24h}</div>
-                <div><strong>¿Dolor mayor a 7?</strong> {r.dolor_mayor_7 || 'No registrado'}</div>
-                <div><strong>Náuseas:</strong> {r.nausea}</div>
-                <div><strong>Vómitos:</strong> {r.vomitos || 'No registrado'}</div>
-                <div><strong>Somnolencia:</strong> {r.somnolencia}</div>
-                <div><strong>Satisfacción:</strong> {r.satisfaccion ?? 'No registrado'}</div>
-                <div><strong>Observaciones:</strong> {r.observacion || 'No'}</div>
-              </motion.div>
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
+                >
+                  <div><strong>Dolor 6h:</strong> {r.dolor_6h}</div>
+                  <div><strong>Dolor 24h:</strong> {r.dolor_24h}</div>
+                  <div><strong>¿Dolor mayor a 7?</strong> {r.dolor_mayor_7 || 'No registrado'}</div>
+                  <div><strong>Náuseas:</strong> {r.nausea}</div>
+                  <div><strong>Vómitos:</strong> {r.vomitos || 'No registrado'}</div>
+                  <div><strong>Somnolencia:</strong> {r.somnolencia}</div>
+                  <div><strong>Satisfacción:</strong> {r.satisfaccion ?? 'No registrado'}</div>
+                  <div><strong>Observaciones:</strong> {r.observacion || 'No'}</div>
+                </motion.div>
+
+                <div className="mt-4">
+                  <button
+                    onClick={() => window.open(`/api/pdf/${r.id}`, '_blank')}
+                    className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
+                  >
+                    📄 Ver PDF institucional
+                  </button>
+                </div>
+              </>
             )}
           </motion.div>
         ))}

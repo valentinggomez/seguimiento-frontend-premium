@@ -130,7 +130,10 @@ export default function Inicio() {
         <ResumenCard
           icon={<Calendar className="text-gray-500 w-6 h-6" />}
           titulo="Última cirugía"
-          valor={stats.ultimaCirugia ? new Date(new Date(stats.ultimaCirugia).getTime() + 3 * 60 * 60 * 1000).toLocaleDateString('es-AR') : '—'}
+          valor={stats?.ultimaCirugia
+            ? new Date(new Date(stats.ultimaCirugia).getTime() + 3 * 60 * 60 * 1000).toLocaleDateString('es-AR')
+            : '—'}
+
         />
       </div>
 
