@@ -186,7 +186,7 @@ export default function PanelRespuestas() {
 
                 <div className="mt-4">
                   <button
-                    onClick={() => window.open(`/api/pdf/${r.id}`, '_blank')}
+                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}`, '_blank')}
                     className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
                   >
                     📄 Ver PDF institucional
