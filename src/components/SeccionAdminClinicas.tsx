@@ -35,7 +35,8 @@ const CAMPOS_DISPONIBLES = [
   "telefono",
   "cirugia",
   "fecha_cirugia",
-  "nombre_medico"
+  "nombre_medico",
+  'hash_validacion'
 ]
 
 
@@ -389,7 +390,7 @@ export default function SeccionAdminClinicas() {
                   <div>
                     <h4 className="text-md font-semibold text-[#003366] mb-2">🧍 Datos del paciente</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico'].map(campo => (
+                      {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion'].map(campo => (
                         <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox
                             checked={(selected?.columnas_exportables || []).includes(campo)}
@@ -643,7 +644,7 @@ export default function SeccionAdminClinicas() {
                         <div>
                           <h4 className="text-md font-semibold text-[#003366] mb-2">🧍 Datos del paciente</h4>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico'].map(campo => (
+                            {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion'].map(campo => (
                               <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                                 <Checkbox
                                   checked={(selected?.columnas_exportables || []).includes(campo)}
