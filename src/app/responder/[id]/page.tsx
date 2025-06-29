@@ -66,6 +66,7 @@ export default function ResponderPage() {
   const [paciente, setPaciente] = useState<any>(null)
   const [estado, setEstado] = useState<'cargando' | 'ok' | 'error' | 'enviando' | 'enviado'>('cargando')
   const [form, setForm] = useState<any>({})
+  const [camposRemotos, setCamposRemotos] = useState<any[] | null>(null)
 
   const camposBase = [
     { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -101,10 +102,29 @@ export default function ResponderPage() {
     })
     .filter((campo: any) => campo.name && !camposBase.some(cb => cb.name === campo.name))
 
-  const camposFinal = [...camposBase, ...camposExtras]
+  const camposFinal = camposRemotos ?? [...camposBase, ...camposExtras]
 
   const campoActivo = (nombre: string) =>
     !clinica?.campos_formulario || camposConfigurados.some((c: string) => c.startsWith(nombre))
+
+  useEffect(() => {
+    const fetchFormulario = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/formularios-config?tipo=paciente_6h`, {
+          headers: {
+            'x-clinica-host': window.location.hostname
+          }
+        })
+        const data = await res.json()
+        if (data.configuracion?.campos) {
+          setCamposRemotos(data.configuracion.campos)
+        }
+      } catch (err) {
+        console.error('❌ Error al cargar formulario remoto:', err)
+      }
+    }
+    fetchFormulario()
+  }, [])
 
   useEffect(() => {
     const fetchPaciente = async () => {
