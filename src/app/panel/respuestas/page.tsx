@@ -26,6 +26,7 @@ interface Respuesta {
   observacion: string
   alerta: boolean
   nivel_alerta: string
+  score_ia?: number
 }
 
 function ModalConfirmacion({
@@ -184,6 +185,20 @@ export default function PanelRespuestas() {
                   <div><strong>Satisfacción:</strong> {r.satisfaccion ?? 'No registrado'}</div>
                   <div><strong>Observaciones:</strong> {r.observacion || 'No'}</div>
                 </motion.div>
+
+                {r.score_ia !== undefined && (
+                  <div
+                    className="inline-block mt-4 px-4 py-1 rounded-full text-white text-sm shadow-md"
+                    style={{
+                      backgroundColor:
+                        r.score_ia >= 7 ? '#dc2626' :
+                        r.score_ia >= 4 ? '#facc15' :
+                        '#22c55e'
+                    }}
+                  >
+                    🧠 Score IA: {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'} ({r.score_ia})
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <button
