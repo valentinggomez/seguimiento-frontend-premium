@@ -20,7 +20,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-semibold mb-4">📊 Dashboard Clínico</h1>
+      <h1 className="text-3xl font-semibold mb-4">📊 Estadisticas Clínicas</h1>
       <GraficoDolorPorCirugia data={data} />
     </div>
   )
