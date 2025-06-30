@@ -83,7 +83,7 @@ export default function PanelRespuestas() {
           }
         })
         const data = await res.json()
-        console.log(data)
+        console.log('📦 Respuestas desde backend:', data)
         if (Array.isArray(data)) {
           setRespuestas(data)
         } else if (data && Array.isArray(data.data)) {
