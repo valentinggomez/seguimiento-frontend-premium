@@ -138,10 +138,18 @@ export default function ResponderPage() {
 
     setEstado('enviando')
 
+    const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
+      const campo = camposFinal.find(c => c.name === key)
+      if (campo?.label) {
+        acc[campo.label] = value  // usa el label como nombre real del campo
+      }
+      return acc
+    }, {} as Record<string, any>)
+
     const payload = {
       paciente_id: id,
       clinica_id: clinica?.id,
-      ...form
+      ...camposFinalMapped
     }
 
     try {
