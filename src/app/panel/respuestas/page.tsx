@@ -104,8 +104,9 @@ export default function PanelRespuestas() {
   }
 
   const getColorClass = (r: Respuesta) => {
-    if (r.nivel_alerta === 'rojo') return 'border-red-400 bg-red-50'
-    if (r.nivel_alerta === 'amarillo') return 'border-yellow-300 bg-yellow-50'
+    const nivel = r.nivel_alerta?.toLowerCase().trim()
+    if (nivel === 'rojo') return 'border-red-400 bg-red-50'
+    if (nivel === 'amarillo') return 'border-yellow-300 bg-yellow-50'
     return 'border-green-400 bg-green-50'
   }
 
