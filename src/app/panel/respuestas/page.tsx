@@ -155,6 +155,19 @@ export default function PanelRespuestas() {
                 )}
                 <h2 className="font-semibold text-[#663300] flex items-center gap-2">
                   📄 Seguimiento de {r.paciente_nombre}
+                  {typeof r.score_ia === 'number' && (
+                    <span
+                      className="ml-2 px-2 py-0.5 text-xs rounded-full text-white shadow-sm"
+                      style={{
+                        backgroundColor:
+                          r.score_ia >= 7 ? '#dc2626' :
+                          r.score_ia >= 4 ? '#facc15' :
+                          '#22c55e'
+                      }}
+                    >
+                      🧠 {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'}
+                    </span>
+                  )}
                 </h2>
                 <p className="text-sm text-gray-700">
                   {r.tipo_cirugia} • {r.edad} años<br />
