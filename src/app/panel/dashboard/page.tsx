@@ -8,15 +8,18 @@ export default function DashboardPage() {
   const [data, setData] = useState([])
 
   useEffect(() => {
-    // Rango fijo de ejemplo por ahora
-    const desde = '2025-06-01'
-    const hasta = '2025-06-30'
+    const hoy = new Date()
+    const hasta = hoy.toISOString().split('T')[0]
+    const desdeObj = new Date()
+    desdeObj.setDate(desdeObj.getDate() - 30)
+    const desde = desdeObj.toISOString().split('T')[0]
 
     fetch(`/api/dashboard/promedios?desde=${desde}&hasta=${hasta}`)
-      .then(res => res.json())
-      .then(setData)
-      .catch(err => console.error('Error al cargar promedios:', err))
-  }, [])
+        .then(res => res.json())
+        .then(setData)
+        .catch(err => console.error('Error al cargar promedios:', err))
+    }, [])
+
 
   return (
     <div className="p-6 space-y-6">
