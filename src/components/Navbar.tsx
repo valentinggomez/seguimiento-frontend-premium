@@ -44,7 +44,6 @@ export default function Navbar() {
           <Link href="/panel" className={linkClasses('/panel')}>Inicio</Link>
           <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>Registrar</Link>
           <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>Respuestas</Link>
-          <Link href="/panel/dashboard" className={linkClasses('/panel/dashboard')}>Estadisticas</Link>
           {rol === 'superadmin' && (
             <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>Clínicas</Link>
           )}
