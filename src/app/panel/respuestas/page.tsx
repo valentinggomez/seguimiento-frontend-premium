@@ -218,7 +218,7 @@ export default function PanelRespuestas() {
                 )}
                 {r.sugerencia_ia && (
                   <p className="mt-2 text-sm text-gray-800 flex items-center gap-2">
-                    💡 <span className="font-medium">{r.sugerencia_ia}</span>
+                     <span className="font-medium">{r.sugerencia_ia}</span>
                   </p>
                 )}
                 <div className="mt-4">
