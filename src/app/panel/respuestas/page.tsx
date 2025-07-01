@@ -27,6 +27,7 @@ interface Respuesta {
   alerta: boolean
   nivel_alerta: string
   score_ia?: number
+    sugerencia_ia?: string
 }
 
 function ModalConfirmacion({
@@ -168,6 +169,9 @@ export default function PanelRespuestas() {
                       🧠 {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'}
                     </span>
                   )}
+                  {r.sugerencia_ia && (
+                    <span className="ml-2 text-sm text-gray-600">💡 {r.sugerencia_ia}</span>
+                  )}
                 </h2>
                 <p className="text-sm text-gray-700">
                   {r.tipo_cirugia} • {r.edad} años<br />
@@ -212,7 +216,11 @@ export default function PanelRespuestas() {
                     🧠 Score IA: {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'} ({r.score_ia})
                   </div>
                 )}
-
+                {r.sugerencia_ia && (
+                  <p className="mt-2 text-sm text-gray-800 flex items-center gap-2">
+                    💡 <span className="font-medium">{r.sugerencia_ia}</span>
+                  </p>
+                )}
                 <div className="mt-4">
                   <button
                     onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}?host=${window.location.hostname}`, '_blank')}
