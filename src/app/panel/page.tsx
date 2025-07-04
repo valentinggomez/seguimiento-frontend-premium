@@ -42,7 +42,7 @@ export default function Inicio() {
         setErrorStats(true)
       })
   }, [clinica?.id])
-
+ 
   useEffect(() => {
     if (!clinica?.id) return;
 
