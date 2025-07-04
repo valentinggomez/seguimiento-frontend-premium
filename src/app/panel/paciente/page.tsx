@@ -72,7 +72,10 @@ export default function RegistroPaciente() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-clinica-host': window.location.hostname  // ✅ Header obligatorio para que el backend detecte la clínica
+        },
         body: JSON.stringify(paciente)
       })
 
