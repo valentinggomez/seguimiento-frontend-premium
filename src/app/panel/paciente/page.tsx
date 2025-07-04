@@ -87,7 +87,7 @@ export default function RegistroPaciente() {
         return
       }
 
-      const nuevoId = resultado.id || ''
+      const nuevoId = resultado.data?.id || ''
       setLink(`${window.location.origin}/responder/${nuevoId}`)
       setEnviado(true)
     } catch (err) {
