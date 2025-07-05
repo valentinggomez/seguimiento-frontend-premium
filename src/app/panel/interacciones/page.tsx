@@ -214,7 +214,7 @@ export default function InteraccionesPage() {
 
                 if (res.ok) {
                   toast.success('📤 Formulario reenviado por WhatsApp')
-                  
+                  await fetchInteracciones()
                 } else {
                   toast.error('❌ Error al reenviar el formulario')
                 }
