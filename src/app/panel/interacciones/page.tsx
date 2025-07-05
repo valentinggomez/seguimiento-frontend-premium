@@ -4,8 +4,18 @@ import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
+type Interaccion = {
+  paciente_id: string
+  nombre: string
+  telefono: string
+  mensaje: string
+  nivel_alerta: 'rojo' | 'amarillo' | 'verde'
+  respuesta_enviada: string
+  fecha: string
+}
+
 export default function InteraccionesPage() {
-  const [interacciones, setInteracciones] = useState([])
+  const [interacciones, setInteracciones] = useState<Interaccion[]>([])
 
   useEffect(() => {
     const fetchInteracciones = async () => {
