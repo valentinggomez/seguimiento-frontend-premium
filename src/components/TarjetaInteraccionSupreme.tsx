@@ -117,12 +117,35 @@ export const TarjetaInteraccionSupreme = ({
                 </div>
               ) : (
                 mensajes.map((m, i) => (
-                  <div key={i} className="bg-gray-50 p-3 rounded-lg shadow-sm border">
-                    ...
+                  <div
+                    key={i}
+                    className="bg-gray-50 p-3 rounded-lg shadow-sm border text-sm text-gray-800 space-y-1"
+                  >
+                    <div className="flex items-start gap-2">
+                      <MessageCircle className="w-4 h-4 mt-0.5 text-gray-500" />
+                      <div>
+                        <span className="font-medium">Paciente:</span> <br />
+                        {m.mensaje}
+                      </div>
+                    </div>
+
+                    {m.respuesta_enviada && (
+                      <div className="flex items-start gap-2 mt-2">
+                        <Bot className="w-4 h-4 mt-0.5 text-blue-500" />
+                        <div>
+                          <span className="font-medium">Respuesta automática:</span> <br />
+                          <span className="text-blue-700">{m.respuesta_enviada}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                      <Clock className="w-3 h-3" />
+                      {new Date(m.fecha).toLocaleString()}
+                    </div>
                   </div>
                 ))
               )}
-
               {/* ACCIONES RÁPIDAS */}
               <div className={`flex gap-2 mt-4 ${sinMensajes ? 'justify-center' : ''}`}>
                 {onArchivar && !sinMensajes &&(
