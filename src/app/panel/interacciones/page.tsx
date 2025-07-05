@@ -8,6 +8,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@/components/ui/tabs'
+import { toast } from 'sonner'
 
 type Interaccion = {
   paciente_id: string
@@ -141,8 +142,14 @@ export default function InteraccionesPage() {
                     console.log('📬 Respuesta del backend:', res.status, data)
 
                     if (res.ok) {
-                      console.log('✅ Escalado correctamente')
-                      window.location.reload()
+                      toast.success(`✅ Alerta escalada a ${color.toUpperCase()}`)
+                      setActivas((prev) =>
+                        prev.map((i) =>
+                          i.paciente_id === mensajes[0].paciente_id
+                            ? { ...i, alerta_manual: color }
+                            : i
+                        )
+                      )
                     } else {
                       alert('❌ Error al escalar alerta')
                     }
