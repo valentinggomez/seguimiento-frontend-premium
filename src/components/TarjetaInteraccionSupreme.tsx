@@ -85,10 +85,10 @@ export const TarjetaInteraccionSupreme = ({
                 })}
               </span>
             </div>
-            <Badge className={`flex items-center gap-1 text-xs ${colorPorAlerta[alerta]}`}>
+            <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${colorPorAlerta[alerta]}`}>
               <AlertTriangle className="w-3 h-3" />
               {alerta}
-            </Badge>
+            </span>
           </div>
           {abierto ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground mt-1" />
