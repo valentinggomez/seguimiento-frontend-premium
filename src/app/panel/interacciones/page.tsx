@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TarjetaInteraccion } from '@/components/TarjetaInteraccion'
+import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 
 type Interaccion = {
   paciente_id: string
@@ -54,16 +54,16 @@ export default function InteraccionesPage() {
       ) : (
         <div className="space-y-4">
           {interacciones.map((item, index) => (
-            <TarjetaInteraccion
-                key={index}
-                nombre={item.nombre}
-                telefono={item.telefono}
-                mensaje={item.mensaje}
-                respuesta={item.respuesta_enviada}
-                alerta={item.nivel_alerta}
-                fecha={new Date(item.fecha).toLocaleString()}
+            <TarjetaInteraccionSupreme
+              key={index}
+              nombre={item.nombre}
+              telefono={item.telefono}
+              mensaje={item.mensaje}
+              respuesta={item.respuesta_enviada}
+              alerta={item.nivel_alerta}
+              fecha={new Date(item.fecha).toLocaleString()}
             />
-            ))}
+          ))}
         </div>
       )}
     </div>
