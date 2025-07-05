@@ -30,6 +30,7 @@ interface Props {
   clinica?: string
   onArchivar?: () => void
   onAlertar?: () => void
+  onEscalarAlerta?: (color: 'rojo' | 'amarillo' | 'verde') => void
 }
 
 const colorPorAlerta = {
@@ -47,6 +48,7 @@ export const TarjetaInteraccionSupreme = ({
   clinica,
   onArchivar,
   onAlertar,
+  onEscalarAlerta,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
   const ultimoMensaje = mensajes[mensajes.length - 1]
@@ -143,6 +145,28 @@ export const TarjetaInteraccionSupreme = ({
                   >
                     <Archive className="w-3 h-3" /> Archivar
                   </button>
+                )}
+                {onEscalarAlerta && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onEscalarAlerta('verde')}
+                      className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 hover:bg-green-200"
+                    >
+                      Escalar a Verde
+                    </button>
+                    <button
+                      onClick={() => onEscalarAlerta('amarillo')}
+                      className="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                    >
+                      Escalar a Amarillo
+                    </button>
+                    <button
+                      onClick={() => onEscalarAlerta('rojo')}
+                      className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+                    >
+                      Escalar a Rojo
+                    </button>
+                  </div>
                 )}
                 {onAlertar && (
                   <button

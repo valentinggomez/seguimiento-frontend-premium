@@ -15,6 +15,7 @@ type Interaccion = {
   telefono: string
   mensaje: string
   nivel_alerta: 'rojo' | 'amarillo' | 'verde'
+  alerta_manual?: 'rojo' | 'amarillo' | 'verde' | null
   respuesta_enviada: string
   fecha: string
 }
@@ -33,11 +34,15 @@ function agruparPorTelefono(data: Interaccion[]) {
 }
 
 function getAlertaGlobal(mensajes: Interaccion[]): 'rojo' | 'amarillo' | 'verde' {
+  const manual = mensajes.find((m) => m.alerta_manual)
+  if (manual) return manual.alerta_manual as 'rojo' | 'amarillo' | 'verde'
+
   const niveles = mensajes.map((m) => m.nivel_alerta)
   if (niveles.includes('rojo')) return 'rojo'
   if (niveles.includes('amarillo')) return 'amarillo'
   return 'verde'
 }
+
 
 export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
@@ -119,6 +124,17 @@ export default function InteraccionesPage() {
                     setActivas((prev) =>
                       prev.filter((i) => i.telefono !== telefono)
                     )
+                  }}
+                  onEscalarAlerta={async (color: 'rojo' | 'amarillo' | 'verde') => {
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'x-clinica-host': window.location.hostname,
+                      },
+                      body: JSON.stringify({ alerta_manual: color }),
+                    })
+                    window.location.reload()
                   }}
                 />
               )
