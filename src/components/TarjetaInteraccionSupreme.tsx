@@ -14,13 +14,19 @@ import {
   ChevronUp,
 } from 'lucide-react'
 
+interface Interaccion {
+  mensaje: string
+  respuesta_enviada: string
+  nivel_alerta: 'rojo' | 'amarillo' | 'verde'
+  fecha: string
+}
+
 interface Props {
   nombre: string
   telefono: string
-  mensaje: string
-  respuesta: string
   alerta: 'verde' | 'amarillo' | 'rojo'
   fecha: string
+  mensajes: Interaccion[]
   clinica?: string
   onArchivar?: () => void
   onAlertar?: () => void
@@ -35,10 +41,9 @@ const colorPorAlerta = {
 export const TarjetaInteraccionSupreme = ({
   nombre,
   telefono,
-  mensaje,
-  respuesta,
   alerta,
   fecha,
+  mensajes,
   clinica,
   onArchivar,
   onAlertar,
@@ -82,27 +87,37 @@ export const TarjetaInteraccionSupreme = ({
             exit={{ height: 0, opacity: 0 }}
             className="px-4 pb-4"
           >
-            <div className="mt-2 space-y-3 text-sm">
-              <div>
-                <p className="font-medium flex items-center gap-1">
-                  <MessageCircle className="w-4 h-4" /> Mensaje del paciente:
-                </p>
-                <p className="bg-gray-100 p-2 rounded-md mt-1">{mensaje}</p>
-              </div>
+            <div className="mt-2 space-y-4 text-sm">
+              {mensajes.map((m, i) => (
+                <div key={i} className="bg-gray-50 p-3 rounded-lg shadow-sm border">
+                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    {new Date(m.fecha).toLocaleString()}
+                    <Badge
+                      className={`${colorPorAlerta[m.nivel_alerta]} text-xs ml-auto`}
+                    >
+                      {m.nivel_alerta}
+                    </Badge>
+                  </div>
 
-              <div>
-                <p className="font-medium flex items-center gap-1 text-blue-800">
-                  <Bot className="w-4 h-4" /> Respuesta automática:
-                </p>
-                <p className="bg-blue-50 p-2 rounded-md mt-1 text-blue-800">{respuesta}</p>
-              </div>
+                  <p className="mb-2">
+                    <span className="font-medium flex items-center gap-1 text-gray-700">
+                      <MessageCircle className="w-4 h-4" /> Paciente:
+                    </span>
+                    {m.mensaje}
+                  </p>
 
-              <div className="text-xs text-gray-500 flex items-center gap-1">
-                <Clock className="w-4 h-4" /> {fecha}
-              </div>
+                  <p className="text-blue-800">
+                    <span className="font-medium flex items-center gap-1">
+                      <Bot className="w-4 h-4" /> Respuesta automática:
+                    </span>
+                    {m.respuesta_enviada}
+                  </p>
+                </div>
+              ))}
 
               {/* ACCIONES RÁPIDAS */}
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-4">
                 {onArchivar && (
                   <button
                     onClick={onArchivar}

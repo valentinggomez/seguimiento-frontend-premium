@@ -19,6 +19,26 @@ type Interaccion = {
   fecha: string
 }
 
+function agruparPorTelefono(data: Interaccion[]) {
+  const agrupadas: Record<string, Interaccion[]> = {}
+
+  data.forEach((item) => {
+    if (!agrupadas[item.telefono]) {
+      agrupadas[item.telefono] = []
+    }
+    agrupadas[item.telefono].push(item)
+  })
+
+  return agrupadas
+}
+
+function getAlertaGlobal(mensajes: Interaccion[]): 'rojo' | 'amarillo' | 'verde' {
+  const niveles = mensajes.map((m) => m.nivel_alerta)
+  if (niveles.includes('rojo')) return 'rojo'
+  if (niveles.includes('amarillo')) return 'amarillo'
+  return 'verde'
+}
+
 export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
   const [archivadas, setArchivadas] = useState<Interaccion[]>([])
@@ -60,34 +80,37 @@ export default function InteraccionesPage() {
           {activas.length === 0 ? (
             <p className="text-muted-foreground">No hay mensajes activos.</p>
           ) : (
-            activas.map((item, index) => (
-              <TarjetaInteraccionSupreme
-                key={index}
-                nombre={item.nombre}
-                telefono={item.telefono}
-                mensaje={item.mensaje}
-                respuesta={item.respuesta_enviada}
-                alerta={item.nivel_alerta}
-                fecha={new Date(item.fecha).toLocaleString()}
-                onArchivar={async () => {
-                  await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/${item.paciente_id}`,
-                    {
-                      method: 'PATCH',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'x-clinica-host': window.location.hostname,
-                      },
-                      body: JSON.stringify({ archivado: true }),
-                    }
-                  )
+            Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
+              const alertaGlobal = getAlertaGlobal(mensajes)
+              const { nombre, fecha } = mensajes[mensajes.length - 1]
 
-                  setActivas(prev =>
-                    prev.filter(i => i.paciente_id !== item.paciente_id)
-                  )
-                }}
-              />
-            ))
+              return (
+                <TarjetaInteraccionSupreme
+                  key={index}
+                  nombre={nombre}
+                  telefono={telefono}
+                  alerta={alertaGlobal}
+                  fecha={new Date(fecha).toLocaleString()}
+                  mensajes={mensajes}
+                  onArchivar={async () => {
+                    await fetch(
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
+                      {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'x-clinica-host': window.location.hostname,
+                        },
+                        body: JSON.stringify({ archivado: true }),
+                      }
+                    )
+                    setActivas((prev) =>
+                      prev.filter((i) => i.telefono !== telefono)
+                    )
+                  }}
+                />
+              )
+            })
           )}
         </TabsContent>
 
@@ -95,17 +118,21 @@ export default function InteraccionesPage() {
           {archivadas.length === 0 ? (
             <p className="text-muted-foreground">No hay interacciones archivadas.</p>
           ) : (
-            archivadas.map((item, index) => (
-              <TarjetaInteraccionSupreme
-                key={index}
-                nombre={item.nombre}
-                telefono={item.telefono}
-                mensaje={item.mensaje}
-                respuesta={item.respuesta_enviada}
-                alerta={item.nivel_alerta}
-                fecha={new Date(item.fecha).toLocaleString()}
-              />
-            ))
+            Object.entries(agruparPorTelefono(archivadas)).map(([telefono, mensajes], index) => {
+              const alertaGlobal = getAlertaGlobal(mensajes)
+              const { nombre, fecha } = mensajes[mensajes.length - 1]
+
+              return (
+                <TarjetaInteraccionSupreme
+                  key={index}
+                  nombre={nombre}
+                  telefono={telefono}
+                  alerta={alertaGlobal}
+                  fecha={new Date(fecha).toLocaleString()}
+                  mensajes={mensajes}
+                />
+              )
+            })
           )}
         </TabsContent>
       </Tabs>
