@@ -56,6 +56,37 @@ export const TarjetaInteraccionSupreme = ({
   const ultimoMensaje = mensajes[mensajes.length - 1]
   const sinMensajes = mensajes.length === 0
 
+  const enviarFeedback = async (
+    paciente_id: string,
+    mensaje: string,
+    nivel_alerta_ia: string,
+    evaluacion_manual: 'bueno' | 'malo'
+  ) => {
+    try {
+      const res = await fetch('/api/ia/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paciente_id,
+          mensaje_original: mensaje,
+          nivel_alerta_ia,
+          evaluacion_manual
+        })
+      })
+
+      if (res.ok) {
+        alert('✅ Feedback guardado correctamente')
+      } else if (res.status === 409) {
+        alert('⚠️ Este mensaje ya fue marcado anteriormente')
+      } else {
+        alert('❌ Ocurrió un error al enviar el feedback')
+      }
+    } catch (err) {
+      console.error('Error al enviar feedback:', err)
+      alert('❌ Error al conectar con el servidor')
+    }
+  }
+
   return (
     <div className={`w-full border rounded-2xl shadow-md transition-all ${sinMensajes ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
       {/* CABECERA */}
@@ -135,6 +166,31 @@ export const TarjetaInteraccionSupreme = ({
                         <div>
                           <span className="font-medium">Respuesta automática:</span> <br />
                           <span className="text-blue-700">{m.respuesta_enviada}</span>
+                          {/* Botones de feedback IA */}
+                          <div className="flex gap-2 mt-2 ml-6">
+                            <button
+                              onClick={() => enviarFeedback(
+                                telefono,
+                                m.mensaje,
+                                m.nivel_alerta,
+                                'bueno'
+                              )}
+                              className="text-xs px-2 py-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
+                            >
+                              👍 Ejemplo bueno
+                            </button>
+                            <button
+                              onClick={() => enviarFeedback(
+                                telefono,
+                                m.mensaje,
+                                m.nivel_alerta,
+                                'malo'
+                              )}
+                              className="text-xs px-2 py-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                            >
+                              👎 Ejemplo malo
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
