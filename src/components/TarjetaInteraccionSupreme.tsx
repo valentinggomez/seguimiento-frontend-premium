@@ -54,9 +54,10 @@ export const TarjetaInteraccionSupreme = ({
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
   const ultimoMensaje = mensajes[mensajes.length - 1]
+  const sinMensajes = mensajes.length === 0
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-all">
+    <div className={`w-full border rounded-2xl shadow-md transition-all ${sinMensajes ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
       {/* CABECERA */}
       <div
         onClick={() => setAbierto(!abierto)}
@@ -71,7 +72,7 @@ export const TarjetaInteraccionSupreme = ({
             {clinica && <span className="italic ml-2">({clinica})</span>}
           </div>
           <p className="text-xs text-gray-500 mt-1 line-clamp-1 max-w-[250px]">
-            {ultimoMensaje?.mensaje}
+            {sinMensajes ? '🕓 Aún sin respuesta del paciente' : ultimoMensaje?.mensaje}
           </p>
         </div>
 
@@ -110,37 +111,21 @@ export const TarjetaInteraccionSupreme = ({
             className="px-4 pb-4"
           >
             <div className="mt-2 space-y-4 text-sm">
-              {mensajes.map((m, i) => (
-                <div key={i} className="bg-gray-50 p-3 rounded-lg shadow-sm border">
-                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    {new Date(m.fecha).toLocaleString()}
-                    <Badge
-                      className={`${colorPorAlerta[m.nivel_alerta]} text-xs ml-auto`}
-                    >
-                      {m.nivel_alerta}
-                    </Badge>
-                  </div>
-
-                  <p className="mb-2">
-                    <span className="font-medium flex items-center gap-1 text-gray-700">
-                      <MessageCircle className="w-4 h-4" /> Paciente:
-                    </span>
-                    {m.mensaje}
-                  </p>
-
-                  <p className="text-blue-800">
-                    <span className="font-medium flex items-center gap-1">
-                      <Bot className="w-4 h-4" /> Respuesta automática:
-                    </span>
-                    {m.respuesta_enviada}
-                  </p>
+              {sinMensajes ? (
+                <div className="p-4 bg-gray-100 rounded-xl text-sm text-gray-600 text-center">
+                  Este paciente aún no respondió por WhatsApp.
                 </div>
-              ))}
+              ) : (
+                mensajes.map((m, i) => (
+                  <div key={i} className="bg-gray-50 p-3 rounded-lg shadow-sm border">
+                    ...
+                  </div>
+                ))
+              )}
 
               {/* ACCIONES RÁPIDAS */}
-              <div className="flex gap-2 mt-4">
-                {onArchivar && (
+              <div className={`flex gap-2 mt-4 ${sinMensajes ? 'justify-center' : ''}`}>
+                {onArchivar && !sinMensajes &&(
                   <button
                     onClick={onArchivar}
                     className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-full"
@@ -148,7 +133,7 @@ export const TarjetaInteraccionSupreme = ({
                     <Archive className="w-3 h-3" /> Archivar
                   </button>
                 )}
-                {onEscalarAlerta && (
+                {onEscalarAlerta && !sinMensajes &&(
                   <div className="flex gap-2">
                     <button
                       onClick={() => onEscalarAlerta('verde')}

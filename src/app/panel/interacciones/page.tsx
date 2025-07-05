@@ -48,6 +48,7 @@ function getAlertaGlobal(mensajes: Interaccion[]): 'rojo' | 'amarillo' | 'verde'
 export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
   const [archivadas, setArchivadas] = useState<Interaccion[]>([])
+  const [pacientes, setPacientes] = useState<any[]>([])
 
   useEffect(() => {
     const fetchAmbas = async () => {
@@ -61,9 +62,12 @@ export default function InteraccionesPage() {
 
         const dataActivas = await resActivas.json()
         const dataArchivadas = await resArchivadas.json()
+        const resPacientes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers })
+        const dataPacientes = await resPacientes.json()
 
         setActivas(dataActivas)
         setArchivadas(dataArchivadas)
+        setPacientes(dataPacientes.pacientes)
       } catch (err) {
         console.error('Error al cargar interacciones:', err)
       }
@@ -71,7 +75,8 @@ export default function InteraccionesPage() {
 
     fetchAmbas()
   }, [])
-
+  const telefonosConMensajes = new Set(activas.map(i => i.telefono))
+  const pacientesSinMensajes = pacientes.filter(p => !telefonosConMensajes.has(p.telefono))
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
@@ -101,7 +106,7 @@ export default function InteraccionesPage() {
             Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
               const alertaGlobal = getAlertaGlobal(mensajes)
               const { nombre, fecha } = mensajes[mensajes.length - 1]
-
+              
               return (
                 <TarjetaInteraccionSupreme
                   key={index}
@@ -178,9 +183,42 @@ export default function InteraccionesPage() {
                     }
                   }}
                 />
+                
               )
             })
           )}
+          {pacientesSinMensajes.map((paciente, index) => (
+            <TarjetaInteraccionSupreme
+              key={`sinmsg-${index}`}
+              nombre={paciente.nombre}
+              telefono={paciente.telefono}
+              alerta="verde"
+              fecha={new Date(paciente.fecha).toLocaleString()}
+              mensajes={[]} // importante: sin mensajes
+              onReenviarFormulario={async () => {
+                const toastId = toast.loading('⏳ Reenviando formulario...')
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-clinica-host': window.location.hostname,
+                  },
+                  body: JSON.stringify({
+                    paciente_id: paciente.id,
+                    telefono: paciente.telefono,
+                  }),
+                })
+
+                toast.dismiss(toastId)
+
+                if (res.ok) {
+                  toast.success('📤 Formulario reenviado por WhatsApp')
+                } else {
+                  toast.error('❌ Error al reenviar el formulario')
+                }
+              }}
+            />
+          ))}
         </TabsContent>
 
         <TabsContent value="archivadas" className="space-y-4">
