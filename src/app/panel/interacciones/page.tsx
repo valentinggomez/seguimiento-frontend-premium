@@ -126,7 +126,9 @@ export default function InteraccionesPage() {
                     )
                   }}
                   onEscalarAlerta={async (color: 'rojo' | 'amarillo' | 'verde') => {
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
+                    console.log(`🟠 Intentando escalar alerta a: ${color}`)
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
                       method: 'PATCH',
                       headers: {
                         'Content-Type': 'application/json',
@@ -134,7 +136,16 @@ export default function InteraccionesPage() {
                       },
                       body: JSON.stringify({ alerta_manual: color }),
                     })
-                    window.location.reload()
+
+                    const data = await res.json().catch(() => null)
+                    console.log('📬 Respuesta del backend:', res.status, data)
+
+                    if (res.ok) {
+                      console.log('✅ Escalado correctamente')
+                      window.location.reload()
+                    } else {
+                      alert('❌ Error al escalar alerta')
+                    }
                   }}
                 />
               )
