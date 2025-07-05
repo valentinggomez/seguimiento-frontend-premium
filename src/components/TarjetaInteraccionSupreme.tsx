@@ -56,35 +56,37 @@ export const TarjetaInteraccionSupreme = ({
       {/* CABECERA */}
       <div
         onClick={() => setAbierto(!abierto)}
-        className="flex justify-between items-center px-4 py-3 cursor-pointer"
+        className="grid grid-cols-[1fr_auto] gap-2 px-4 py-4 cursor-pointer hover:bg-gray-50 transition-all items-center"
       >
-        <div className="flex flex-col">
+        {/* Columna izquierda: Info paciente */}
+        <div>
           <p className="text-sm font-semibold">{nombre}</p>
           <div className="flex items-center text-xs text-muted-foreground gap-2">
             <Phone className="w-4 h-4" />
             {telefono}
             {clinica && <span className="italic ml-2">({clinica})</span>}
           </div>
-          <p className="text-xs text-gray-500 mt-1 truncate max-w-[280px]">
+          <p className="text-xs text-gray-500 mt-1 line-clamp-1 max-w-[250px]">
             {ultimoMensaje?.mensaje}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-muted-foreground">
+        {/* Columna derecha: hora + alerta + toggle */}
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-xs text-muted-foreground">
             {new Date(fecha).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
             })}
-          </p>
+          </span>
           <Badge className={`flex items-center gap-1 ${colorPorAlerta[alerta]} text-xs`}>
             <AlertTriangle className="w-3 h-3" />
             {alerta}
           </Badge>
           {abierto ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            <ChevronUp className="w-4 h-4 text-muted-foreground mt-1" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            <ChevronDown className="w-4 h-4 text-muted-foreground mt-1" />
           )}
         </div>
       </div>
