@@ -34,9 +34,9 @@ interface Props {
 }
 
 const colorPorAlerta = {
-  verde: 'bg-green-100 text-green-800',
-  amarillo: 'bg-yellow-100 text-yellow-800',
-  rojo: 'bg-red-100 text-red-800',
+  verde: 'bg-green-200 text-green-900',
+  amarillo: 'bg-yellow-200 text-yellow-800',
+  rojo: 'bg-red-200 text-red-800',
 }
 
 export const TarjetaInteraccionSupreme = ({
