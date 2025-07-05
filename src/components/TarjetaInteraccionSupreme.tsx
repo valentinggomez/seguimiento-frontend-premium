@@ -63,7 +63,7 @@ export const TarjetaInteraccionSupreme = ({
     evaluacion_manual: 'bueno' | 'malo'
   ) => {
     try {
-      const res = await fetch('/api/ia/feedback', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
