@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { TarjetaInteraccion } from '@/components/TarjetaInteraccion'
 
 type Interaccion = {
   paciente_id: string
@@ -53,23 +54,16 @@ export default function InteraccionesPage() {
       ) : (
         <div className="space-y-4">
           {interacciones.map((item, index) => (
-            <Card key={index} className="p-4 border shadow-md">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">
-                    {item.nombre} — <span className="text-muted-foreground text-sm">{item.telefono}</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">{new Date(item.fecha).toLocaleString()}</p>
-                </div>
-                <Badge className={getColor(item.nivel_alerta)}>{item.nivel_alerta.toUpperCase()}</Badge>
-              </div>
-
-              <div className="mt-2">
-                <p className="text-sm"><strong>📝 Mensaje:</strong> {item.mensaje}</p>
-                <p className="text-sm mt-1"><strong>🤖 Respuesta:</strong> {item.respuesta_enviada}</p>
-              </div>
-            </Card>
-          ))}
+            <TarjetaInteraccion
+                key={index}
+                nombre={item.nombre}
+                telefono={item.telefono}
+                mensaje={item.mensaje}
+                respuesta={item.respuesta_enviada}
+                alerta={item.nivel_alerta}
+                fecha={new Date(item.fecha).toLocaleString()}
+            />
+            ))}
         </div>
       )}
     </div>
