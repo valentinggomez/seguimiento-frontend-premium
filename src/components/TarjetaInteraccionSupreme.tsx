@@ -49,25 +49,36 @@ export const TarjetaInteraccionSupreme = ({
   onAlertar,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
+  const ultimoMensaje = mensajes[mensajes.length - 1]
 
   return (
-    <div className="w-full border border-gray-200 rounded-2xl shadow-sm overflow-hidden bg-white">
+    <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-all">
       {/* CABECERA */}
       <div
         onClick={() => setAbierto(!abierto)}
-        className="flex justify-between items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-all"
+        className="flex justify-between items-center px-4 py-3 cursor-pointer"
       >
-        <div>
+        <div className="flex flex-col">
           <p className="text-sm font-semibold">{nombre}</p>
           <div className="flex items-center text-xs text-muted-foreground gap-2">
             <Phone className="w-4 h-4" />
             {telefono}
             {clinica && <span className="italic ml-2">({clinica})</span>}
           </div>
+          <p className="text-xs text-gray-500 mt-1 truncate max-w-[280px]">
+            {ultimoMensaje?.mensaje}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Badge className={`${colorPorAlerta[alerta]} capitalize text-xs`}>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            {new Date(fecha).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
+          <Badge className={`flex items-center gap-1 ${colorPorAlerta[alerta]} text-xs`}>
+            <AlertTriangle className="w-3 h-3" />
             {alerta}
           </Badge>
           {abierto ? (
