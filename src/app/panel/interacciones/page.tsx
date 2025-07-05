@@ -50,31 +50,32 @@ export default function InteraccionesPage() {
   const [archivadas, setArchivadas] = useState<Interaccion[]>([])
   const [pacientes, setPacientes] = useState<any[]>([])
 
-  useEffect(() => {
-    const fetchAmbas = async () => {
-      try {
-        const headers = { 'x-clinica-host': window.location.hostname }
+  const fetchInteracciones = async () => {
+    try {
+      const headers = { 'x-clinica-host': window.location.hostname }
 
-        const [resActivas, resArchivadas] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/archivados`, { headers }),
-        ])
+      const [resActivas, resArchivadas, resPacientes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/archivados`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers }),
+      ])
 
-        const dataActivas = await resActivas.json()
-        const dataArchivadas = await resArchivadas.json()
-        const resPacientes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers })
-        const dataPacientes = await resPacientes.json()
+      const dataActivas = await resActivas.json()
+      const dataArchivadas = await resArchivadas.json()
+      const dataPacientes = await resPacientes.json()
 
-        setActivas(dataActivas)
-        setArchivadas(dataArchivadas)
-        setPacientes(dataPacientes.pacientes)
-      } catch (err) {
-        console.error('Error al cargar interacciones:', err)
-      }
+      setActivas(dataActivas)
+      setArchivadas(dataArchivadas)
+      setPacientes(dataPacientes.pacientes)
+    } catch (err) {
+      console.error('❌ Error al cargar interacciones:', err)
     }
+  }
 
-    fetchAmbas()
+  useEffect(() => {
+    fetchInteracciones()
   }, [])
+
   const telefonosConMensajes = new Set(activas.map(i => i.telefono))
   const pacientesSinMensajes = pacientes.filter(p => !telefonosConMensajes.has(p.telefono))
   return (
@@ -178,6 +179,7 @@ export default function InteraccionesPage() {
 
                     if (res.ok) {
                       toast.success('📤 Formulario reenviado por WhatsApp')
+                      await fetchInteracciones()
                     } else {
                       toast.error('❌ Error al reenviar el formulario')
                     }
