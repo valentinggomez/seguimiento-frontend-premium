@@ -71,20 +71,20 @@ export default function InteraccionesPage() {
       <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
 
       <Tabs defaultValue="activas" className="w-full">
-        <TabsList className="mb-6 bg-gray-100 rounded-full p-1 w-fit mx-auto">
+        <TabsList className="flex bg-white p-1 rounded-xl shadow-sm border w-fit mx-auto mb-6">
           <TabsTrigger
             value="activas"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white
-                      bg-white text-gray-600 px-4 py-1.5 rounded-full text-sm transition-all"
+            className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900
+                      data-[state=active]:font-semibold text-sm text-gray-600 px-5 py-1.5 rounded-lg transition-all"
           >
-            Activas
+            🟢 Activas
           </TabsTrigger>
           <TabsTrigger
             value="archivadas"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white
-                      bg-white text-gray-600 px-4 py-1.5 rounded-full text-sm transition-all"
+            className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900
+                      data-[state=active]:font-semibold text-sm text-gray-600 px-5 py-1.5 rounded-lg transition-all"
           >
-            Archivadas
+            🗃 Archivadas
           </TabsTrigger>
         </TabsList>
 
