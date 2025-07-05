@@ -34,9 +34,9 @@ interface Props {
 }
 
 const colorPorAlerta = {
-  verde: 'bg-green-200 text-green-900',
-  amarillo: 'bg-yellow-200 text-yellow-800',
-  rojo: 'bg-red-200 text-red-800',
+  verde: 'bg-green-200 text-green-900 font-semibold',
+  amarillo: 'bg-yellow-200 text-yellow-800 font-semibold',
+  rojo: 'bg-red-200 text-red-800 font-semibold',
 }
 
 export const TarjetaInteraccionSupreme = ({
@@ -85,7 +85,7 @@ export const TarjetaInteraccionSupreme = ({
                 })}
               </span>
             </div>
-            <Badge className={`flex items-center gap-1 ${colorPorAlerta[alerta]} text-xs`}>
+            <Badge className={`flex items-center gap-1 text-xs ${colorPorAlerta[alerta]}`}>
               <AlertTriangle className="w-3 h-3" />
               {alerta}
             </Badge>
