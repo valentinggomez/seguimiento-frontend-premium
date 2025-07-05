@@ -20,7 +20,14 @@ export default function InteraccionesPage() {
   useEffect(() => {
     const fetchInteracciones = async () => {
       try {
-        const res = await fetch('/api/interacciones')
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones`,
+          {
+              headers: {
+              'x-clinica-host': window.location.hostname,
+            },
+          }
+        )
         const data = await res.json()
         setInteracciones(data)
       } catch (err) {
