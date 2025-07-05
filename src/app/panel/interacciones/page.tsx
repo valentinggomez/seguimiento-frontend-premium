@@ -154,6 +154,29 @@ export default function InteraccionesPage() {
                       alert('❌ Error al escalar alerta')
                     }
                   }}
+                  onReenviarFormulario={async () => {
+                    const toastId = toast.loading('⏳ Reenviando formulario...')
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'x-clinica-host': window.location.hostname,
+                      },
+                      body: JSON.stringify({
+                        paciente_id: mensajes[0].paciente_id,
+                        telefono: telefono,
+                      }),
+                    })
+
+                    toast.dismiss(toastId)
+
+                    if (res.ok) {
+                      toast.success('📤 Formulario reenviado por WhatsApp')
+                    } else {
+                      toast.error('❌ Error al reenviar el formulario')
+                    }
+                  }}
                 />
               )
             })

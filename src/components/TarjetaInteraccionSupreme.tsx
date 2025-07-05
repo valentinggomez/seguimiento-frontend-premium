@@ -31,6 +31,7 @@ interface Props {
   onArchivar?: () => void
   onAlertar?: () => void
   onEscalarAlerta?: (color: 'rojo' | 'amarillo' | 'verde') => void
+  onReenviarFormulario?: () => void
 }
 
 const colorPorAlerta = {
@@ -49,6 +50,7 @@ export const TarjetaInteraccionSupreme = ({
   onArchivar,
   onAlertar,
   onEscalarAlerta,
+  onReenviarFormulario,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
   const ultimoMensaje = mensajes[mensajes.length - 1]
@@ -174,6 +176,14 @@ export const TarjetaInteraccionSupreme = ({
                     className="flex items-center gap-1 px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded-full"
                   >
                     <AlertTriangle className="w-3 h-3" /> Escalar alerta
+                  </button>
+                )}
+                {onReenviarFormulario && (
+                  <button
+                    onClick={onReenviarFormulario}
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full"
+                  >
+                    🔁 Reenviar formulario
                   </button>
                 )}
               </div>
