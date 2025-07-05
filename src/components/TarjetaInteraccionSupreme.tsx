@@ -73,16 +73,21 @@ export const TarjetaInteraccionSupreme = ({
 
         {/* Columna derecha: hora + alerta + toggle */}
         <div className="flex flex-col items-end gap-1">
-          <span className="text-xs text-muted-foreground">
-            {new Date(fecha).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
-          <Badge className={`flex items-center gap-1 ${colorPorAlerta[alerta]} text-xs`}>
-            <AlertTriangle className="w-3 h-3" />
-            {alerta}
-          </Badge>
+          <div className="flex flex-col items-end text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 mb-1">
+              <Clock className="w-3 h-3" />
+              <span>
+                {new Date(fecha).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+            <Badge className={`flex items-center gap-1 ${colorPorAlerta[alerta]} text-xs`}>
+              <AlertTriangle className="w-3 h-3" />
+              {alerta}
+            </Badge>
+          </div>
           {abierto ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground mt-1" />
           ) : (
