@@ -62,6 +62,12 @@ export const TarjetaInteraccionSupreme = ({
     nivel_alerta_ia: string,
     evaluacion_manual: 'bueno' | 'malo'
   ) => {
+    console.log('📤 Enviando feedback IA:', {
+      telefono: paciente_id,
+      mensaje_original: mensaje,
+      nivel_alerta_ia,
+      evaluacion_manual
+    })
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/feedback`, {
         method: 'POST',
