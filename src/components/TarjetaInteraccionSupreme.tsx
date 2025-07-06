@@ -20,6 +20,9 @@ interface Interaccion {
   respuesta_enviada: string
   nivel_alerta: 'rojo' | 'amarillo' | 'verde'
   fecha: string
+  score_ia?: number
+  nivel_alerta_ia?: string
+  tags_detectados?: string[]
 }
 
 interface Props {
@@ -56,6 +59,7 @@ export const TarjetaInteraccionSupreme = ({
   paciente_id,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
+  const [analisisVisible, setAnalisisVisible] = useState<number | null>(null)
   const ultimoMensaje = mensajes[mensajes.length - 1]
   const sinMensajes = mensajes.length === 0
 
@@ -206,7 +210,41 @@ export const TarjetaInteraccionSupreme = ({
                         </div>
                       </div>
                     )}
+                    {/* Botón para ver análisis IA */}
+                      <button
+                        onClick={() => setAnalisisVisible(analisisVisible === i ? null : i)}
+                        className="text-xs mt-2 ml-6 underline text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                      >
+                        <span>Ver análisis IA</span>
+                        {analisisVisible === i ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
 
+                      {/* Bloque de análisis IA */}
+                      {analisisVisible === i && (
+                        <div className="mt-2 ml-6 bg-neutral-100 rounded-xl p-3 text-xs text-gray-700 border">
+                          {m.score_ia || m.nivel_alerta_ia || (m.tags_detectados && m.tags_detectados.length > 0) ? (
+                            <ul className="space-y-1">
+                              {m.score_ia && (
+                                <li>
+                                  <span className="font-semibold">🔢 Score IA:</span> {m.score_ia}
+                                </li>
+                              )}
+                              {m.nivel_alerta_ia && (
+                                <li>
+                                  <span className="font-semibold">🚦 Nivel evaluado:</span> {m.nivel_alerta_ia}
+                                </li>
+                              )}
+                              {m.tags_detectados && m.tags_detectados.length > 0 && (
+                                <li>
+                                  <span className="font-semibold">🏷️ Tags detectados:</span> {m.tags_detectados.join(', ')}
+                                </li>
+                              )}
+                            </ul>
+                          ) : (
+                            <p className="italic text-gray-500">Sin datos de IA para este mensaje.</p>
+                          )}
+                        </div>
+                      )}
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
                       <Clock className="w-3 h-3" />
                       {new Date(m.fecha).toLocaleString()}

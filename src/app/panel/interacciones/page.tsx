@@ -19,6 +19,9 @@ type Interaccion = {
   alerta_manual?: 'rojo' | 'amarillo' | 'verde' | null
   respuesta_enviada: string
   fecha: string
+  score_ia?: number
+  nivel_alerta_ia?: string
+  tags_detectados?: string[]
 }
 
 function agruparPorTelefono(data: Interaccion[]) {
