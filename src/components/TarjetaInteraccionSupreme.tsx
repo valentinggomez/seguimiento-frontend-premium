@@ -22,6 +22,7 @@ interface Interaccion {
 }
 
 interface Props {
+  paciente_id: string 
   nombre: string
   telefono: string
   alerta: 'verde' | 'amarillo' | 'rojo'
@@ -51,6 +52,7 @@ export const TarjetaInteraccionSupreme = ({
   onAlertar,
   onEscalarAlerta,
   onReenviarFormulario,
+  paciente_id,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
   const ultimoMensaje = mensajes[mensajes.length - 1]
@@ -63,7 +65,7 @@ export const TarjetaInteraccionSupreme = ({
     evaluacion_manual: 'bueno' | 'malo'
   ) => {
     console.log('📤 Enviando feedback IA:', {
-      telefono: paciente_id,
+      paciente_id,
       mensaje_original: mensaje,
       nivel_alerta_ia,
       evaluacion_manual
@@ -179,7 +181,7 @@ export const TarjetaInteraccionSupreme = ({
                           <div className="flex gap-2 mt-2 ml-6">
                             <button
                               onClick={() => enviarFeedback(
-                                telefono,
+                                paciente_id,
                                 m.mensaje,
                                 m.nivel_alerta,
                                 'bueno'
@@ -190,7 +192,7 @@ export const TarjetaInteraccionSupreme = ({
                             </button>
                             <button
                               onClick={() => enviarFeedback(
-                                telefono,
+                                paciente_id,
                                 m.mensaje,
                                 m.nivel_alerta,
                                 'malo'
