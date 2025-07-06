@@ -116,6 +116,7 @@ export default function InteraccionesPage() {
                   alerta={alertaGlobal}
                   fecha={new Date(fecha).toLocaleString()}
                   mensajes={mensajes}
+                  paciente_id={mensajes[0].paciente_id}
                   onArchivar={async () => {
                     await fetch(
                       `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
@@ -195,7 +196,8 @@ export default function InteraccionesPage() {
               telefono={paciente.telefono}
               alerta="verde"
               fecha={new Date(paciente.fecha).toLocaleString()}
-              mensajes={[]} // importante: sin mensajes
+              mensajes={[]}
+              paciente_id={paciente.id} 
               onReenviarFormulario={async () => {
                 const toastId = toast.loading('⏳ Reenviando formulario...')
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
@@ -239,6 +241,7 @@ export default function InteraccionesPage() {
                   alerta={alertaGlobal}
                   fecha={new Date(fecha).toLocaleString()}
                   mensajes={mensajes}
+                  paciente_id={mensajes[0].paciente_id}
                 />
               )
             })
