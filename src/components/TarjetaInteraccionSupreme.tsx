@@ -213,12 +213,20 @@ export const TarjetaInteraccionSupreme = ({
                     {/* Botón para ver análisis IA */}
                       <button
                         onClick={() => setAnalisisVisible(analisisVisible === i ? null : i)}
-                        className="text-xs mt-2 ml-6 underline text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                        className="mt-3 ml-6 flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700 transition-all"
                       >
-                        <span className="font-medium">🔍 Análisis clínico IA</span>
-                        {analisisVisible === i ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        <div className="flex items-center justify-center bg-blue-100 text-blue-900 rounded-full w-6 h-6 text-xs shadow-sm">
+                          🔍
+                        </div>
+                        <span className="underline underline-offset-2">
+                          Ver análisis clínico IA
+                        </span>
+                        {analisisVisible === i ? (
+                          <ChevronUp className="w-4 h-4 text-blue-800" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-blue-800" />
+                        )}
                       </button>
-
                       {/* Bloque de análisis IA */}
                       {analisisVisible === i && (
                         <div className="mt-2 ml-6 bg-neutral-100 rounded-xl p-3 text-xs text-gray-700 border">
