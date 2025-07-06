@@ -215,7 +215,7 @@ export const TarjetaInteraccionSupreme = ({
                         onClick={() => setAnalisisVisible(analisisVisible === i ? null : i)}
                         className="text-xs mt-2 ml-6 underline text-blue-700 hover:text-blue-900 flex items-center gap-1"
                       >
-                        <span>Ver análisis IA</span>
+                        <span className="font-medium">🔍 Análisis clínico IA</span>
                         {analisisVisible === i ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
 
@@ -223,23 +223,26 @@ export const TarjetaInteraccionSupreme = ({
                       {analisisVisible === i && (
                         <div className="mt-2 ml-6 bg-neutral-100 rounded-xl p-3 text-xs text-gray-700 border">
                           {m.score_ia || m.nivel_alerta_ia || (m.tags_detectados && m.tags_detectados.length > 0) ? (
-                            <ul className="space-y-1">
-                              {m.score_ia && (
-                                <li>
-                                  <span className="font-semibold">🔢 Score IA:</span> {m.score_ia}
-                                </li>
-                              )}
-                              {m.nivel_alerta_ia && (
-                                <li>
-                                  <span className="font-semibold">🚦 Nivel evaluado:</span> {m.nivel_alerta_ia}
-                                </li>
-                              )}
-                              {m.tags_detectados && m.tags_detectados.length > 0 && (
-                                <li>
-                                  <span className="font-semibold">🏷️ Tags detectados:</span> {m.tags_detectados.join(', ')}
-                                </li>
-                              )}
-                            </ul>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-900 font-semibold bg-blue-100 px-2 py-0.5 rounded-md">
+                                  🔢 Score IA:
+                                </span>
+                                <span className="text-blue-800">{m.score_ia}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-red-900 font-semibold bg-red-100 px-2 py-0.5 rounded-md">
+                                  🚦 Nivel evaluado:
+                                </span>
+                                <span className="capitalize">{m.nivel_alerta_ia}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-700 font-semibold bg-yellow-100 px-2 py-0.5 rounded-md">
+                                  🏷️ Tags detectados:
+                                </span>
+                                <span>{m.tags_detectados?.join(', ')}</span>
+                              </div>
+                            </div>
                           ) : (
                             <p className="italic text-gray-500">Sin datos de IA para este mensaje.</p>
                           )}
