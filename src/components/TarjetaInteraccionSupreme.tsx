@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 
 interface Interaccion {
   mensaje: string
@@ -86,15 +87,15 @@ export const TarjetaInteraccionSupreme = ({
       })
 
       if (res.ok) {
-        alert('✅ Feedback guardado correctamente')
+        toast.success('✅ Feedback guardado correctamente')
       } else if (res.status === 409) {
-        alert('⚠️ Este mensaje ya fue marcado anteriormente')
+        toast('⚠️ Este mensaje ya fue marcado anteriormente', { icon: '⚠️' })
       } else {
-        alert('❌ Ocurrió un error al enviar el feedback')
+        toast.error('❌ Ocurrió un error al enviar el feedback')
       }
     } catch (err) {
       console.error('Error al enviar feedback:', err)
-      alert('❌ Error al conectar con el servidor')
+      toast.error('❌ Error al conectar con el servidor')
     }
   }
 
