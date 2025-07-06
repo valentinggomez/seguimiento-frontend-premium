@@ -71,7 +71,10 @@ export const TarjetaInteraccionSupreme = ({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-clinica-host': window.location.hostname, // ✅ CLAVE
+        },
         body: JSON.stringify({
           paciente_id,
           mensaje_original: mensaje,
