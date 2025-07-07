@@ -127,6 +127,7 @@ export default function InteraccionesPage() {
         <div className="mb-6 space-y-4">
           <h2 className="text-lg font-semibold">📂 Resultados encontrados</h2>
           {Object.entries(agruparPorTelefono(resultados)).map(([telefono, mensajes], index) => {
+            mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
             const alertaGlobal = getAlertaGlobal(mensajes)
             const { nombre, fecha } = mensajes[mensajes.length - 1]
             return (
