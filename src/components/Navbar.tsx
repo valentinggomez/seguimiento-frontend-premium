@@ -34,6 +34,11 @@ export default function Navbar() {
   }, [])
   
   useEffect(() => {
+    const preload = new Audio('/sounds/notificacion.wav')
+    preload.load()
+  }, [])
+  
+  useEffect(() => {
     const rolGuardado = localStorage.getItem('rol')
     setRol(rolGuardado)
 
@@ -61,12 +66,7 @@ export default function Navbar() {
       eventBus.off('nuevo_mensaje', handler)
     }
   }, [])
-  
-  useEffect(() => {
-    const preload = new Audio('/sounds/notificacion.wav')
-    preload.load()
-  }, [])
-  
+
   useEffect(() => {
     const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
 
