@@ -72,7 +72,13 @@ export default function InteraccionesPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers }),
       ])
 
-      const dataActivas = await resActivas.json()
+      let dataActivas = []
+        if (resActivas.ok) {
+          dataActivas = await resActivas.json()
+        } else {
+          console.warn('❗️ Falló resActivas:', resActivas.status)
+        }
+
       const dataArchivadas = await resArchivadas.json()
       const dataPacientes = await resPacientes.json()
 
