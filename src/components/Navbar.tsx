@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { useEffect, useState } from 'react'
+import { eventBus } from '@/lib/eventBus'
+import { toast } from 'sonner'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -34,6 +36,30 @@ export default function Navbar() {
   useEffect(() => {
     const rolGuardado = localStorage.getItem('rol')
     setRol(rolGuardado)
+
+    const reproducirSonido = () => {
+      const audio = new Audio('/sonidos/notificacion.mp3')
+      audio.play().catch((e) => {
+        console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
+      })
+    }
+
+    const handler = (mensaje: any) => {
+      if (mensaje?.tipo === 'nuevo_mensaje') {
+        setTieneMensajesNoLeidos(true)
+        toast.info(`📩 Nuevo mensaje de ${mensaje.nombre}`, {
+          description: 'Haz clic en Interacciones para verlo.',
+          duration: 4000,
+        })
+        reproducirSonido()
+      }
+    }
+
+    eventBus.on('nuevo_mensaje', handler)
+
+    return () => {
+      eventBus.off('nuevo_mensaje', handler)
+    }
   }, [])
 
   const linkClasses = (path: string) =>
