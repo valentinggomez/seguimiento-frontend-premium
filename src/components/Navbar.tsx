@@ -74,13 +74,6 @@ export default function Navbar() {
         // 🔴 Mostrar punto rojo
         setTieneMensajesNoLeidos(true)
 
-        // 🔔 Mostrar toast
-        toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
-          icon: '💬',
-          position: 'top-right',
-          duration: 4000,
-        })
-
         // 🔊 Reproducir sonido directamente
         const audio = new Audio('/sounds/notificacion.wav')
         audio.play().catch((err) => {
