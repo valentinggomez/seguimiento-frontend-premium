@@ -19,9 +19,10 @@ import { useEffect } from 'react'
 const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [nota, setNota] = useState('');
   const [cargando, setCargando] = useState(true);
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL; // ✅ usando tu variable real
 
   useEffect(() => {
-    fetch(`/api/notas/${pacienteId}`, {
+    fetch(`${backendUrl}/api/notas/${pacienteId}`, {
       headers: { 'x-clinica-host': window.location.hostname },
     })
       .then(res => res.ok ? res.json() : null)
@@ -34,9 +35,8 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
       .finally(() => setCargando(false));
   }, [pacienteId]);
 
-
   const guardarNota = async () => {
-    const res = await fetch('/api/notas', {
+    const res = await fetch(`${backendUrl}/api/notas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
