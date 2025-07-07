@@ -226,7 +226,7 @@ export const TarjetaInteraccionSupreme = ({
             <div className="flex items-center gap-1 mb-1">
               <Clock className="w-3 h-3" />
               <span>
-                {new Date(fecha).toLocaleTimeString([], {
+                {new Date(ultimoMensaje?.fecha || fecha).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
