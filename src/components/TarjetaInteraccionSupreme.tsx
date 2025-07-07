@@ -14,6 +14,59 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { useEffect } from 'react'
+
+const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
+  const [nota, setNota] = useState('');
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/notas/${pacienteId}`)
+      .then(res => res.json())
+      .then(data => {
+        setNota(data?.nota || '');
+        setCargando(false);
+      });
+  }, [pacienteId]);
+
+  const guardarNota = async () => {
+    const res = await fetch('/api/notas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-clinica-host': window.location.hostname,
+      },
+      body: JSON.stringify({ paciente_id: pacienteId, nota }),
+    });
+
+    if (res.ok) {
+      toast.success('📝 Nota guardada correctamente');
+    } else {
+      toast.error('❌ Error al guardar la nota');
+    }
+  };
+
+  if (cargando) return <p className="text-sm text-gray-400">Cargando nota clínica...</p>;
+
+  return (
+    <div className="mt-6 bg-gray-50 p-4 rounded-xl border text-sm">
+      <label className="block font-medium mb-2 text-gray-700">📝 Nota interna del médico</label>
+      <textarea
+        value={nota}
+        onChange={e => setNota(e.target.value)}
+        className="w-full p-2 border rounded-md text-sm"
+        placeholder="Anotar evolución, decisiones clínicas, seguimiento..."
+        rows={4}
+      />
+      <button
+        onClick={guardarNota}
+        className="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1 rounded-md"
+      >
+        Guardar nota
+      </button>
+    </div>
+  );
+};
 
 interface Interaccion {
   mensaje: string
@@ -263,6 +316,7 @@ export const TarjetaInteraccionSupreme = ({
                   </div>
                 ))
               )}
+              <NotasClinicas pacienteId={paciente_id} />
               {/* ACCIONES RÁPIDAS */}
               <div className={`flex gap-2 mt-4 ${sinMensajes ? 'justify-center' : ''}`}>
                 {onArchivar && !sinMensajes &&(
