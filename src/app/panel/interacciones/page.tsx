@@ -113,26 +113,36 @@ export default function InteraccionesPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
 
-      {/* 📤 Botón de exportar interacciones */}
       <div className="mb-6 text-center">
         <button
           onClick={async () => {
             const toastId = toast.loading('⏳ Exportando interacciones a Sheets...')
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/exportar`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-clinica-host': window.location.hostname,
-              },
-            })
+            try {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/exportar`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-clinica-host': window.location.hostname,
+                },
+              })
 
-            toast.dismiss(toastId)
+              const data = await res.json()
+              toast.dismiss(toastId)
 
-            if (res.ok) {
-              toast.success('✅ Interacciones exportadas correctamente')
-            } else {
-              toast.error('❌ Error al exportar interacciones')
+              if (data?.status === 'ok') {
+                toast.success('✅ Interacciones exportadas correctamente')
+              } else if (data?.status === 'empty') {
+                toast('ℹ️ No hay nuevas interacciones para exportar', {
+                  icon: '🟡',
+                })
+              } else {
+                toast.error('❌ Error al exportar interacciones')
+              }
+            } catch (err) {
+              toast.dismiss(toastId)
+              toast.error('❌ Error de conexión al exportar')
+              console.error('Error:', err)
             }
           }}
           className="px-4 py-2 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 shadow-sm transition-all"
