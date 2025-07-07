@@ -21,13 +21,19 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/notas/${pacienteId}`)
-      .then(res => res.json())
+    fetch(`/api/notas/${pacienteId}`, {
+      headers: { 'x-clinica-host': window.location.hostname },
+    })
+      .then(res => res.ok ? res.json() : null)
       .then(data => {
         setNota(data?.nota || '');
-        setCargando(false);
-      });
+      })
+      .catch((err) => {
+        console.error('❌ Error al obtener nota:', err);
+      })
+      .finally(() => setCargando(false));
   }, [pacienteId]);
+
 
   const guardarNota = async () => {
     const res = await fetch('/api/notas', {
