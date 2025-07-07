@@ -113,7 +113,6 @@ export default function InteraccionesPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
 
-      {/* 📤 Botón de exportar interacciones Supreme */}
       <div className="mb-6 text-center">
         <button
           onClick={async () => {
