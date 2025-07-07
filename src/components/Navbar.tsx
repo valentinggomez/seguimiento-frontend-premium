@@ -13,7 +13,11 @@ export default function Navbar() {
   useEffect(() => {
     const verificarMensajesNoLeidos = async () => {
       try {
-        const res = await fetch('/api/interacciones/noleidos')
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/noleidos`, {
+          headers: {
+            'x-clinica-host': window.location.hostname
+          }
+        })
         const data = await res.json()
         setTieneMensajesNoLeidos(data.cantidad > 0)
       } catch (error) {
