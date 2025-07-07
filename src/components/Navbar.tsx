@@ -8,6 +8,24 @@ export default function Navbar() {
   const pathname = usePathname()
   const { clinica } = useClinica()
   const [rol, setRol] = useState<string | null>(null)
+  const [tieneMensajesNoLeidos, setTieneMensajesNoLeidos] = useState(false)
+
+  useEffect(() => {
+    const verificarMensajesNoLeidos = async () => {
+      try {
+        const res = await fetch('/api/interacciones/noleidos')
+        const data = await res.json()
+        setTieneMensajesNoLeidos(data.cantidad > 0)
+      } catch (error) {
+        console.error('Error al verificar mensajes no leídos', error)
+      }
+    }
+
+    verificarMensajesNoLeidos()
+    const intervalo = setInterval(verificarMensajesNoLeidos, 10000) // cada 10s
+
+    return () => clearInterval(intervalo)
+  }, [])
 
   useEffect(() => {
     const rolGuardado = localStorage.getItem('rol')
@@ -44,7 +62,12 @@ export default function Navbar() {
           <Link href="/panel" className={linkClasses('/panel')}>Inicio</Link>
           <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>Registrar</Link>
           <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>Respuestas</Link>
-          <Link href="/panel/interacciones" className={linkClasses('/panel/interacciones')}>Interacciones</Link>
+          <Link href="/panel/interacciones" className={`${linkClasses('/panel/interacciones')} relative`}>
+            Interacciones
+            {tieneMensajesNoLeidos && (
+              <span className="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-sm"></span>
+            )}
+          </Link>
           {rol === 'superadmin' && (
             <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>Clínicas</Link>
           )}

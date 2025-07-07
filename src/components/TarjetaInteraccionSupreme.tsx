@@ -156,6 +156,21 @@ export const TarjetaInteraccionSupreme = ({
   paciente_id,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
+  useEffect(() => {
+    if (abierto && paciente_id) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/marcarLeido`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-clinica-host': window.location.hostname,
+        },
+        body: JSON.stringify({ paciente_id }),
+      }).catch((err) => {
+        console.error('❌ Error al marcar como leído:', err)
+      })
+    }
+  }, [abierto, paciente_id])
+
   const [analisisVisible, setAnalisisVisible] = useState<number | null>(null)
   const ultimoMensaje = mensajes[0]
   const sinMensajes = mensajes.length === 0
