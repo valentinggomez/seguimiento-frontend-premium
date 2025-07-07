@@ -44,7 +44,7 @@ export default function Navbar() {
 
     const reproducirSonido = () => {
       const audio = new Audio('/sounds/notificacion.wav')
-      audio.play().catch((e) => {
+      audio.play().catch(() => {
         console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
       })
     }
@@ -52,16 +52,18 @@ export default function Navbar() {
     const handler = (mensaje: any) => {
       if (mensaje?.tipo === 'nuevo_mensaje') {
         setTieneMensajesNoLeidos(true)
+
+        // ✅ Solo ejecutamos esto una vez acá
         toast.info(`📩 Nuevo mensaje de ${mensaje.nombre}`, {
           description: 'Haz clic en Interacciones para verlo.',
           duration: 4000,
         })
+
         reproducirSonido()
       }
     }
 
     eventBus.on('nuevo_mensaje', handler)
-
     return () => {
       eventBus.off('nuevo_mensaje', handler)
     }
@@ -76,20 +78,13 @@ export default function Navbar() {
       if (data.tipo === 'nuevo_mensaje') {
         console.log('📥 Nuevo mensaje detectado por SSE:', data)
 
-        // 🔴 Mostrar punto rojo
+        // 🔴 Mostrar punto rojo visual
         setTieneMensajesNoLeidos(true)
 
-        // 🔊 Reproducir sonido directamente
-        const audio = new Audio('/sounds/notificacion.wav')
-        audio.play().catch((err) => {
-          console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
-        })
-
-        // 📡 Emitir evento al resto del frontend (por si se quiere actualizar otra parte)
+        // 📡 Emitir evento global (el resto se maneja desde el eventBus)
         eventBus.emit('nuevo_mensaje', data)
       }
     }
-
     return () => {
       eventSource.close()
     }
