@@ -61,6 +61,15 @@ export default function InteraccionesPage() {
   const [buscando, setBuscando] = useState(false)
   const [, setForceUpdate] = useState(0)
 
+    // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
+  useEffect(() => {
+    const activarSonido = () => {
+      sonidoNuevoMensaje?.play().catch(() => {})
+      document.removeEventListener('click', activarSonido)
+    }
+
+    document.addEventListener('click', activarSonido)
+  }, [])
 
   const fetchInteracciones = async () => {
     try {
