@@ -82,11 +82,20 @@ export default function InteraccionesPage() {
       ])
 
       let dataActivas = []
-        if (resActivas.ok) {
-          dataActivas = await resActivas.json()
+
+      if (resActivas.ok) {
+        const json = await resActivas.json()
+
+        if (Array.isArray(json)) {
+          dataActivas = json
         } else {
-          console.warn('❗️ Falló resActivas:', resActivas.status)
+          console.error('❌ Error: respuesta inesperada en interacciones:', json)
+          toast.error('Error al obtener interacciones activas')
         }
+      } else {
+        console.warn('❗️ Falló resActivas:', resActivas.status)
+      }
+
 
       const dataArchivadas = await resArchivadas.json()
       const dataPacientes = await resPacientes.json()
