@@ -32,13 +32,13 @@ export default function Navbar() {
 
     return () => clearInterval(intervalo)
   }, [])
-
+  
   useEffect(() => {
     const rolGuardado = localStorage.getItem('rol')
     setRol(rolGuardado)
 
     const reproducirSonido = () => {
-      const audio = new Audio('/sonidos/notificacion.mp3')
+      const audio = new Audio('/sounds/notificacion.wav')
       audio.play().catch((e) => {
         console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
       })
@@ -60,6 +60,11 @@ export default function Navbar() {
     return () => {
       eventBus.off('nuevo_mensaje', handler)
     }
+  }, [])
+  
+  useEffect(() => {
+    const preload = new Audio('/sounds/notificacion.wav')
+    preload.load()
   }, [])
   
   useEffect(() => {
