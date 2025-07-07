@@ -59,6 +59,7 @@ export default function InteraccionesPage() {
   const [query, setQuery] = useState('')
   const [resultados, setResultados] = useState<Interaccion[]>([])
   const [buscando, setBuscando] = useState(false)
+  const [, setForceUpdate] = useState(0)
 
 
   const fetchInteracciones = async () => {
@@ -78,6 +79,8 @@ export default function InteraccionesPage() {
       setActivas(dataActivas)
       setArchivadas(dataArchivadas)
       setPacientes(dataPacientes.pacientes)
+
+      setForceUpdate((prev) => prev + 1) // 🧠 Forzar re-render visual
     } catch (err) {
       console.error('❌ Error al cargar interacciones:', err)
     }
