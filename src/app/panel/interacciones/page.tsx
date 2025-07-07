@@ -4,7 +4,7 @@ const sonidoNuevoMensaje = typeof Audio !== 'undefined'
   ? new Audio('/sounds/notificacion.wav')
   : null
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 import {
   Tabs,
@@ -60,6 +60,7 @@ export default function InteraccionesPage() {
   const [resultados, setResultados] = useState<Interaccion[]>([])
   const [buscando, setBuscando] = useState(false)
   const [, setForceUpdate] = useState(0)
+  const prevMensajesRef = useRef<string[]>([])
 
     // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
   useEffect(() => {
@@ -101,6 +102,8 @@ export default function InteraccionesPage() {
       const dataPacientes = await resPacientes.json()
 
       setActivas(dataActivas)
+      // 🧠 Guardar los mensajes actuales por ID o texto
+      prevMensajesRef.current = dataActivas.map((m) => `${m.paciente_id}-${m.mensaje}`)
       setArchivadas(dataArchivadas)
       setPacientes(dataPacientes.pacientes)
 
@@ -121,23 +124,27 @@ export default function InteraccionesPage() {
       if (data.tipo === 'nuevo_mensaje') {
         console.log('📥 Nuevo mensaje detectado por SSE:', data)
 
-        // 🟡 Toast clínico
-        toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
-          icon: '💬',
-          position: 'top-right',
-          duration: 4000,
-        })
+        const idMensajeNuevo = `${data.paciente_id}-${data.mensaje}`
 
-        // 🔊 Sonido sutil
-        if (sonidoNuevoMensaje) {
-          sonidoNuevoMensaje.currentTime = 0
-          sonidoNuevoMensaje.play().catch((err) => {
-            console.warn('🔇 Error al reproducir sonido:', err)
+        if (!prevMensajesRef.current.includes(idMensajeNuevo)) {
+          // 🔊 Sonido sutil
+          if (sonidoNuevoMensaje) {
+            sonidoNuevoMensaje.currentTime = 0
+            sonidoNuevoMensaje.play().catch((err) => {
+              console.warn('🔇 Error al reproducir sonido:', err)
+            })
+          }
+
+          // 🟡 Toast clínico
+          toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
+            icon: '💬',
+            position: 'top-right',
+            duration: 4000,
           })
-        }
 
-        // 🔁 Refrescar panel
-        fetchInteracciones()
+          // 🔁 Refrescar panel
+          fetchInteracciones()
+        }
       }
     }
 
