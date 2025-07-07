@@ -157,7 +157,7 @@ export const TarjetaInteraccionSupreme = ({
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
   const [analisisVisible, setAnalisisVisible] = useState<number | null>(null)
-  const ultimoMensaje = mensajes[mensajes.length - 1]
+  const ultimoMensaje = mensajes[0]
   const sinMensajes = mensajes.length === 0
 
   const enviarFeedback = async (
