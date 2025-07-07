@@ -95,7 +95,7 @@ export default function InteraccionesPage() {
   useEffect(() => {
     fetchInteracciones()
 
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/stream`)
+    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
 
     eventSource.onmessage = (e) => {
       const data = JSON.parse(e.data)
