@@ -1,5 +1,9 @@
 'use client'
 
+const sonidoNuevoMensaje = typeof Audio !== 'undefined'
+  ? new Audio('/sounds/notificacion.wav')
+  : null
+
 import { useEffect, useState } from 'react'
 import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 import {
@@ -81,6 +85,38 @@ export default function InteraccionesPage() {
 
   useEffect(() => {
     fetchInteracciones()
+
+    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/stream`)
+
+    eventSource.onmessage = (e) => {
+      const data = JSON.parse(e.data)
+
+      if (data.tipo === 'nuevo_mensaje') {
+        console.log('📥 Nuevo mensaje detectado por SSE:', data)
+
+        // 🟡 Toast clínico
+        toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
+          icon: '💬',
+          position: 'top-right',
+          duration: 4000,
+        })
+
+        // 🔊 Sonido sutil
+        if (sonidoNuevoMensaje) {
+          sonidoNuevoMensaje.currentTime = 0
+          sonidoNuevoMensaje.play().catch((err) => {
+            console.warn('🔇 Error al reproducir sonido:', err)
+          })
+        }
+
+        // 🔁 Refrescar panel
+        fetchInteracciones()
+      }
+    }
+
+    return () => {
+      eventSource.close()
+    }
   }, [])
 
   const buscarInteracciones = async (texto: string) => {
