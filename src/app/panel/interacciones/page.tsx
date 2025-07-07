@@ -62,15 +62,25 @@ export default function InteraccionesPage() {
   const [, setForceUpdate] = useState(0)
   const prevMensajesRef = useRef<string[]>([])
 
-    // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
+  // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
   useEffect(() => {
     const activarSonido = () => {
-      sonidoNuevoMensaje?.play().catch(() => {})
+      // Solo intenta desbloquear una vez sin reproducir realmente
+      if (sonidoNuevoMensaje) {
+        sonidoNuevoMensaje.play().then(() => {
+          sonidoNuevoMensaje.pause()
+          sonidoNuevoMensaje.currentTime = 0
+        }).catch(() => {})
+      }
+
+      // Remover listener para no repetir
       document.removeEventListener('click', activarSonido)
     }
 
+    // Requiere interacción para desbloquear el audio
     document.addEventListener('click', activarSonido)
   }, [])
+
 
   const fetchInteracciones = async () => {
     try {
