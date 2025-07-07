@@ -18,16 +18,19 @@ import { useEffect } from 'react'
 
 const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [nota, setNota] = useState('');
+  const [fecha, setFecha] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
   const [cargando, setCargando] = useState(true);
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL; // ✅ usando tu variable real
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     fetch(`${backendUrl}/api/notas/${pacienteId}`, {
       headers: { 'x-clinica-host': window.location.hostname },
     })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
         setNota(data?.nota || '');
+        setFecha(data?.fecha || null);
       })
       .catch((err) => {
         console.error('❌ Error al obtener nota:', err);
@@ -47,32 +50,67 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
 
     if (res.ok) {
       toast.success('📝 Nota guardada correctamente');
+      setEditando(false);
+      const now = new Date();
+      setFecha(now.toISOString());
     } else {
       toast.error('❌ Error al guardar la nota');
     }
   };
 
-  if (cargando) return <p className="text-sm text-gray-400">Cargando nota clínica...</p>;
+  if (cargando)
+    return <p className="text-sm text-gray-400">Cargando nota clínica...</p>;
 
   return (
     <div className="mt-6 bg-gray-50 p-4 rounded-xl border text-sm">
       <label className="block font-medium mb-2 text-gray-700">📝 Nota interna del médico</label>
-      <textarea
-        value={nota}
-        onChange={e => setNota(e.target.value)}
-        className="w-full p-2 border rounded-md text-sm"
-        placeholder="Anotar evolución, decisiones clínicas, seguimiento..."
-        rows={4}
-      />
-      <button
-        onClick={guardarNota}
-        className="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1 rounded-md"
-      >
-        Guardar nota
-      </button>
+
+      {!editando ? (
+        <>
+          <div className="whitespace-pre-line text-gray-800 mb-2">
+            {nota || <span className="italic text-gray-500">Sin nota registrada.</span>}
+          </div>
+          {fecha && (
+            <p className="text-xs text-gray-500 italic mb-2">
+              🕓 Última actualización: {new Date(fecha).toLocaleString('es-AR')}
+            </p>
+          )}
+          <button
+            onClick={() => setEditando(true)}
+            className="text-xs px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full"
+          >
+            ✏️ Editar nota
+          </button>
+        </>
+      ) : (
+        <>
+          <textarea
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            className="w-full p-2 border rounded-md text-sm"
+            placeholder="Anotar evolución, decisiones clínicas, seguimiento..."
+            rows={4}
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={guardarNota}
+              className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-1 rounded-md"
+            >
+              💾 Guardar cambios
+            </button>
+            <button
+              onClick={() => setEditando(false)}
+              className="bg-gray-200 hover:bg-gray-300 text-sm px-4 py-1 rounded-md"
+            >
+              ❌ Cancelar
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
+
 
 interface Interaccion {
   mensaje: string
