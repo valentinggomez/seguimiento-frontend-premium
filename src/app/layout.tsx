@@ -1,7 +1,7 @@
 import './globals.css'
 import { headers } from 'next/headers'
 import { ClinicaProvider } from '@/lib/ClinicaProvider'
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from 'sonner'
 
 export default async function RootLayout({
   children,
@@ -27,7 +27,7 @@ export default async function RootLayout({
         <ClinicaProvider clinicaInicial={clinica}>
           {children}
         </ClinicaProvider>
-        <Toaster position="top-right" /> {/* ✅ AGREGADO */}
+        <Toaster position="top-center" richColors /> {/* ✅ AGREGADO */}
       </body>
     </html>
   )
