@@ -145,13 +145,6 @@ export default function InteraccionesPage() {
             })
           }
 
-          // 🟡 Toast clínico
-          toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
-            icon: '💬',
-            position: 'top-right',
-            duration: 4000,
-          })
-
           // 🔁 Refrescar panel
           fetchInteracciones()
         }
