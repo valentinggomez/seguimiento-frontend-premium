@@ -82,7 +82,7 @@ export default function Navbar() {
         })
 
         // 🔊 Reproducir sonido directamente
-        const audio = new Audio('/sonidos/notificacion.mp3')
+        const audio = new Audio('/sounds/notificacion.wav')
         audio.play().catch((err) => {
           console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
         })
