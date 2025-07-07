@@ -52,6 +52,10 @@ export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
   const [archivadas, setArchivadas] = useState<Interaccion[]>([])
   const [pacientes, setPacientes] = useState<any[]>([])
+  const [query, setQuery] = useState('')
+  const [resultados, setResultados] = useState<Interaccion[]>([])
+  const [buscando, setBuscando] = useState(false)
+
 
   const fetchInteracciones = async () => {
     try {
@@ -79,12 +83,66 @@ export default function InteraccionesPage() {
     fetchInteracciones()
   }, [])
 
+  const buscarInteracciones = async (texto: string) => {
+    setBuscando(true)
+    setQuery(texto)
+
+    if (!texto) {
+      setResultados([])
+      setBuscando(false)
+      return
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`, {
+        headers: { 'x-clinica-host': window.location.hostname },
+      })
+
+      const data = await res.json()
+      setResultados(data)
+    } catch (err) {
+      console.error('❌ Error al buscar interacciones:', err)
+    } finally {
+      setBuscando(false)
+    }
+  }
+
   const telefonosConMensajes = new Set(activas.map(i => i.telefono))
   const pacientesSinMensajes = pacientes.filter(p => !telefonosConMensajes.has(p.telefono))
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
 
+      {/* 🔍 Buscador Supreme */}
+      <div className="max-w-xl mx-auto mb-6">
+        <input
+          type="text"
+          placeholder="🔍 Buscar por nombre, teléfono o mensaje..."
+          value={query}
+          onChange={(e) => buscarInteracciones(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        />
+      </div>
+      {resultados.length > 0 && (
+        <div className="mb-6 space-y-4">
+          <h2 className="text-lg font-semibold">📂 Resultados encontrados</h2>
+          {Object.entries(agruparPorTelefono(resultados)).map(([telefono, mensajes], index) => {
+            const alertaGlobal = getAlertaGlobal(mensajes)
+            const { nombre, fecha } = mensajes[mensajes.length - 1]
+            return (
+              <TarjetaInteraccionSupreme
+                key={`res-${index}`}
+                nombre={nombre}
+                telefono={telefono}
+                alerta={alertaGlobal}
+                fecha={new Date(fecha).toLocaleString()}
+                mensajes={mensajes}
+                paciente_id={mensajes[0].paciente_id}
+              />
+            )
+          })}
+        </div>
+      )}
       <Tabs defaultValue="activas" className="w-full">
         <TabsList className="flex bg-white p-1 rounded-xl shadow-sm border w-fit mx-auto mb-6">
           <TabsTrigger
