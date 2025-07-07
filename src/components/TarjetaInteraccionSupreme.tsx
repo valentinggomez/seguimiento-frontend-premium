@@ -361,54 +361,57 @@ export const TarjetaInteraccionSupreme = ({
                 ))
               )}
               <NotasClinicas pacienteId={paciente_id} />
+              
               {/* ACCIONES RÁPIDAS */}
-              <div className={`flex gap-2 mt-4 ${sinMensajes ? 'justify-center' : ''}`}>
-                {onArchivar && !sinMensajes &&(
-                  <button
-                    onClick={onArchivar}
-                    className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-full"
-                  >
-                    <Archive className="w-3 h-3" /> Archivar
-                  </button>
-                )}
-                {onEscalarAlerta && !sinMensajes &&(
-                  <div className="flex gap-2">
+              <div className="w-full overflow-x-auto">
+                <div className="flex flex-nowrap sm:flex-wrap gap-2 mt-4 px-2">
+                  {onArchivar && !sinMensajes && (
                     <button
-                      onClick={() => onEscalarAlerta('verde')}
-                      className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 hover:bg-green-200"
+                      onClick={onArchivar}
+                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-full whitespace-nowrap"
                     >
-                      Escalar a Verde
+                      <Archive className="w-3 h-3" /> Archivar
                     </button>
+                  )}
+                  {onEscalarAlerta && !sinMensajes && (
+                    <>
+                      <button
+                        onClick={() => onEscalarAlerta('verde')}
+                        className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 hover:bg-green-200 whitespace-nowrap"
+                      >
+                        Escalar a Verde
+                      </button>
+                      <button
+                        onClick={() => onEscalarAlerta('amarillo')}
+                        className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 whitespace-nowrap"
+                      >
+                        Escalar a Amarillo
+                      </button>
+                      <button
+                        onClick={() => onEscalarAlerta('rojo')}
+                        className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200 whitespace-nowrap"
+                      >
+                        Escalar a Rojo
+                      </button>
+                    </>
+                  )}
+                  {onAlertar && (
                     <button
-                      onClick={() => onEscalarAlerta('amarillo')}
-                      className="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                      onClick={onAlertar}
+                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded-full whitespace-nowrap"
                     >
-                      Escalar a Amarillo
+                      <AlertTriangle className="w-3 h-3" /> Escalar alerta
                     </button>
+                  )}
+                  {onReenviarFormulario && (
                     <button
-                      onClick={() => onEscalarAlerta('rojo')}
-                      className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+                      onClick={onReenviarFormulario}
+                      className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full whitespace-nowrap"
                     >
-                      Escalar a Rojo
+                      🔁 Reenviar formulario
                     </button>
-                  </div>
-                )}
-                {onAlertar && (
-                  <button
-                    onClick={onAlertar}
-                    className="flex items-center gap-1 px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded-full"
-                  >
-                    <AlertTriangle className="w-3 h-3" /> Escalar alerta
-                  </button>
-                )}
-                {onReenviarFormulario && (
-                  <button
-                    onClick={onReenviarFormulario}
-                    className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full"
-                  >
-                    🔁 Reenviar formulario
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
