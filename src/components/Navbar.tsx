@@ -61,6 +61,41 @@ export default function Navbar() {
       eventBus.off('nuevo_mensaje', handler)
     }
   }, [])
+  
+  useEffect(() => {
+    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
+
+    eventSource.onmessage = (e) => {
+      const data = JSON.parse(e.data)
+
+      if (data.tipo === 'nuevo_mensaje') {
+        console.log('📥 Nuevo mensaje detectado por SSE:', data)
+
+        // 🔴 Mostrar punto rojo
+        setTieneMensajesNoLeidos(true)
+
+        // 🔔 Mostrar toast
+        toast(`Nuevo mensaje de ${data.nombre || 'paciente'}`, {
+          icon: '💬',
+          position: 'top-right',
+          duration: 4000,
+        })
+
+        // 🔊 Reproducir sonido directamente
+        const audio = new Audio('/sonidos/notificacion.mp3')
+        audio.play().catch((err) => {
+          console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
+        })
+
+        // 📡 Emitir evento al resto del frontend (por si se quiere actualizar otra parte)
+        eventBus.emit('nuevo_mensaje', data)
+      }
+    }
+
+    return () => {
+      eventSource.close()
+    }
+  }, [])
 
   const linkClasses = (path: string) =>
     `transition-all px-3 py-1.5 rounded-lg font-medium ${
