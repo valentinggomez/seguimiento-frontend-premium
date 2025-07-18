@@ -1,23 +1,15 @@
-export async function getDashboardStats(clinica_id: string) {
-  try {
-    const token = localStorage.getItem('token');
+import { fetchConToken } from './fetchConToken';
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'x-clinica-host': window.location.hostname
-      }
-    });
+export const getDashboardStats = async () => {
+  const res = await fetchConToken('/api/dashboard');
 
-    if (!res.ok) {
-      console.error('❌ Error en fetch del dashboard:', res.status);
-      return null;
+  if (!res.ok) {
+    if (res.status === 401) {
+      console.warn('Token inválido o expirado. Redirigiendo al login.');
+      window.location.href = '/login';
     }
-
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error('❌ Error en getDashboardStats:', error);
-    return null;
+    throw new Error('Error al obtener estadísticas del dashboard');
   }
-}
+
+  return res.json();
+};

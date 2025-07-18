@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle, AlertTriangle, ClipboardList, Calendar } from 'lucide-react'
 import Link from 'next/link'
-import { getDashboardStats } from '@/lib/getDashboardStats'
 import { useClinica } from '@/lib/ClinicaProvider'
-
+import { getDashboardStats } from '@/lib/getDashboardStats';
+import { getRespuestasAlertas } from '@/lib/getRespuestasAlertas';
+import { getInteraccionesNoleidas } from '@/lib/getInteraccionesNoleidas';
 
 export default function Inicio() {
   const clinicaContext = useClinica()
@@ -28,39 +29,49 @@ export default function Inicio() {
   useEffect(() => {
     if (!clinica?.id) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas/alertas`, {
-      headers: {
-        'x-clinica-host': window.location.hostname
+    const cargarAlertas = async () => {
+      try {
+        const data = await getRespuestasAlertas();
+        setAlertas(data);
+      } catch (err) {
+        console.error('Error al cargar alertas:', err);
+        setErrorStats(true);
       }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setAlertas(data)
-      })
-      .catch(err => {
-        console.error('Error al cargar alertas:', err)
-        setErrorStats(true)
-      })
-  }, [clinica?.id])
+    };
+
+    cargarAlertas();
+  }, [clinica?.id]);
  
   useEffect(() => {
     if (!clinica?.id) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
-      headers: {
-        'x-clinica-host': window.location.hostname
+    const cargarDashboard = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (err) {
+        console.error('Error al cargar estadísticas:', err);
+        setErrorStats(true);
       }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setStats(data)
-      })
-      .catch(err => {
-        console.error('Error al cargar estadísticas del dashboard:', err)
-        setErrorStats(true)
-      })
-  }, [clinica?.id])
+    };
 
+    cargarDashboard();
+  }, [clinica?.id]);
+
+  useEffect(() => {
+    if (!clinica?.id) return;
+
+    const cargarNoleidas = async () => {
+      try {
+        const interacciones = await getInteraccionesNoleidas();
+        // setNoleidas(interacciones); // si lo necesitás
+      } catch (err) {
+        console.error('Error al obtener interacciones no leídas:', err);
+      }
+    };
+
+    cargarNoleidas();
+  }, [clinica?.id]);
 
   if (!clinica) {
     return (
