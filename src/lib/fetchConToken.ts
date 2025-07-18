@@ -1,8 +1,10 @@
 export async function fetchConToken(
-  input: RequestInfo,
+  input: string,
   init: RequestInit = {}
 ): Promise<Response> {
   const token = localStorage.getItem('token');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
   const headers = {
     ...init.headers,
     Authorization: `Bearer ${token}`,
@@ -10,5 +12,5 @@ export async function fetchConToken(
     'Content-Type': 'application/json',
   };
 
-  return fetch(input, { ...init, headers });
+  return fetch(`${baseUrl}${input}`, { ...init, headers });
 }
