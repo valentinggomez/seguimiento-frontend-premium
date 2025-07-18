@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useEffect } from 'react'
+import { getNotaPorPaciente } from '@/lib/getNotaPorPaciente';
 
 const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [nota, setNota] = useState('');
@@ -24,18 +25,18 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    fetch(`${backendUrl}/api/notas/${pacienteId}`, {
-      headers: { 'x-clinica-host': window.location.hostname },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
+    const cargarNota = async () => {
+      try {
+        const data = await getNotaPorPaciente(pacienteId);
         setNota(data?.nota || '');
         setFecha(data?.fecha || null);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('❌ Error al obtener nota:', err);
-      })
-      .finally(() => setCargando(false));
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarNota();
   }, [pacienteId]);
 
   const guardarNota = async () => {
