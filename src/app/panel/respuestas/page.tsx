@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { fetchConToken } from '@/lib/fetchConToken'
 
 interface Respuesta {
   id: string
@@ -79,11 +80,7 @@ export default function PanelRespuestas() {
   useEffect(() => {
     const fetchRespuestas = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
-          headers: {
-            'x-clinica-host': window.location.hostname
-          }
-        })
+        const res = await fetchConToken('/api/respuestas')
         const data = await res.json()
         console.log('📦 Respuestas desde backend:', data)
         if (Array.isArray(data)) {
@@ -250,11 +247,10 @@ export default function PanelRespuestas() {
             onCancelar={() => setMostrarModal(false)}
             onConfirmar={async () => {
               try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
+                const res = await fetchConToken('/api/respuestas', {
                   method: 'DELETE',
                   headers: {
                     'Content-Type': 'application/json',
-                    'x-clinica-host': window.location.hostname
                   },
                   body: JSON.stringify({ ids: seleccionadas }),
                 })
