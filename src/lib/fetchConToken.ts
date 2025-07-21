@@ -1,16 +1,14 @@
-export async function fetchConToken(
-  input: string,
-  init: RequestInit = {}
-): Promise<Response> {
+export const fetchConToken = (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  const headers = {
-    ...init.headers,
-    Authorization: `Bearer ${token}`,
+  const headers: HeadersInit = {
+    ...(options.headers || {}),
+    Authorization: token ? `Bearer ${token}` : '',
     'x-clinica-host': window.location.hostname,
-    'Content-Type': 'application/json',
   };
 
-  return fetch(`${baseUrl}${input}`, { ...init, headers });
-}
+  return fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+};
