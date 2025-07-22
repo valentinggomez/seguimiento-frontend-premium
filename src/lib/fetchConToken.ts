@@ -7,7 +7,10 @@ export const fetchConToken = (endpoint: string, options: RequestInit = {}) => {
     'x-clinica-host': window.location.hostname,
   };
 
-  return fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  return fetch(`${baseUrl}${cleanEndpoint}`, {
     ...options,
     headers,
   });
