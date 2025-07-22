@@ -269,6 +269,6 @@ export default function PanelRespuestas() {
           />
         </div>
       )}
-    </div>
+    </div> 
   )
 }
