@@ -81,10 +81,18 @@ export default function InteraccionesPage() {
     document.addEventListener('click', activarSonido)
   }, [])
 
+  function getAuthHeaders(contentType = 'application/json'): HeadersInit {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': contentType,
+      'x-clinica-host': window.location.hostname,
+      'Authorization': `Bearer ${token}`,
+    }
+  }
 
   const fetchInteracciones = async () => {
     try {
-      const headers = { 'x-clinica-host': window.location.hostname }
+      const headers = getAuthHeaders()
 
       const [resActivas, resArchivadas, resPacientes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones`, { headers }),
@@ -168,7 +176,7 @@ export default function InteraccionesPage() {
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`, {
-        headers: { 'x-clinica-host': window.location.hostname },
+        headers: getAuthHeaders(),
       })
 
       const data = await res.json()
@@ -194,10 +202,7 @@ export default function InteraccionesPage() {
             try {
               const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/exportar`, {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-clinica-host': window.location.hostname,
-                },
+                headers: getAuthHeaders(),
               })
 
               const data = await res.json()
@@ -295,10 +300,7 @@ export default function InteraccionesPage() {
                       `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
                       {
                         method: 'PATCH',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'x-clinica-host': window.location.hostname,
-                        },
+                        headers: getAuthHeaders(),
                         body: JSON.stringify({ archivado: true }),
                       }
                     )
@@ -311,10 +313,7 @@ export default function InteraccionesPage() {
 
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
                       method: 'PATCH',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'x-clinica-host': window.location.hostname,
-                      },
+                      headers: getAuthHeaders(),
                       body: JSON.stringify({ alerta_manual: color }),
                     })
 
@@ -339,10 +338,7 @@ export default function InteraccionesPage() {
 
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                       method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'x-clinica-host': window.location.hostname,
-                      },
+                      headers: getAuthHeaders(),
                       body: JSON.stringify({
                         paciente_id: mensajes[0].paciente_id,
                         telefono: telefono,
@@ -375,10 +371,7 @@ export default function InteraccionesPage() {
                 const toastId = toast.loading('⏳ Reenviando formulario...')
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-clinica-host': window.location.hostname,
-                  },
+                  headers: getAuthHeaders(),
                   body: JSON.stringify({
                     paciente_id: paciente.id,
                     telefono: paciente.telefono,
