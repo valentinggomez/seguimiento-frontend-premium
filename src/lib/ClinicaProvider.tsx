@@ -15,7 +15,9 @@ type ClinicaContextType = {
   clinica: Clinica | null
 }
 
-const ClinicaContext = createContext<ClinicaContextType | null>(null)
+const ClinicaContext = createContext<ClinicaContextType>({
+  clinica: null,
+})
 
 export const ClinicaProvider = ({
   children,
@@ -58,11 +60,6 @@ export const ClinicaProvider = ({
   )
 }
 
-export const useClinica = () => {
-  const context = useContext(ClinicaContext)
-  if (!context) {
-    console.warn('useClinica debe usarse dentro de <ClinicaProvider>')
-    return { clinica: null }
-  }
-  return context
+export const useClinica = (): ClinicaContextType => {
+  return useContext(ClinicaContext)
 }

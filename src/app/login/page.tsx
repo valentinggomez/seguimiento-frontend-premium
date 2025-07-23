@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
 
@@ -9,15 +9,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
-
-  const clinica = useClinica()
+  const { clinica } = useClinica() // ✅ destructuring directo
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     try {
-      // 1. Login: obtener token
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,28 +23,18 @@ export default function LoginPage() {
       })
 
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión')
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión')
-      }
-
-      // 2. Guardar token
       localStorage.setItem('token', data.token)
 
-      // 3. Obtener info del usuario
       const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/me`, {
-        headers: {
-          'Authorization': `Bearer ${data.token}`
-        }
+        headers: { Authorization: `Bearer ${data.token}` }
       })
-
       const usuario = await meRes.json()
 
-      // 4. Guardar rol y datos
       localStorage.setItem('rol', usuario.rol)
       localStorage.setItem('usuario', JSON.stringify(usuario))
 
-      // 5. Redireccionar
       router.push('/panel')
     } catch (err: any) {
       setError(err.message)
@@ -59,7 +47,6 @@ export default function LoginPage() {
         onSubmit={handleLogin}
         className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md"
       >
-        {/* 🏥 Encabezado institucional */}
         {clinica ? (
           <div className="text-center mb-6">
             <img
@@ -80,10 +67,8 @@ export default function LoginPage() {
           </h1>
         )}
 
-        {/* ⚠️ Error */}
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        {/* ✉️ Email */}
         <input
           type="email"
           placeholder="Correo electrónico"
@@ -93,7 +78,6 @@ export default function LoginPage() {
           className="w-full px-4 py-2 mb-4 border rounded-md"
         />
 
-        {/* 🔒 Contraseña */}
         <input
           type="password"
           placeholder="Contraseña"
@@ -103,7 +87,6 @@ export default function LoginPage() {
           className="w-full px-4 py-2 mb-6 border rounded-md"
         />
 
-        {/* ✅ Botón ingresar */}
         <button
           type="submit"
           className="w-full bg-[#003466] text-white py-2 rounded-md hover:bg-[#002c55]"
@@ -111,7 +94,6 @@ export default function LoginPage() {
           Ingresar
         </button>
 
-        {/* ➕ Crear cuenta */}
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-500">¿No tenés cuenta?</p>
           <button
