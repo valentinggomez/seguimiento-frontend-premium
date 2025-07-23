@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useClinica } from '@/lib/ClinicaProvider'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -10,7 +11,7 @@ export default function RegistroPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [codigoRegistro, setCodigoRegistro] = useState('')
   const [error, setError] = useState('')
-  const [clinica, setClinica] = useState<any>(null)
+  const { clinica } = useClinica()
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +34,6 @@ export default function RegistroPage() {
         throw new Error(data.error || 'Error al registrarse')
       }
 
-      // Guardar token y datos
       localStorage.setItem('token', data.token)
 
       const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/me`, {
@@ -56,9 +56,25 @@ export default function RegistroPage() {
         onSubmit={handleRegistro}
         className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md"
       >
-        <h1 className="text-3xl font-bold text-center text-[#003466] mb-6">
-          Crear cuenta médica
-        </h1>
+        {clinica ? (
+          <div className="text-center mb-6">
+            <img
+              src={clinica.logo_url}
+              alt="Logo clínica"
+              className="w-20 h-20 object-contain mx-auto mb-2"
+            />
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: clinica.color_primario }}
+            >
+              Crear cuenta médica — {clinica.nombre_clinica}
+            </h1>
+          </div>
+        ) : (
+          <h1 className="text-3xl font-bold text-center text-[#003466] mb-6">
+            Crear cuenta médica
+          </h1>
+        )}
 
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
 
