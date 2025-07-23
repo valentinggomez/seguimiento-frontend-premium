@@ -5,6 +5,7 @@ import { useClinica } from '@/lib/ClinicaProvider'
 import { useEffect, useState } from 'react'
 import { eventBus } from '@/lib/eventBus'
 import { toast } from 'sonner'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -16,9 +17,7 @@ export default function Navbar() {
     const verificarMensajesNoLeidos = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/noleidos`, {
-          headers: {
-            'x-clinica-host': window.location.hostname
-          }
+          headers: getAuthHeaders()
         })
         const data = await res.json()
         setTieneMensajesNoLeidos(data.cantidad > 0)

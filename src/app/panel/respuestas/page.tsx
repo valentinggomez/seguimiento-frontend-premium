@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { fetchConToken } from '@/lib/fetchConToken'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 interface Respuesta {
   id: string
@@ -249,9 +250,7 @@ export default function PanelRespuestas() {
               try {
                 const res = await fetchConToken('/api/respuestas', {
                   method: 'DELETE',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
+                  headers: getAuthHeaders(),
                   body: JSON.stringify({ ids: seleccionadas }),
                 })
                 if (res.ok) {

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/Tooltip"
 import { toast } from "sonner"
 import { Plus, Trash2, X, Info, Save } from "lucide-react"
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 const CAMPOS_DISPONIBLES = [
   "fecha",
@@ -58,7 +59,7 @@ export default function SeccionAdminClinicas() {
       try {
         const res = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
           headers: {
-            "x-clinica-host": window.location.hostname,
+            ...getAuthHeaders(),
             "rol": localStorage.getItem("rol") || ""
           }
         });
@@ -193,10 +194,7 @@ export default function SeccionAdminClinicas() {
 
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-clinica-host": window.location.hostname,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...selected,
           campos_formulario,
@@ -212,7 +210,7 @@ export default function SeccionAdminClinicas() {
 
         const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
           headers: {
-            "x-clinica-host": window.location.hostname,
+            ...getAuthHeaders(),
             "rol": localStorage.getItem("rol") || ""
           }
         }).then(r => r.json());

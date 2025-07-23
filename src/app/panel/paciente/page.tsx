@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { useClinica } from '@/lib/ClinicaProvider'
-
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({})
@@ -72,10 +72,7 @@ export default function RegistroPaciente() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-clinica-host': window.location.hostname  // ✅ Header obligatorio para que el backend detecte la clínica
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(paciente)
       })
 
