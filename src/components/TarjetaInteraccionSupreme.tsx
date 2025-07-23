@@ -16,6 +16,7 @@ import {
 import { toast } from 'react-hot-toast'
 import { useEffect } from 'react'
 import { getNotaPorPaciente } from '@/lib/getNotaPorPaciente';
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [nota, setNota] = useState('');
@@ -42,10 +43,7 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const guardarNota = async () => {
     const res = await fetch(`${backendUrl}/api/notas`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-clinica-host': window.location.hostname,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ paciente_id: pacienteId, nota }),
     });
 
@@ -161,10 +159,7 @@ export const TarjetaInteraccionSupreme = ({
     if (abierto && paciente_id) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/marcarLeido`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-clinica-host': window.location.hostname,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ paciente_id }),
       }).catch((err) => {
         console.error('❌ Error al marcar como leído:', err)
@@ -191,10 +186,7 @@ export const TarjetaInteraccionSupreme = ({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/feedback`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-clinica-host': window.location.hostname, // ✅ CLAVE
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           paciente_id,
           mensaje_original: mensaje,
