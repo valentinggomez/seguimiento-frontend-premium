@@ -15,6 +15,7 @@ export default function LoginPage() {
     setError('')
 
     try {
+      // 1. Login: obtener token
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -27,7 +28,23 @@ export default function LoginPage() {
         throw new Error(data.error || 'Error al iniciar sesión')
       }
 
+      // 2. Guardar token
       localStorage.setItem('token', data.token)
+
+      // 3. Obtener info del usuario (rol, clinica_id, etc)
+      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/me`, {
+        headers: {
+          'Authorization': `Bearer ${data.token}`
+        }
+      })
+
+      const usuario = await meRes.json()
+
+      // 4. Guardar rol y datos del usuario
+      localStorage.setItem('rol', usuario.rol)
+      localStorage.setItem('usuario', JSON.stringify(usuario))
+
+      // 5. Redireccionar al panel
       router.push('/panel')
     } catch (err: any) {
       setError(err.message)
