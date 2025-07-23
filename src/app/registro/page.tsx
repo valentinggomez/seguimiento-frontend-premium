@@ -12,13 +12,6 @@ export default function RegistroPage() {
   const [error, setError] = useState('')
   const [clinica, setClinica] = useState<any>(null)
 
-  useEffect(() => {
-    const usuario = localStorage.getItem('usuario')
-    if (usuario) {
-      router.push('/panel')
-    }
-  }, [])
-
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
