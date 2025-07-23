@@ -1,16 +1,18 @@
-export const fetchConToken = (endpoint: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
+const backendUrl = process.env.NEXT_PUBLIC_API_URL!;
 
+export const fetchConToken = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
   const headers: HeadersInit = {
-    ...(options.headers || {}),
-    Authorization: token ? `Bearer ${token}` : '',
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
     'x-clinica-host': window.location.hostname,
+    ...(options.headers || {}),
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  // 🧠 Si ya es URL completa (http o https), no le agregamos backendUrl
+  const finalUrl = url.startsWith('http') ? url : `${backendUrl}${url}`;
 
-  return fetch(`${baseUrl}${cleanEndpoint}`, {
+  return fetch(finalUrl, {
     ...options,
     headers,
   });
