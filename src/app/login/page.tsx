@@ -2,27 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useClinica } from '@/lib/ClinicaProvider'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [clinica, setClinica] = useState<any>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    const cargarClinica = async () => {
-      try {
-        const res = await fetch('/api/clinica-actual')
-        const data = await res.json()
-        setClinica(data)
-      } catch (e) {
-        console.error('Error al cargar clínica')
-      }
-    }
-
-    cargarClinica()
-  }, [])
+  const clinica = useClinica()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
