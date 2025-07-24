@@ -39,3 +39,18 @@ body {
 .animate-fade-in {
   animation: fade-in 0.4s ease-out both;
 }
+
+/* 🎨 Placeholders visibles en todos los modos */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af; /* Tailwind: text-gray-400 */
+  opacity: 1;
+}
+
+/* Para Safari móvil oscuro */
+@media (prefers-color-scheme: dark) {
+  input::placeholder,
+  textarea::placeholder {
+    color: #d1d5db; /* Tailwind: text-gray-300 */
+  }
+}
