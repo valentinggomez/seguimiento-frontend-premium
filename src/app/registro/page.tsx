@@ -51,10 +51,10 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e4ecf7] to-[#f9fbff] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f9fbff] to-[#e6eef8] px-4">
       <form
         onSubmit={handleRegistro}
-        className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-8 w-full max-w-md animate-fade-in transition-all"
+        className="bg-white/80 backdrop-blur-sm shadow-[0_4px_24px_rgba(0,0,0,0.06)] rounded-2xl p-8 w-full max-w-md transition-all duration-500 ease-in-out"
       >
         {clinica ? (
           <div className="text-center mb-6">
@@ -63,7 +63,7 @@ export default function RegistroPage() {
               alt="Logo clínica"
               className="w-20 h-20 object-contain mx-auto mb-2"
             />
-            <h1 className="text-xl font-semibold text-gray-700">
+            <h1 className="text-xl font-semibold text-center text-gray-700 leading-snug">
               Acceso exclusivo al sistema médico de{' '}
               <span style={{ color: clinica.color_primario }}>
                 {clinica.nombre_clinica}
@@ -85,7 +85,7 @@ export default function RegistroPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 mb-4 border rounded-md"
+          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
         />
 
         <input
@@ -95,7 +95,7 @@ export default function RegistroPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-4 py-2 mb-4 border rounded-md"
+          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
         />
 
         <input
@@ -105,7 +105,7 @@ export default function RegistroPage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
-          className="w-full px-4 py-2 mb-4 border rounded-md"
+          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
         />
 
         <input
@@ -116,12 +116,12 @@ export default function RegistroPage() {
           value={codigoRegistro}
           onChange={(e) => setCodigoRegistro(e.target.value)}
           required
-          className="w-full px-4 py-2 mb-6 border rounded-md"
+          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
         />
 
         <button
           type="submit"
-          className="w-full text-white py-2 rounded-md transition hover:opacity-90"
+          className="w-full text-white py-2 font-semibold rounded-md shadow-sm transition hover:shadow-md hover:scale-[1.01]"
           style={{
             backgroundColor: clinica?.color_primario || '#003466',
           }}
