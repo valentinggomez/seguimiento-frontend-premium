@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
-import { fetchSinToken } from '@/lib/fetchSinTocken'
+import { fetchSinToken } from '@/lib/fetchSinToken'
 
 export default function RegistroPage() {
   const router = useRouter()

@@ -3,7 +3,7 @@ export async function fetchSinToken(endpoint: string, options: RequestInit = {})
 
   const headers = {
     'Content-Type': 'application/json',
-    'X-Clinica-Host': window.location.hostname, // 👈 clave para multiclínica
+    'x-clinica-host': window.location.hostname, // 👈 clave para multiclínica
     ...(options.headers || {}),
   }
 
