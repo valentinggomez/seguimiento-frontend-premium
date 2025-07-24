@@ -51,17 +51,17 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f9fbff] to-[#e6eef8] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f9fbff] to-[#e6eef8] px-4 sm:px-6 lg:px-8 py-12">
       <form
         onSubmit={handleRegistro}
-        className="bg-white/80 backdrop-blur-sm shadow-[0_4px_24px_rgba(0,0,0,0.06)] rounded-2xl p-8 w-full max-w-md transition-all duration-500 ease-in-out"
+        className="bg-white/90 backdrop-blur-md shadow-xl hover:shadow-2xl transition-shadow rounded-2xl w-full max-w-md p-6 sm:p-8 animate-fade-in"
       >
         {clinica ? (
           <div className="text-center mb-6">
             <img
               src={clinica.logo_url}
               alt="Logo clínica"
-              className="w-20 h-20 object-contain mx-auto mb-2"
+              className="w-20 h-20 object-contain mx-auto mb-2 rounded-full shadow"
             />
             <h1 className="text-xl font-semibold text-center text-gray-700 leading-snug">
               Acceso exclusivo al sistema médico de{' '}
