@@ -23,7 +23,6 @@ export default function RegistroPage() {
     }
 
     try {
-      console.log('🔍 URL a usar:', process.env.NEXT_PUBLIC_API_URL)
       const res = await fetchSinToken('/api/registro', {
         method: 'POST',
         body: JSON.stringify({ email, password, codigoRegistro }),
@@ -38,7 +37,7 @@ export default function RegistroPage() {
       localStorage.setItem('token', data.token)
 
       const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/me`, {
-        headers: { Authorization: `Bearer ${data.token}` }
+        headers: { Authorization: `Bearer ${data.token}` },
       })
       const usuario = await meRes.json()
 
@@ -52,10 +51,10 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e4ecf7] to-[#f9fbff] px-4">
       <form
         onSubmit={handleRegistro}
-        className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md"
+        className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-8 w-full max-w-md animate-fade-in transition-all"
       >
         {clinica ? (
           <div className="text-center mb-6">
@@ -64,11 +63,11 @@ export default function RegistroPage() {
               alt="Logo clínica"
               className="w-20 h-20 object-contain mx-auto mb-2"
             />
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: clinica.color_primario }}
-            >
-              Crear cuenta médica — {clinica.nombre_clinica}
+            <h1 className="text-xl font-semibold text-gray-700">
+              Acceso exclusivo al sistema médico de{' '}
+              <span style={{ color: clinica.color_primario }}>
+                {clinica.nombre_clinica}
+              </span>
             </h1>
           </div>
         ) : (
@@ -81,6 +80,7 @@ export default function RegistroPage() {
 
         <input
           type="email"
+          aria-label="Correo institucional"
           placeholder="Correo institucional"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -90,6 +90,7 @@ export default function RegistroPage() {
 
         <input
           type="password"
+          aria-label="Contraseña"
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -99,6 +100,7 @@ export default function RegistroPage() {
 
         <input
           type="password"
+          aria-label="Repetir contraseña"
           placeholder="Repetir contraseña"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -108,7 +110,9 @@ export default function RegistroPage() {
 
         <input
           type="text"
+          aria-label="Código de acceso de la clínica"
           placeholder="Código de acceso de la clínica"
+          title="Solicitalo a tu administrador clínico"
           value={codigoRegistro}
           onChange={(e) => setCodigoRegistro(e.target.value)}
           required
@@ -117,14 +121,17 @@ export default function RegistroPage() {
 
         <button
           type="submit"
-          className="w-full bg-[#003466] text-white py-2 rounded-md hover:bg-[#002c55]"
+          className="w-full text-white py-2 rounded-md transition hover:opacity-90"
+          style={{
+            backgroundColor: clinica?.color_primario || '#003466',
+          }}
         >
           Registrarme
         </button>
 
         <p className="text-sm text-center text-gray-500 mt-4">
-          ¿Ya tenés cuenta?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
+          ¿Ya estás registrado?{' '}
+          <a href="/login" className="text-blue-600 font-medium hover:underline">
             Iniciar sesión
           </a>
         </p>
