@@ -22,6 +22,7 @@ export default function RegistroPage() {
     }
 
     try {
+      console.log('🔍 URL a usar:', process.env.NEXT_PUBLIC_API_URL)
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/registro`, {
         method: 'POST',
         headers: {
