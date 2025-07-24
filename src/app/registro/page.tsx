@@ -24,7 +24,10 @@ export default function RegistroPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/registro`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Clínica-Host': window.location.hostname, // 👈 ESTA LÍNEA NUEVA
+        },
         body: JSON.stringify({ email, password, codigoRegistro }),
       })
 
