@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
+import { fetchSinToken } from '@/lib/fetchSinTocken'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -23,12 +24,8 @@ export default function RegistroPage() {
 
     try {
       console.log('🔍 URL a usar:', process.env.NEXT_PUBLIC_API_URL)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/registro`, {
+      const res = await fetchSinToken('/api/registro', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Clínica-Host': window.location.hostname, // 👈 ESTA LÍNEA NUEVA
-        },
         body: JSON.stringify({ email, password, codigoRegistro }),
       })
 
