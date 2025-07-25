@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 export default function PanelPacientes() {
   const [pacientes, setPacientes] = useState<any[]>([])
@@ -10,19 +11,24 @@ export default function PanelPacientes() {
 
   useEffect(() => {
     const fetchPacientes = async () => {
-      try {
-        const { data } = await axios.get('/api/pacientes')
-        setPacientes(data.data || [])
-      } catch (error) {
-        toast.error('Error al cargar pacientes')
-        console.error(error)
-      } finally {
-        setLoading(false)
+  try {
+    const { data } = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/pacientes`,
+      {
+        headers: getAuthHeaders(),
       }
-    }
+    )
+    setPacientes(data.data || [])
+  } catch (error) {
+    toast.error('Error al cargar pacientes')
+    console.error(error)
+  } finally {
+    setLoading(false)
+  }
+}
 
     fetchPacientes()
-  }, [])
+    }, [])
 
   return (
     <div className="p-6">
