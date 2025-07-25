@@ -119,6 +119,7 @@ export default function Navbar() {
           <Link href="/panel" className={linkClasses('/panel')}>Inicio</Link>
           <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>Registrar</Link>
           <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>Respuestas</Link>
+          <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>Pacientes</Link>
           <Link href="/panel/interacciones" className={`${linkClasses('/panel/interacciones')} relative`}>
             Interacciones
             {tieneMensajesNoLeidos && (
