@@ -62,7 +62,7 @@ export default function PanelPacientes() {
                     <td className="px-4 py-2">{p.telefono}</td>
                     <td className="px-4 py-2">{p.cirugia}</td>
                     <td className="px-4 py-2">
-                    {p.fecha_cirugia ? new Date(p.fecha_cirugia).toLocaleDateString() : '—'}
+                      {p.fecha_cirugia ? p.fecha_cirugia.split('T')[0].split('-').reverse().join('/') : '—'}
                     </td>
                 </tr>
               ))}
