@@ -91,7 +91,7 @@ export default function Navbar() {
 
   const linkClasses = (path: string) =>
     `transition-all px-3 py-1.5 rounded-lg font-medium ${
-      pathname?.startsWith(path)
+      pathname === path
         ? 'text-[#003466] bg-gray-100 shadow-sm'
         : 'text-gray-600 hover:text-[#003466] hover:bg-gray-50'
     }`
