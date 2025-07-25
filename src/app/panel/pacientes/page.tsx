@@ -45,6 +45,8 @@ export default function PanelPacientes() {
               <tr>
                 <th className="px-4 py-2 border">Nombre</th>
                 <th className="px-4 py-2 border">Edad</th>
+                <th className="px-4 py-2 border">DNI</th>              
+                <th className="px-4 py-2 border">Obra Social</th>       
                 <th className="px-4 py-2 border">Teléfono</th>
                 <th className="px-4 py-2 border">Cirugía</th>
                 <th className="px-4 py-2 border">Fecha</th>
@@ -53,13 +55,15 @@ export default function PanelPacientes() {
             <tbody>
               {pacientes.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{p.nombre}</td>
-                  <td className="px-4 py-2">{p.edad}</td>
-                  <td className="px-4 py-2">{p.telefono}</td>
-                  <td className="px-4 py-2">{p.cirugia}</td>
-                  <td className="px-4 py-2">
+                    <td className="px-4 py-2">{p.nombre}</td>
+                    <td className="px-4 py-2">{p.edad}</td>
+                    <td className="px-4 py-2">{p.dni || '—'}</td>              
+                    <td className="px-4 py-2">{p.obra_social || '—'}</td>       
+                    <td className="px-4 py-2">{p.telefono}</td>
+                    <td className="px-4 py-2">{p.cirugia}</td>
+                    <td className="px-4 py-2">
                     {p.fecha_cirugia ? new Date(p.fecha_cirugia).toLocaleDateString() : '—'}
-                  </td>
+                    </td>
                 </tr>
               ))}
             </tbody>

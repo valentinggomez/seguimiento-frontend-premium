@@ -166,6 +166,38 @@ export default function RegistroPaciente() {
               </label>
             </div>
 
+            {/* DNI */}
+            <div className="relative">
+              <input
+                type="text"
+                name="dni"
+                value={form.dni || ''}
+                onChange={(e) => setForm({ ...form, dni: e.target.value })}
+                placeholder=" "
+                autoComplete="off"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                DNI
+              </label>
+            </div>
+
+            {/* Obra Social */}
+            <div className="relative">
+              <input
+                type="text"
+                name="obra_social"
+                value={form.obra_social || ''}
+                onChange={(e) => setForm({ ...form, obra_social: e.target.value })}
+                placeholder=" "
+                autoComplete="off"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                Obra social
+              </label>
+            </div>
+
             {/* SEXO */}
             <div className="relative">
                 <select
