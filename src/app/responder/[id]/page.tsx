@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useClinica } from '@/lib/ClinicaProvider'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
 function FieldBlock({
   label,
@@ -109,7 +110,12 @@ export default function ResponderPage() {
   useEffect(() => {
     const fetchPaciente = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${id}`)
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${id}`,
+          {
+            headers: getAuthHeaders()
+          }
+        )
         if (!res.ok) throw new Error()
         const data = await res.json()
         setPaciente(data)
