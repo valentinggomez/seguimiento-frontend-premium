@@ -37,7 +37,7 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
     setLoading(true)
     try {
       const res = await fetch(`/api/pacientes/${paciente.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify(formData),
       })
