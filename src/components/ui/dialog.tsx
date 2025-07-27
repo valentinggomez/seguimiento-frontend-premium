@@ -41,3 +41,34 @@ export function DialogContent({
     </RadixDialog.Portal>
   )
 }
+// Encabezado institucional
+export function DialogHeader({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("mb-4 text-center sm:text-left", className)}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Footer institucional (opcional)
+export function DialogFooter({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
