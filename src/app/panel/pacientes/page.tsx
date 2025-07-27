@@ -100,7 +100,6 @@ export default function PanelPacientes() {
                       : '—'}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <DialogTrigger asChild>
                       <Button
                         size="sm"
                         variant="outline"
@@ -111,7 +110,6 @@ export default function PanelPacientes() {
                       >
                         ✏️ Editar
                       </Button>
-                    </DialogTrigger>
                   </td>
                 </tr>
               ))}
