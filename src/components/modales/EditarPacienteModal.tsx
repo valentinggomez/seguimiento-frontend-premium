@@ -36,39 +36,37 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
   const handleSubmit = async () => {
     setLoading(true)
     try {
-        const headers = await getAuthHeaders()
+      const headers = await getAuthHeaders()
+      const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-        // Clonamos el objeto y lo limpiamos para enviar al backend
-        const { id, ...payload } = formData
-
-        // Convertir edad a número explícitamente
-        const datos = {
+      const { id, ...payload } = formData
+      const datos = {
         ...payload,
         edad: Number(payload.edad),
-        }
+      }
 
-        const res = await fetch(`/api/pacientes/${paciente.id}`, {
+      const res = await fetch(`${API_URL}/api/pacientes/${paciente.id}`, {
         method: 'PATCH',
         headers: {
-            ...headers,
-            'Content-Type': 'application/json',
+          ...headers,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(datos),
-        })
+      })
 
-        const data = await res.json()
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar cambios')
 
-        if (!res.ok) throw new Error(data.error || 'Error al guardar cambios')
-
-        toast.success('✅ Paciente actualizado correctamente')
-        onSave()
-        onClose()
+      toast.success('✅ Paciente actualizado correctamente')
+      onSave()
+      onClose()
     } catch (err: any) {
-        toast.error(`❌ ${err.message}`)
+      toast.error(`❌ ${err.message}`)
     } finally {
-        setLoading(false)
+      setLoading(false)
     }
-    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md rounded-2xl shadow-lg border border-gray-200 p-6">
@@ -77,55 +75,17 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
         </DialogHeader>
 
         <div className="grid gap-4 pt-2">
-          <Input
-            name="nombre"
-            placeholder="Nombre completo"
-            value={formData.nombre}
-            onChange={handleChange}
-          />
-          <Input
-            name="edad"
-            placeholder="Edad"
-            type="number"
-            value={formData.edad}
-            onChange={handleChange}
-          />
-          <Input
-            name="dni"
-            placeholder="DNI"
-            value={formData.dni}
-            onChange={handleChange}
-          />
-          <Input
-            name="telefono"
-            placeholder="Teléfono"
-            value={formData.telefono}
-            onChange={handleChange}
-          />
-          <Input
-            name="obra_social"
-            placeholder="Obra social"
-            value={formData.obra_social || ''}
-            onChange={handleChange}
-          />
-          <Input
-            name="cirugia"
-            placeholder="Tipo de cirugía"
-            value={formData.cirugia || ''}
-            onChange={handleChange}
-          />
-          <Input
-            name="nombre_medico"
-            placeholder="Nombre del médico"
-            value={formData.nombre_medico || ''}
-            onChange={handleChange}
-          />
+          <Input name="nombre" placeholder="Nombre completo" value={formData.nombre} onChange={handleChange} />
+          <Input name="edad" placeholder="Edad" type="number" value={formData.edad} onChange={handleChange} />
+          <Input name="dni" placeholder="DNI" value={formData.dni} onChange={handleChange} />
+          <Input name="telefono" placeholder="Teléfono" value={formData.telefono} onChange={handleChange} />
+          <Input name="obra_social" placeholder="Obra social" value={formData.obra_social || ''} onChange={handleChange} />
+          <Input name="cirugia" placeholder="Tipo de cirugía" value={formData.cirugia || ''} onChange={handleChange} />
+          <Input name="nombre_medico" placeholder="Nombre del médico" value={formData.nombre_medico || ''} onChange={handleChange} />
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? 'Guardando...' : 'Guardar'}
           </Button>
