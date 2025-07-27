@@ -21,19 +21,24 @@ export default function PanelPacientes() {
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any | null>(null)
   const [editando, setEditando] = useState(false) 
 
+  
   const guardarCambios = async () => {
     try {
-      await axios.put(
+      const headers = await getAuthHeaders()
+
+      await axios.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${pacienteSeleccionado.id}`,
         pacienteSeleccionado,
-        { headers: getAuthHeaders() }
+        { headers }
       )
+
       toast.success('Paciente actualizado correctamente')
       setEditando(false)
       setPacienteSeleccionado(null)
+
       // Refrescar lista
       const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
-        headers: getAuthHeaders(),
+        headers,
       })
       setPacientes(data.data || [])
     } catch (error) {
@@ -41,6 +46,7 @@ export default function PanelPacientes() {
       toast.error('Error al guardar cambios')
     }
   }
+
   useEffect(() => {
     const fetchPacientes = async () => {
   try {
