@@ -37,10 +37,23 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
     setLoading(true)
     try {
         const headers = await getAuthHeaders()
+
+        // Clonamos el objeto y lo limpiamos para enviar al backend
+        const { id, ...payload } = formData
+
+        // Convertir edad a número explícitamente
+        const datos = {
+        ...payload,
+        edad: Number(payload.edad),
+        }
+
         const res = await fetch(`/api/pacientes/${paciente.id}`, {
         method: 'PATCH',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify(formData),
+        headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datos),
         })
 
         const data = await res.json()
@@ -55,7 +68,7 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
     } finally {
         setLoading(false)
     }
-  }
+    }
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md rounded-2xl shadow-lg border border-gray-200 p-6">
