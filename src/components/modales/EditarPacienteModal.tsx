@@ -36,26 +36,26 @@ export default function EditarPacienteModal({ open, onClose, paciente, onSave }:
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/pacientes/${paciente.id}`, {
+        const headers = await getAuthHeaders()
+        const res = await fetch(`/api/pacientes/${paciente.id}`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify(formData),
-      })
+        })
 
-      const data = await res.json()
+        const data = await res.json()
 
-      if (!res.ok) throw new Error(data.error || 'Error al guardar cambios')
+        if (!res.ok) throw new Error(data.error || 'Error al guardar cambios')
 
-      toast.success('✅ Paciente actualizado correctamente')
-      onSave()
-      onClose()
+        toast.success('✅ Paciente actualizado correctamente')
+        onSave()
+        onClose()
     } catch (err: any) {
-      toast.error(`❌ ${err.message}`)
+        toast.error(`❌ ${err.message}`)
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
   }
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md rounded-2xl shadow-lg border border-gray-200 p-6">
