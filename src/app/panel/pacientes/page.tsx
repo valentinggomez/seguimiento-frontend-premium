@@ -109,7 +109,7 @@ export default function PanelPacientes() {
       <div className="mb-4 max-w-md">
         <Input
           type="text"
-          placeholder="Buscar por nombre, DNI, teléfono o cirugia"
+          placeholder="Buscar por Nombre, DNI, Teléfono, Obra Social o Cirugia"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full"
@@ -142,7 +142,8 @@ export default function PanelPacientes() {
                     p.nombre.toLowerCase().includes(texto) ||
                     (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
                     (p.telefono?.toLowerCase().includes(texto) ?? false) ||
-                    (p.cirugia?.toLowerCase().includes(texto) ?? false)
+                    (p.cirugia?.toLowerCase().includes(texto) ?? false) ||
+                    (p.obra_social?.toLowerCase().includes(texto) ?? false)
                   )
                 })
                 .map((p) => (
