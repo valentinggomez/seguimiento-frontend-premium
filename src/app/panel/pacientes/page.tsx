@@ -176,7 +176,7 @@ export default function PanelPacientes() {
 
                       <Button
                         size="sm"
-                        className="bg-red-100 text-red-900 hover:bg-red-200 font-semibold shadow-sm rounded-full px-3 py-1 ml-2"
+                        className="bg-red-200 text-red-900 hover:bg-red-300 font-semibold shadow-sm rounded-full px-3 py-1 ml-2"
                         onClick={() => {
                           setPacienteAEliminar({ id: p.id, nombre: p.nombre })
                           setMostrarModalEliminar(true)
