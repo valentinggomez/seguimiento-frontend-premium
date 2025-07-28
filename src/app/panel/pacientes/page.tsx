@@ -105,14 +105,17 @@ export default function PanelPacientes() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">📋 Pacientes registrados</h1>
-      <div className="mb-4 max-w-md">
+      <h1 className="text-center text-2xl md:text-3xl font-medium tracking-wide text-slate-800 mb-6">
+        📋 Pacientes registrados
+      </h1>
+      <div className="mb-6 max-w-md relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
         <Input
           type="text"
-          placeholder="Buscar por Nombre, DNI, Teléfono, Obra Social o Cirugia"
+          placeholder="Buscar por nombre, DNI, cirugía, teléfono u obra social..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full"
+          className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
         />
       </div>
       {loading ? (
@@ -121,9 +124,9 @@ export default function PanelPacientes() {
         <p className="text-center text-gray-500">No hay pacientes registrados aún.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 rounded-lg shadow-sm text-sm bg-white">
-            <thead className="bg-gray-100 text-gray-700 font-semibold">
-              <tr>
+          <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md">
+            <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 z-10">
+            <tr className="border-b">
                 <th className="px-4 py-2 border">Nombre</th>
                 <th className="px-4 py-2 border">Edad</th>
                 <th className="px-4 py-2 border">DNI</th>
@@ -146,8 +149,8 @@ export default function PanelPacientes() {
                     (p.obra_social?.toLowerCase().includes(texto) ?? false)
                   )
                 })
-                .map((p) => (
-                <tr key={p.id} className="border-t hover:bg-gray-50">
+                .map((p, loopIndex) => (
+                <tr key={p.id} className={`hover:bg-slate-50 ${loopIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                   <td className="px-4 py-2">{p.nombre}</td>
                   <td className="px-4 py-2">{p.edad}</td>
                   <td className="px-4 py-2">{p.dni || '—'}</td>
@@ -162,7 +165,7 @@ export default function PanelPacientes() {
                   <td className="px-4 py-2 text-center">
                       <Button
                         size="sm"
-                        variant="outline"
+                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full px-3 py-1"
                         onClick={() => {
                           setPacienteSeleccionado(p)
                           setEditando(true)
@@ -172,8 +175,7 @@ export default function PanelPacientes() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="destructive"
-                        className="ml-2"
+                        className="bg-red-100 text-red-700 hover:bg-red-200 rounded-full px-3 py-1 ml-2"
                         onClick={() => {
                           setPacienteAEliminar({ id: p.id, nombre: p.nombre })
                           setMostrarModalEliminar(true)
@@ -188,6 +190,38 @@ export default function PanelPacientes() {
           </table>
         </div>
       )}
+      {/* 📱 Versión Mobile */}
+      <div className="md:hidden space-y-3 mt-6">
+        {pacientes
+          .filter((p) => {
+            const texto = busqueda.toLowerCase()
+            return (
+              p.nombre.toLowerCase().includes(texto) ||
+              (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
+              (p.telefono?.toLowerCase().includes(texto) ?? false) ||
+              (p.cirugia?.toLowerCase().includes(texto) ?? false) ||
+              (p.obra_social?.toLowerCase().includes(texto) ?? false)
+            )
+          })
+          .map((p) => (
+            <div key={p.id} className="bg-white rounded-xl shadow p-4">
+              <p className="text-lg font-semibold text-slate-800">{p.nombre}</p>
+              <p className="text-sm text-slate-600">Cirugía: {p.cirugia}</p>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  size="sm"
+                  className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full px-3 py-1"
+                  onClick={() => {
+                    setPacienteSeleccionado(p)
+                    setEditando(true)
+                  }}
+                >
+                  Ver
+                </Button>
+              </div>
+            </div>
+          ))}
+      </div>
 
       <Dialog open={editando} onOpenChange={setEditando}>
         <DialogContent>
