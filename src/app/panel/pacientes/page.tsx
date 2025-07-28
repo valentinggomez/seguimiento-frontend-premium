@@ -190,38 +190,6 @@ export default function PanelPacientes() {
           </table>
         </div>
       )}
-      {/* 📱 Versión Mobile */}
-      <div className="md:hidden space-y-3 mt-6">
-        {pacientes
-          .filter((p) => {
-            const texto = busqueda.toLowerCase()
-            return (
-              p.nombre.toLowerCase().includes(texto) ||
-              (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
-              (p.telefono?.toLowerCase().includes(texto) ?? false) ||
-              (p.cirugia?.toLowerCase().includes(texto) ?? false) ||
-              (p.obra_social?.toLowerCase().includes(texto) ?? false)
-            )
-          })
-          .map((p) => (
-            <div key={p.id} className="bg-white rounded-xl shadow p-4">
-              <p className="text-lg font-semibold text-slate-800">{p.nombre}</p>
-              <p className="text-sm text-slate-600">Cirugía: {p.cirugia}</p>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  size="sm"
-                  className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full px-3 py-1"
-                  onClick={() => {
-                    setPacienteSeleccionado(p)
-                    setEditando(true)
-                  }}
-                >
-                  Ver
-                </Button>
-              </div>
-            </div>
-          ))}
-      </div>
 
       <Dialog open={editando} onOpenChange={setEditando}>
         <DialogContent>
