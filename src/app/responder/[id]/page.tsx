@@ -168,10 +168,13 @@ export default function ResponderPage() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
-        // Llamar predicción IA
         try {
+          const data = await res.json()
+          const respuestaId = data?.id
+          if (!respuestaId) throw new Error("No se obtuvo ID de respuesta")
+
           const authHeaders = getAuthHeaders()
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/prediccion/${id}`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/prediccion/${respuestaId}`, {
             method: 'POST',
             headers: {
               ...authHeaders,
@@ -180,7 +183,7 @@ export default function ResponderPage() {
             },
           })
         } catch (err) {
-          console.warn("Error al calcular predicción IA:", err)
+          console.warn("⚠️ No se pudo guardar score IA:", err)
         }
 
         setEstado('enviado')
