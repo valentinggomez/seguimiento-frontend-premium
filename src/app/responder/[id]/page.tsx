@@ -167,7 +167,26 @@ export default function ResponderPage() {
         },
         body: JSON.stringify(payload)
       })
-      setEstado(res.ok ? 'enviado' : 'error')
+      if (res.ok) {
+        // Llamar predicción IA
+        try {
+          const authHeaders = getAuthHeaders()
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/prediccion/${id}`, {
+            method: 'POST',
+            headers: {
+              ...authHeaders,
+              'Content-Type': 'application/json',
+              'x-clinica-host': window.location.hostname,
+            },
+          })
+        } catch (err) {
+          console.warn("Error al calcular predicción IA:", err)
+        }
+
+        setEstado('enviado')
+      } else {
+        setEstado('error')
+      }
     } catch {
       setEstado('error')
     }
