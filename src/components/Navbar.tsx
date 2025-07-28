@@ -98,7 +98,7 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-3">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-3 overflow-x-auto">
 
         {/* Logo + nombre de clínica */}
         <div className="flex items-center gap-3 min-w-0 max-w-[70%] truncate">
@@ -115,7 +115,7 @@ export default function Navbar() {
         </div>
 
         {/* Navegación */}
-        <nav className="flex gap-1 sm:gap-3 text-sm sm:text-base">
+        <nav className="flex gap-1 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1">
           <Link href="/panel" className={linkClasses('/panel')}>Inicio</Link>
           <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>Registrar</Link>
           <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>Respuestas</Link>
