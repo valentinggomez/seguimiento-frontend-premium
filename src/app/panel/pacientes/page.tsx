@@ -20,7 +20,7 @@ export default function PanelPacientes() {
   const [loading, setLoading] = useState(true)
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any | null>(null)
   const [editando, setEditando] = useState(false) 
-
+  const [eliminando, setEliminando] = useState(false)
   
   const guardarCambios = async () => {
     try {
@@ -44,6 +44,36 @@ export default function PanelPacientes() {
     } catch (error) {
       console.error(error)
       toast.error('Error al guardar cambios')
+    }
+  }
+
+  const eliminarPaciente = async (id: string, nombre: string) => {
+    const confirmado = window.confirm(`¿Estás seguro de eliminar al paciente "${nombre}"?`)
+    if (!confirmado) return
+
+    setEliminando(true)
+    try {
+      const headers = await getAuthHeaders()
+
+      const res = await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${id}`,
+        { headers }
+      )
+
+      if (!res.data.ok) throw new Error(res.data.error || 'Error al eliminar')
+
+      toast.success('✅ Paciente eliminado correctamente')
+
+      // Refrescar lista
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
+        headers,
+      })
+      setPacientes(data.data || [])
+    } catch (error) {
+      console.error(error)
+      toast.error('❌ Error al eliminar paciente')
+    } finally {
+      setEliminando(false)
     }
   }
 
@@ -115,6 +145,14 @@ export default function PanelPacientes() {
                         }}
                       >
                         ✏️ Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="ml-2"
+                        onClick={() => eliminarPaciente(p.id, p.nombre)}
+                      >
+                        🗑️ Eliminar
                       </Button>
                   </td>
                 </tr>
