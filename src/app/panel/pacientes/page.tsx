@@ -109,7 +109,7 @@ export default function PanelPacientes() {
       <div className="mb-4 max-w-md">
         <Input
           type="text"
-          placeholder="Buscar por nombre, DNI o teléfono"
+          placeholder="Buscar por nombre, DNI, teléfono o cirugia"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full"
