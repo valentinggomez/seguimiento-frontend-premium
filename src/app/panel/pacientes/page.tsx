@@ -25,6 +25,26 @@ export default function PanelPacientes() {
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false)
   const [pacienteAEliminar, setPacienteAEliminar] = useState<{ id: string, nombre: string } | null>(null)
   const [busqueda, setBusqueda] = useState("")
+  const [paginaActual, setPaginaActual] = useState(1)
+  const pacientesPorPagina = 20
+  
+  const pacientesFiltrados = pacientes.filter((p) => {
+    const texto = busqueda.toLowerCase()
+    return (
+      p.nombre.toLowerCase().includes(texto) ||
+      (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
+      (p.telefono?.toLowerCase().includes(texto) ?? false) ||
+      (p.cirugia?.toLowerCase().includes(texto) ?? false) ||
+      (p.obra_social?.toLowerCase().includes(texto) ?? false)
+    )
+  })
+
+  // Slice para paginar
+  const totalPaginas = Math.ceil(pacientesFiltrados.length / pacientesPorPagina)
+  const pacientesPaginados = pacientesFiltrados.slice(
+    (paginaActual - 1) * pacientesPorPagina,
+    paginaActual * pacientesPorPagina
+  )
 
   const guardarCambios = async () => {
     try {
@@ -138,18 +158,7 @@ export default function PanelPacientes() {
               </tr>
             </thead>
             <tbody>
-              {pacientes
-                .filter((p) => {
-                  const texto = busqueda.toLowerCase()
-                  return (
-                    p.nombre.toLowerCase().includes(texto) ||
-                    (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
-                    (p.telefono?.toLowerCase().includes(texto) ?? false) ||
-                    (p.cirugia?.toLowerCase().includes(texto) ?? false) ||
-                    (p.obra_social?.toLowerCase().includes(texto) ?? false)
-                  )
-                })
-                .map((p, loopIndex) => (
+              {pacientesPaginados.map((p, loopIndex) => (
                 <tr key={p.id} className={`hover:bg-slate-50 ${loopIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                   <td className="px-4 py-2">{p.nombre}</td>
                   <td className="px-4 py-2">{p.edad}</td>
@@ -163,32 +172,51 @@ export default function PanelPacientes() {
                       : '—'}
                   </td>
                   <td className="px-4 py-2 text-center">
-                      <Button
-                        size="sm"
-                        className="bg-yellow-100 text-yellow-900 hover:bg-yellow-200 font-semibold shadow-sm rounded-full px-3 py-1"
-                        onClick={() => {
-                          setPacienteSeleccionado(p)
-                          setEditando(true)
-                        }}
-                      >
-                        ✏️ Editar
-                      </Button>
+                    <Button
+                      size="sm"
+                      className="bg-yellow-100 text-yellow-900 hover:bg-yellow-200 font-semibold shadow-sm rounded-full px-3 py-1"
+                      onClick={() => {
+                        setPacienteSeleccionado(p)
+                        setEditando(true)
+                      }}
+                    >
+                      ✏️ Editar
+                    </Button>
 
-                      <Button
-                        size="sm"
-                        className="bg-red-200 text-red-900 hover:bg-red-300 font-semibold shadow-sm rounded-full px-3 py-1 ml-2"
-                        onClick={() => {
-                          setPacienteAEliminar({ id: p.id, nombre: p.nombre })
-                          setMostrarModalEliminar(true)
-                        }}
-                      >
-                        🗑️ Eliminar
-                      </Button>
+                    <Button
+                      size="sm"
+                      className="bg-red-200 text-red-900 hover:bg-red-300 font-semibold shadow-sm rounded-full px-3 py-1 ml-2"
+                      onClick={() => {
+                        setPacienteAEliminar({ id: p.id, nombre: p.nombre })
+                        setMostrarModalEliminar(true)
+                      }}
+                    >
+                      🗑️ Eliminar
+                    </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button
+              variant="ghost"
+              onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              ⬅️ Anterior
+            </Button>
+            <span className="text-slate-600 font-medium">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <Button
+              variant="ghost"
+              onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas}
+            >
+              Siguiente ➡️
+            </Button>
+          </div>
         </div>
       )}
 
