@@ -165,7 +165,7 @@ export default function PanelPacientes() {
                   <td className="px-4 py-2 text-center">
                       <Button
                         size="sm"
-                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full px-3 py-1"
+                        className="bg-yellow-100 text-yellow-900 hover:bg-yellow-200 font-semibold shadow-sm rounded-full px-3 py-1"
                         onClick={() => {
                           setPacienteSeleccionado(p)
                           setEditando(true)
@@ -173,9 +173,10 @@ export default function PanelPacientes() {
                       >
                         ✏️ Editar
                       </Button>
+
                       <Button
                         size="sm"
-                        className="bg-red-100 text-red-700 hover:bg-red-200 rounded-full px-3 py-1 ml-2"
+                        className="bg-red-100 text-red-900 hover:bg-red-200 font-semibold shadow-sm rounded-full px-3 py-1 ml-2"
                         onClick={() => {
                           setPacienteAEliminar({ id: p.id, nombre: p.nombre })
                           setMostrarModalEliminar(true)
