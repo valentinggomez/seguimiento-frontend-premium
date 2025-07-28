@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ModalConfirmarEliminarPaciente } from '@/components/modales/ModalConfirmarEliminarPaciente'
 
 export default function PanelPacientes() {
   const [pacientes, setPacientes] = useState<any[]>([])
@@ -21,7 +22,9 @@ export default function PanelPacientes() {
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any | null>(null)
   const [editando, setEditando] = useState(false) 
   const [eliminando, setEliminando] = useState(false)
-  
+  const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false)
+  const [pacienteAEliminar, setPacienteAEliminar] = useState<{ id: string, nombre: string } | null>(null)
+
   const guardarCambios = async () => {
     try {
       const headers = await getAuthHeaders()
@@ -47,16 +50,15 @@ export default function PanelPacientes() {
     }
   }
 
-  const eliminarPaciente = async (id: string, nombre: string) => {
-    const confirmado = window.confirm(`¿Estás seguro de eliminar al paciente "${nombre}"?`)
-    if (!confirmado) return
+  const eliminarPaciente = async () => {
+    if (!pacienteAEliminar) return
 
     setEliminando(true)
     try {
       const headers = await getAuthHeaders()
 
       const res = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${pacienteAEliminar.id}`,
         { headers }
       )
 
@@ -74,6 +76,8 @@ export default function PanelPacientes() {
       toast.error('❌ Error al eliminar paciente')
     } finally {
       setEliminando(false)
+      setMostrarModalEliminar(false)
+      setPacienteAEliminar(null)
     }
   }
 
@@ -150,7 +154,10 @@ export default function PanelPacientes() {
                         size="sm"
                         variant="destructive"
                         className="ml-2"
-                        onClick={() => eliminarPaciente(p.id, p.nombre)}
+                        onClick={() => {
+                          setPacienteAEliminar({ id: p.id, nombre: p.nombre })
+                          setMostrarModalEliminar(true)
+                        }}
                       >
                         🗑️ Eliminar
                       </Button>
@@ -223,6 +230,12 @@ export default function PanelPacientes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ModalConfirmarEliminarPaciente
+        open={mostrarModalEliminar}
+        onClose={() => setMostrarModalEliminar(false)}
+        onConfirm={eliminarPaciente}
+        nombrePaciente={pacienteAEliminar?.nombre || ''}
+      />
     </div>
   )
 }
