@@ -24,6 +24,7 @@ export default function PanelPacientes() {
   const [eliminando, setEliminando] = useState(false)
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false)
   const [pacienteAEliminar, setPacienteAEliminar] = useState<{ id: string, nombre: string } | null>(null)
+  const [busqueda, setBusqueda] = useState("")
 
   const guardarCambios = async () => {
     try {
@@ -105,7 +106,15 @@ export default function PanelPacientes() {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">📋 Pacientes registrados</h1>
-
+      <div className="mb-4 max-w-md">
+        <Input
+          type="text"
+          placeholder="Buscar por nombre, DNI o teléfono"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full"
+        />
+      </div>
       {loading ? (
         <p className="text-center text-gray-500">Cargando pacientes...</p>
       ) : pacientes.length === 0 ? (
@@ -126,7 +135,17 @@ export default function PanelPacientes() {
               </tr>
             </thead>
             <tbody>
-              {pacientes.map((p) => (
+              {pacientes
+                .filter((p) => {
+                  const texto = busqueda.toLowerCase()
+                  return (
+                    p.nombre.toLowerCase().includes(texto) ||
+                    (p.dni?.toString().toLowerCase().includes(texto) ?? false) ||
+                    (p.telefono?.toLowerCase().includes(texto) ?? false) ||
+                    (p.cirugia?.toLowerCase().includes(texto) ?? false)
+                  )
+                })
+                .map((p) => (
                 <tr key={p.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2">{p.nombre}</td>
                   <td className="px-4 py-2">{p.edad}</td>
