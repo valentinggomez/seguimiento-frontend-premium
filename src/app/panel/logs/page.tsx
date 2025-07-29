@@ -16,19 +16,23 @@ export default function PanelLogs() {
   const [paginaActual, setPaginaActual] = useState(1)
   const logsPorPagina = 15
   const [accionSeleccionada, setAccionSeleccionada] = useState('')
-
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+  
   // Filtrado local
   const logsFiltrados = logs.filter((log) => {
     const texto = busqueda.toLowerCase()
+    const fechaLog = new Date(log.fecha)
+
     const coincideBusqueda =
       log.usuario_email?.toLowerCase().includes(texto) ||
       log.accion?.toLowerCase().includes(texto) ||
       log.descripcion?.toLowerCase().includes(texto)
 
-    const coincideAccion =
-      accionSeleccionada === '' || log.accion === accionSeleccionada
+    const desdeOk = fechaDesde ? fechaLog >= new Date(fechaDesde) : true
+    const hastaOk = fechaHasta ? fechaLog <= new Date(fechaHasta + 'T23:59:59') : true
 
-    return coincideBusqueda && coincideAccion
+    return coincideBusqueda && desdeOk && hastaOk
   })
 
   // Paginación
@@ -63,6 +67,34 @@ export default function PanelLogs() {
         <p className="text-center text-slate-600 mb-6">
         Logs de trazabilidad legal y operativa del sistema.
         </p>
+
+      {/* Filtro por fecha */}
+      <div className="mb-4 flex flex-wrap gap-4 items-center">
+        <div>
+          <label className="block text-sm text-slate-600 mb-1">Desde:</label>
+          <Input
+          type="date"
+          value={fechaDesde}
+          onChange={(e) => {
+              setFechaDesde(e.target.value)
+              setPaginaActual(1)
+          }}
+          className="rounded-xl shadow-md"
+            />
+        </div>
+        <div>
+          <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
+          <Input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => {
+              setFechaHasta(e.target.value)
+              setPaginaActual(1)
+          }}
+          className="rounded-xl shadow-md"
+          />
+        </div>
+      </div>
 
       {/* Buscador */}
       <div className="mb-6 flex max-w-xl mx-auto gap-2">
