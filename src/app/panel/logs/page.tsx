@@ -69,32 +69,29 @@ export default function PanelLogs() {
         </p>
 
       {/* Filtro por fecha */}
-      <div className="flex gap-x-4 items-end mb-6">
-        <div className="flex flex-col">
-            <label className="mb-1 text-slate-700 font-medium">Desde:</label>
+      <div className="mb-4 flex flex-wrap gap-4 items-center">
+        <div>
+          <label className="block text-sm text-slate-600 mb-1">Desde:</label>
           <Input
-            type="text"
-            placeholder="dd/mm/aaaa"
+            type="date"
             value={fechaDesde}
             onChange={(e) => {
-              setFechaDesde(e.target.value)
-              setPaginaActual(1)
-            }}
-          className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
-          <Input
-            type="text"
-            placeholder="dd/mm/aaaa"
-            value={fechaHasta}
-            onChange={(e) => {
-                setFechaHasta(e.target.value)
+                setFechaDesde(e.target.value)
                 setPaginaActual(1)
             }}
-            className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
+            className="rounded-xl shadow-md"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
+          <Input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => {
+              setFechaHasta(e.target.value)
+              setPaginaActual(1)
+          }}
+          className="rounded-xl shadow-md"
           />
         </div>
       </div>
