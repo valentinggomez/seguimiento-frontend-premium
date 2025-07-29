@@ -25,14 +25,18 @@ export default function PanelLogs() {
     const fechaLog = new Date(log.fecha)
 
     const coincideBusqueda =
-      log.usuario_email?.toLowerCase().includes(texto) ||
-      log.accion?.toLowerCase().includes(texto) ||
-      log.descripcion?.toLowerCase().includes(texto)
+        log.usuario_email?.toLowerCase().includes(texto) ||
+        log.accion?.toLowerCase().includes(texto) ||
+        log.descripcion?.toLowerCase().includes(texto)
+
+    const coincideAccion = accionSeleccionada
+        ? log.accion === accionSeleccionada
+        : true
 
     const desdeOk = fechaDesde ? fechaLog >= new Date(fechaDesde) : true
     const hastaOk = fechaHasta ? fechaLog <= new Date(fechaHasta + 'T23:59:59') : true
 
-    return coincideBusqueda && desdeOk && hastaOk
+    return coincideBusqueda && coincideAccion && desdeOk && hastaOk
   })
 
   // Paginación
