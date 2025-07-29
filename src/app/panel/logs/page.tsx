@@ -7,6 +7,7 @@ import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { formatFechaLocal } from '@/lib/formatFechaLocal'
+import { formatearAccionLog } from '@/lib/formatearAccionLog'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
@@ -125,7 +126,7 @@ export default function PanelLogs() {
                         {formatFechaLocal(log.fecha)}
                         </td>
                         <td className="px-4 py-2 text-slate-700">{log.usuario_email}</td>
-                        <td className="px-4 py-2 text-slate-700">{log.accion}</td>
+                        <td className="px-4 py-2">{formatearAccionLog(log.accion)}</td>
                         <td className="px-4 py-2 text-slate-700">{log.entidad}</td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
                         {log.descripcion}
