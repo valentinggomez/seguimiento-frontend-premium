@@ -82,23 +82,23 @@ export default function PanelLogs() {
                 setFechaDesde(e.target.value)
                 setPaginaActual(1)
                 }}
-                className="rounded-xl shadow-md placeholder:text-slate-400"
+            className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
             />
             </div>
 
             {/* Fecha hasta */}
             <div className="flex flex-col">
             <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
-            <Input
+              <Input
                 type="text"
                 placeholder="dd/mm/aaaa"
                 value={fechaHasta}
                 onChange={(e) => {
-                setFechaHasta(e.target.value)
-                setPaginaActual(1)
+                    setFechaHasta(e.target.value)
+                    setPaginaActual(1)
                 }}
-                className="rounded-xl shadow-md placeholder:text-slate-400"
-            />
+                className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
+              />
             </div>
 
             {/* Filtro por acción */}
