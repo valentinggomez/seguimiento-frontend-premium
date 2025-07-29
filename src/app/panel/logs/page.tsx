@@ -51,23 +51,28 @@ export default function PanelLogs() {
 
   return (
     <div className="p-6">
-      <h1 className="text-center text-2xl md:text-3xl font-medium tracking-wide text-slate-800 mb-6">
-        🩺 Auditoría Clínica — Logs de Trazabilidad
-      </h1>
+      <h1 className="text-center text-3xl font-bold tracking-tight text-[#003466] mb-2">
+        🩺 Auditoría Clínica
+        </h1>
+        <p className="text-center text-slate-600 mb-6">
+        Logs de trazabilidad legal y operativa del sistema.
+        </p>
 
       {/* Buscador */}
-      <div className="mb-6 max-w-md relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
-        <Input
-          type="text"
-          placeholder="Buscar por email, acción o descripción..."
-          value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value)
-            setPaginaActual(1) // Reiniciar paginación
-          }}
-          className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
-        />
+      <div className="mb-6 flex max-w-xl mx-auto gap-2">
+        <div className="relative w-full">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+            <Input
+            type="text"
+            placeholder="Buscar por email, acción o descripción..."
+            value={busqueda}
+            onChange={(e) => {
+                setBusqueda(e.target.value)
+                setPaginaActual(1)
+            }}
+            className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
+            />
+        </div>
       </div>
 
       {loading ? (
@@ -77,50 +82,52 @@ export default function PanelLogs() {
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md">
-              <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 z-10">
-                <tr className="border-b">
-                  <th className="px-4 py-2 border">Fecha</th>
-                  <th className="px-4 py-2 border">Usuario</th>
-                  <th className="px-4 py-2 border">Acción</th>
-                  <th className="px-4 py-2 border">Entidad</th>
-                  <th className="px-4 py-2 border">Descripción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logsPaginados.map((log, i) => (
-                  <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {formatFechaLocal(log.fecha)}
-                    </td>
-                    <td className="px-4 py-2">{log.usuario_email}</td>
-                    <td className="px-4 py-2">{log.accion}</td>
-                    <td className="px-4 py-2">{log.entidad}</td>
-                    <td className="px-4 py-2">{log.descripcion}</td>
-                  </tr>
-                ))}
-              </tbody>
+            <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md border border-slate-200">
+                <thead className="bg-slate-100 text-[#003466] font-semibold text-sm uppercase tracking-wide">
+                    <tr className="border-b">
+                    <th className="px-4 py-2 border">Fecha</th>
+                    <th className="px-4 py-2 border">Usuario</th>
+                    <th className="px-4 py-2 border">Acción</th>
+                    <th className="px-4 py-2 border">Entidad</th>
+                    <th className="px-4 py-2 border">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {logsPaginados.map((log, i) => (
+                    <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                        <td className="px-4 py-2 text-slate-800 font-mono text-[13px]">
+                        {formatFechaLocal(log.fecha)}
+                        </td>
+                        <td className="px-4 py-2 text-slate-700">{log.usuario_email}</td>
+                        <td className="px-4 py-2 text-slate-700">{log.accion}</td>
+                        <td className="px-4 py-2 text-slate-700">{log.entidad}</td>
+                        <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
+                        {log.descripcion}
+                        </td>
+                    </tr>
+                    ))}
+                </tbody>
             </table>
           </div>
 
           {/* Paginación */}
-          <div className="flex justify-center items-center gap-2 mt-6">
+          <div className="flex justify-center items-center gap-2 mt-6 text-slate-600">
             <Button
-              variant="ghost"
-              onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
-              disabled={paginaActual === 1}
+                variant="ghost"
+                onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
             >
-              ⬅️ Anterior
+                ◀ Anterior
             </Button>
-            <span className="text-slate-600 font-medium">
-              Página {paginaActual} de {totalPaginas}
+            <span className="font-medium">
+                Página {paginaActual} de {totalPaginas}
             </span>
             <Button
-              variant="ghost"
-              onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
-              disabled={paginaActual === totalPaginas}
+                variant="ghost"
+                onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
             >
-              Siguiente ➡️
+                Siguiente ▶
             </Button>
           </div>
         </>
