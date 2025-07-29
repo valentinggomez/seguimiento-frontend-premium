@@ -59,6 +59,23 @@ export default function PanelLogs() {
     fetchLogs()
   }, [])
 
+  function formatearFecha(valor: string) {
+    // Eliminar todo lo que no sea número
+    const soloNumeros = valor.replace(/\D/g, '')
+
+    let formateado = ''
+    if (soloNumeros.length >= 1) {
+        formateado = soloNumeros.slice(0, 2)
+    }
+    if (soloNumeros.length >= 3) {
+        formateado += '/' + soloNumeros.slice(2, 4)
+    }
+    if (soloNumeros.length >= 5) {
+        formateado += '/' + soloNumeros.slice(4, 8)
+    }
+
+    return formateado
+    }
   return (
     <div className="p-6">
       <h1 className="text-center text-3xl font-bold tracking-tight text-[#003466] mb-2">
@@ -71,34 +88,39 @@ export default function PanelLogs() {
       {/* 🔎 Bloque de filtros institucionales */}
      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm max-w-4xl mx-auto space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Fecha desde */}
+            {/* Filtro por fecha */}
+            <div className="flex gap-x-4 items-end mb-6">
             <div className="flex flex-col">
-            <label className="mb-1 text-slate-700 font-medium">Desde:</label>
-            <Input
+                <label className="mb-1 text-slate-700 font-medium">Desde:</label>
+                <Input
                 type="text"
                 placeholder="dd/mm/aaaa"
                 value={fechaDesde}
                 onChange={(e) => {
-                setFechaDesde(e.target.value)
-                setPaginaActual(1)
+                    const valorFormateado = formatearFecha(e.target.value)
+                    setFechaDesde(valorFormateado)
+                    setPaginaActual(1)
                 }}
-            className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
-            />
+                className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
+                maxLength={10}
+                />
             </div>
 
-            {/* Fecha hasta */}
             <div className="flex flex-col">
-            <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
-              <Input
+                <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
+                <Input
                 type="text"
                 placeholder="dd/mm/aaaa"
                 value={fechaHasta}
                 onChange={(e) => {
-                    setFechaHasta(e.target.value)
+                    const valorFormateado = formatearFecha(e.target.value)
+                    setFechaHasta(valorFormateado)
                     setPaginaActual(1)
                 }}
                 className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
-              />
+                maxLength={10}
+                />
+            </div>
             </div>
 
             {/* Filtro por acción */}
