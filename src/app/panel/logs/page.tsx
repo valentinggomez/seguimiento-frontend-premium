@@ -14,15 +14,20 @@ export default function PanelLogs() {
   const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
   const logsPorPagina = 15
+  const [accionSeleccionada, setAccionSeleccionada] = useState('')
 
   // Filtrado local
   const logsFiltrados = logs.filter((log) => {
     const texto = busqueda.toLowerCase()
-    return (
+    const coincideBusqueda =
       log.usuario_email?.toLowerCase().includes(texto) ||
       log.accion?.toLowerCase().includes(texto) ||
       log.descripcion?.toLowerCase().includes(texto)
-    )
+
+    const coincideAccion =
+      accionSeleccionada === '' || log.accion === accionSeleccionada
+
+    return coincideBusqueda && coincideAccion
   })
 
   // Paginación
@@ -74,6 +79,27 @@ export default function PanelLogs() {
             />
         </div>
       </div>
+
+      <div className="mb-4 max-w-xl mx-auto flex gap-4 items-center">
+        <label className="text-sm text-slate-700 font-medium">Filtrar por acción:</label>
+        <select
+            value={accionSeleccionada}
+            onChange={(e) => {
+            setAccionSeleccionada(e.target.value)
+            setPaginaActual(1)
+            }}
+            className="rounded-xl border border-slate-300 px-3 py-1 text-sm shadow-sm text-slate-700"
+        >
+            <option value="">Todas</option>
+            <option value="registro_paciente">Registro de paciente</option>
+            <option value="edicion_paciente">Edición de paciente</option>
+            <option value="eliminacion_paciente">Eliminación de paciente</option>
+            <option value="registro_respuesta">Registro de respuesta</option>
+            <option value="envio_whatsapp">Envío por WhatsApp</option>
+            <option value="respuesta_guardada">Respuesta guardada</option>
+            {/* Podés agregar más acciones según tu sistema */}
+        </select>
+        </div>
 
       {loading ? (
         <p className="text-center text-gray-500">Cargando logs...</p>
