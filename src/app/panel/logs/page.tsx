@@ -68,34 +68,6 @@ export default function PanelLogs() {
         Logs de trazabilidad legal y operativa del sistema.
         </p>
 
-      {/* Filtro por fecha */}
-      <div className="mb-4 flex flex-wrap gap-4 items-center">
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">Desde:</label>
-          <Input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => {
-                setFechaDesde(e.target.value)
-                setPaginaActual(1)
-            }}
-            className="rounded-xl shadow-md"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
-          <Input
-          type="date"
-          value={fechaHasta}
-          onChange={(e) => {
-              setFechaHasta(e.target.value)
-              setPaginaActual(1)
-          }}
-          className="rounded-xl shadow-md"
-          />
-        </div>
-      </div>
-
       {/* Buscador */}
       <div className="mb-6 flex max-w-xl mx-auto gap-2">
         <div className="relative w-full">
@@ -113,16 +85,18 @@ export default function PanelLogs() {
         </div>
       </div>
 
-      <div className="mb-4 max-w-xl mx-auto flex gap-4 items-center">
-        <label className="text-sm text-slate-700 font-medium">Filtrar por acción:</label>
-        <select
+      <div className="mb-6 flex flex-wrap justify-center gap-6 items-end">
+        {/* Filtro por acción */}
+        <div className="flex flex-col">
+            <label className="text-sm text-slate-700 font-medium mb-1">Filtrar por acción:</label>
+            <select
             value={accionSeleccionada}
             onChange={(e) => {
-            setAccionSeleccionada(e.target.value)
-            setPaginaActual(1)
+                setAccionSeleccionada(e.target.value)
+                setPaginaActual(1)
             }}
             className="rounded-xl border border-slate-300 px-3 py-1 text-sm shadow-sm text-slate-700"
-        >
+            >
             <option value="">Todas</option>
             <option value="registro_paciente">Registro de paciente</option>
             <option value="edicion_paciente">Edición de paciente</option>
@@ -130,8 +104,36 @@ export default function PanelLogs() {
             <option value="registro_respuesta">Registro de respuesta</option>
             <option value="envio_whatsapp">Envío por WhatsApp</option>
             <option value="respuesta_guardada">Respuesta guardada</option>
-            {/* Podés agregar más acciones según tu sistema */}
-        </select>
+            </select>
+        </div>
+
+        {/* Filtro por fecha desde */}
+        <div className="flex flex-col">
+            <label className="block text-sm text-slate-600 mb-1">Desde:</label>
+            <Input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => {
+                setFechaDesde(e.target.value)
+                setPaginaActual(1)
+            }}
+            className="rounded-xl shadow-md"
+            />
+        </div>
+
+        {/* Filtro por fecha hasta */}
+        <div className="flex flex-col">
+            <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
+            <Input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => {
+                setFechaHasta(e.target.value)
+                setPaginaActual(1)
+            }}
+            className="rounded-xl shadow-md"
+            />
+        </div>
         </div>
 
       {loading ? (
