@@ -55,3 +55,10 @@ textarea::placeholder {
     color: #d1d5db; /* Tailwind: text-gray-300 */
   }
 }
+
+/* ❌ Ocultar ícono del calendario en Chrome */
+input[type="date"]::-webkit-calendar-picker-indicator,
+.no-calendar-icon::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
