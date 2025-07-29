@@ -126,6 +126,11 @@ export default function Navbar() {
               <span className="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-sm"></span>
             )}
           </Link>
+          {(rol === 'superadmin' || rol === 'admin') && (
+            <Link href="/panel/logs" className={linkClasses('/panel/logs')}>
+              Logs
+            </Link>
+          )}
           {rol === 'superadmin' && (
             <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>Clínicas</Link>
           )}
