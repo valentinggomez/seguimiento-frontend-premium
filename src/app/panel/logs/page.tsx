@@ -11,6 +11,8 @@ export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
   const [busqueda, setBusqueda] = useState('')
   const [loading, setLoading] = useState(true)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const logsPorPagina = 15
 
   const fetchLogs = async () => {
     try {
@@ -35,8 +37,16 @@ export default function PanelLogs() {
   }, [])
 
   const handleBuscar = () => {
+    setPaginaActual(1)
     fetchLogs()
   }
+
+  const logsFiltrados = logs
+  const totalPaginas = Math.ceil(logsFiltrados.length / logsPorPagina)
+  const logsPaginados = logsFiltrados.slice(
+    (paginaActual - 1) * logsPorPagina,
+    paginaActual * logsPorPagina
+  )
 
   return (
     <div className="p-6">
@@ -61,32 +71,54 @@ export default function PanelLogs() {
       ) : logs.length === 0 ? (
         <p className="text-center text-gray-500">No hay registros de auditoría aún.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md">
-            <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 z-10">
-              <tr className="border-b">
-                <th className="px-4 py-2 border">Fecha</th>
-                <th className="px-4 py-2 border">Usuario</th>
-                <th className="px-4 py-2 border">Acción</th>
-                <th className="px-4 py-2 border">Entidad</th>
-                <th className="px-4 py-2 border">Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log, i) => (
-                <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {new Date(log.fecha).toLocaleString('es-AR')}
-                  </td>
-                  <td className="px-4 py-2">{log.usuario_email}</td>
-                  <td className="px-4 py-2">{log.accion}</td>
-                  <td className="px-4 py-2">{log.entidad}</td>
-                  <td className="px-4 py-2">{log.descripcion}</td>
+        <>
+          <div className="overflow-x-auto">
+            <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md">
+              <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 z-10">
+                <tr className="border-b">
+                  <th className="px-4 py-2 border">Fecha</th>
+                  <th className="px-4 py-2 border">Usuario</th>
+                  <th className="px-4 py-2 border">Acción</th>
+                  <th className="px-4 py-2 border">Entidad</th>
+                  <th className="px-4 py-2 border">Descripción</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {logsPaginados.map((log, i) => (
+                  <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {new Date(log.fecha).toLocaleString('es-AR')}
+                    </td>
+                    <td className="px-4 py-2">{log.usuario_email}</td>
+                    <td className="px-4 py-2">{log.accion}</td>
+                    <td className="px-4 py-2">{log.entidad}</td>
+                    <td className="px-4 py-2">{log.descripcion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button
+              variant="ghost"
+              onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              ⬅️ Anterior
+            </Button>
+            <span className="text-slate-600 font-medium">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <Button
+              variant="ghost"
+              onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas}
+            >
+              Siguiente ➡️
+            </Button>
+          </div>
+        </>
       )}
     </div>
   )
