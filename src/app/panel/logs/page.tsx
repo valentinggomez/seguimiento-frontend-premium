@@ -68,40 +68,63 @@ export default function PanelLogs() {
         Logs de trazabilidad legal y operativa del sistema.
         </p>
 
-      {/* Filtro por fecha */}
-      <div className="flex gap-x-4 items-end mb-6">
-        <div className="flex flex-col">
-          <label className="mb-1 text-slate-700 font-medium">Desde:</label>
-          <Input
-            type="text"
-            placeholder="dd/mm/aaaa"
-            value={fechaDesde}
-            onChange={(e) => {
-              setFechaDesde(e.target.value)
-              setPaginaActual(1)
-            }}
-          className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
-          />
-        </div>
+      {/* 🔎 Bloque de filtros institucionales */}
+     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm max-w-4xl mx-auto space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Fecha desde */}
+            <div className="flex flex-col">
+            <label className="mb-1 text-slate-700 font-medium">Desde:</label>
+            <Input
+                type="text"
+                placeholder="dd/mm/aaaa"
+                value={fechaDesde}
+                onChange={(e) => {
+                setFechaDesde(e.target.value)
+                setPaginaActual(1)
+                }}
+                className="rounded-xl shadow-md placeholder:text-slate-400"
+            />
+            </div>
 
-        <div className="flex flex-col">
-          <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
-          <Input
-            type="text"
-            placeholder="dd/mm/aaaa"
-            value={fechaHasta}
-            onChange={(e) => {
+            {/* Fecha hasta */}
+            <div className="flex flex-col">
+            <label className="mb-1 text-slate-700 font-medium">Hasta:</label>
+            <Input
+                type="text"
+                placeholder="dd/mm/aaaa"
+                value={fechaHasta}
+                onChange={(e) => {
                 setFechaHasta(e.target.value)
                 setPaginaActual(1)
-            }}
-            className="rounded-xl shadow-md placeholder:text-slate-400 w-36"
-          />
-        </div>
-      </div>
+                }}
+                className="rounded-xl shadow-md placeholder:text-slate-400"
+            />
+            </div>
 
-      {/* Buscador */}
-      <div className="mb-6 flex max-w-xl mx-auto gap-2">
-        <div className="relative w-full">
+            {/* Filtro por acción */}
+            <div className="flex flex-col">
+            <label className="mb-1 text-slate-700 font-medium">Filtrar por acción:</label>
+            <select
+                value={accionSeleccionada}
+                onChange={(e) => {
+                setAccionSeleccionada(e.target.value)
+                setPaginaActual(1)
+                }}
+                className="rounded-xl border border-slate-300 px-3 py-2 shadow-md text-slate-700"
+            >
+                <option value="">Todas</option>
+                <option value="registro_paciente">Registro de paciente</option>
+                <option value="edicion_paciente">Edición de paciente</option>
+                <option value="eliminacion_paciente">Eliminación de paciente</option>
+                <option value="registro_respuesta">Registro de respuesta</option>
+                <option value="envio_whatsapp">Envío por WhatsApp</option>
+                <option value="respuesta_guardada">Respuesta guardada</option>
+            </select>
+            </div>
+        </div>
+
+        {/* Buscador centrado */}
+        <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
             <Input
             type="text"
@@ -114,27 +137,6 @@ export default function PanelLogs() {
             className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
             />
         </div>
-      </div>
-
-      <div className="mb-4 max-w-xl mx-auto flex gap-4 items-center">
-        <label className="text-sm text-slate-700 font-medium">Filtrar por acción:</label>
-        <select
-            value={accionSeleccionada}
-            onChange={(e) => {
-            setAccionSeleccionada(e.target.value)
-            setPaginaActual(1)
-            }}
-            className="rounded-xl border border-slate-300 px-3 py-1 text-sm shadow-sm text-slate-700"
-        >
-            <option value="">Todas</option>
-            <option value="registro_paciente">Registro de paciente</option>
-            <option value="edicion_paciente">Edición de paciente</option>
-            <option value="eliminacion_paciente">Eliminación de paciente</option>
-            <option value="registro_respuesta">Registro de respuesta</option>
-            <option value="envio_whatsapp">Envío por WhatsApp</option>
-            <option value="respuesta_guardada">Respuesta guardada</option>
-            {/* Podés agregar más acciones según tu sistema */}
-        </select>
         </div>
 
       {loading ? (
