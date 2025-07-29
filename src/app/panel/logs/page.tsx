@@ -73,14 +73,15 @@ export default function PanelLogs() {
         <div>
           <label className="block text-sm text-slate-600 mb-1">Desde:</label>
           <Input
-          type="date"
-          value={fechaDesde}
-          onChange={(e) => {
+            type="text"
+            placeholder="YYYY-MM-DD"
+            value={fechaDesde}
+            onChange={(e) => {
               setFechaDesde(e.target.value)
               setPaginaActual(1)
-          }}
-          className="rounded-xl shadow-md"
-            />
+            }}
+            className="rounded-xl shadow-md placeholder:text-slate-400"
+          />
         </div>
         <div>
           <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
