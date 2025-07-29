@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { formatFechaLocal } from '@/lib/formatFechaLocal'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
@@ -90,7 +91,7 @@ export default function PanelLogs() {
                 {logsPaginados.map((log, i) => (
                   <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      {new Date(log.fecha).toLocaleString('es-AR')}
+                      {formatFechaLocal(log.fecha)}
                     </td>
                     <td className="px-4 py-2">{log.usuario_email}</td>
                     <td className="px-4 py-2">{log.accion}</td>
