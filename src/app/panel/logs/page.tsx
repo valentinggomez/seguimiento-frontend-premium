@@ -2,27 +2,39 @@
 
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
-  const [busqueda, setBusqueda] = useState('')
   const [loading, setLoading] = useState(true)
+  const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
   const logsPorPagina = 15
+
+  // Filtrado local
+  const logsFiltrados = logs.filter((log) => {
+    const texto = busqueda.toLowerCase()
+    return (
+      log.usuario_email?.toLowerCase().includes(texto) ||
+      log.accion?.toLowerCase().includes(texto) ||
+      log.descripcion?.toLowerCase().includes(texto)
+    )
+  })
+
+  // Paginación
+  const totalPaginas = Math.ceil(logsFiltrados.length / logsPorPagina)
+  const logsPaginados = logsFiltrados.slice(
+    (paginaActual - 1) * logsPorPagina,
+    paginaActual * logsPorPagina
+  )
 
   const fetchLogs = async () => {
     try {
       const headers = await getAuthHeaders()
-      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/logs`, {
-        headers,
-        params: {
-          search: busqueda,
-        },
-      })
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/logs`, { headers })
       setLogs(data.logs || [])
     } catch (error) {
       toast.error('Error al cargar los logs')
@@ -36,32 +48,23 @@ export default function PanelLogs() {
     fetchLogs()
   }, [])
 
-  const handleBuscar = () => {
-    setPaginaActual(1)
-    fetchLogs()
-  }
-
-  const logsFiltrados = logs
-  const totalPaginas = Math.ceil(logsFiltrados.length / logsPorPagina)
-  const logsPaginados = logsFiltrados.slice(
-    (paginaActual - 1) * logsPorPagina,
-    paginaActual * logsPorPagina
-  )
-
   return (
     <div className="p-6">
       <h1 className="text-center text-2xl md:text-3xl font-medium tracking-wide text-slate-800 mb-6">
         🩺 Auditoría Clínica — Logs de Trazabilidad
       </h1>
 
+      {/* Buscador */}
       <div className="mb-6 max-w-md relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
         <Input
           type="text"
           placeholder="Buscar por email, acción o descripción..."
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleBuscar()}
+          onChange={(e) => {
+            setBusqueda(e.target.value)
+            setPaginaActual(1) // Reiniciar paginación
+          }}
           className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
         />
       </div>
@@ -99,10 +102,11 @@ export default function PanelLogs() {
             </table>
           </div>
 
+          {/* Paginación */}
           <div className="flex justify-center items-center gap-2 mt-6">
             <Button
               variant="ghost"
-              onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+              onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
               disabled={paginaActual === 1}
             >
               ⬅️ Anterior
@@ -112,7 +116,7 @@ export default function PanelLogs() {
             </span>
             <Button
               variant="ghost"
-              onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
               disabled={paginaActual === totalPaginas}
             >
               Siguiente ➡️
