@@ -155,7 +155,7 @@ export default function Navbar() {
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
-          className="ml-4 px-2 py-1 border rounded"
+          className="ml-4 px-3 py-1 rounded-xl shadow-sm border border-slate-300 text-sm bg-white hover:cursor-pointer"
         >
           <option value="es">🇦🇷 Español</option>
           <option value="en">🇺🇸 English</option>
