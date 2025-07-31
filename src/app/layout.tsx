@@ -1,6 +1,7 @@
 import './globals.css'
 import { headers } from 'next/headers'
 import { ClinicaProvider } from '@/lib/ClinicaProvider'
+import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { Toaster } from 'sonner'
 
 export default async function RootLayout({
@@ -15,19 +16,19 @@ export default async function RootLayout({
     cache: 'no-store',
   })
 
-
   const datos = await res.json()
   console.log('🎯 Clínica obtenida en layout:', datos.clinica)
   const clinica = res.ok ? datos.clinica : null
-
 
   return (
     <html lang="es">
       <body>
         <ClinicaProvider clinicaInicial={clinica}>
-          {children}
+          <LanguageProvider> {/* 🌍 Soporte multilenguaje */}
+            {children}
+          </LanguageProvider>
         </ClinicaProvider>
-        <Toaster position="top-center" richColors /> {/* ✅ AGREGADO */}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   )

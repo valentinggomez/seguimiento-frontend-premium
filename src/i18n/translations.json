@@ -1,0 +1,68 @@
+{
+  "es": {
+    "navbar": {
+      "pacientes": "Pacientes",
+      "respuestas": "Respuestas",
+      "interacciones": "Interacciones",
+      "configuracion": "Configuración",
+      "inicio": "Inicio",
+      "registrar": "Registrar",
+      "logs": "Logs",
+      "clinicas": "Clínicas"
+    },
+    "formulario": {
+      "titulo": "Formulario de seguimiento postoperatorio",
+      "nombre": "Nombre del paciente",
+      "edad": "Edad",
+      "sexo": "Sexo",
+      "peso": "Peso (kg)",
+      "altura": "Altura (m)",
+      "imc": "Índice de Masa Corporal (IMC)",
+      "cirugia": "Tipo de cirugía",
+      "satisfaccion": "Nivel de satisfacción (1 a 10)",
+      "observaciones": "Observaciones del paciente",
+      "enviar": "Enviar formulario"
+    },
+    "pdf": {
+      "titulo": "Seguimiento Clínico Institucional",
+      "paciente": "Datos del paciente",
+      "respuesta": "Respuesta del paciente",
+      "fecha": "Fecha de registro",
+      "medico": "Médico responsable",
+      "firma": "Firma digital y trazabilidad"
+    }
+  },
+  "en": {
+    "navbar": {
+      "pacientes": "Patients",
+      "respuestas": "Responses",
+      "interacciones": "Interactions",
+      "configuracion": "Settings",
+      "inicio": "Home",
+      "registrar": "Register",
+      "logs": "Logs",
+      "clinicas": "Clinics"
+    },
+    "formulario": {
+      "titulo": "Postoperative Follow-Up Form",
+      "nombre": "Patient Name",
+      "edad": "Age",
+      "sexo": "Gender",
+      "peso": "Weight (kg)",
+      "altura": "Height (m)",
+      "imc": "Body Mass Index (BMI)",
+      "cirugia": "Surgery Type",
+      "satisfaccion": "Satisfaction Level (1 to 10)",
+      "observaciones": "Patient Comments",
+      "enviar": "Submit Form"
+    },
+    "pdf": {
+      "titulo": "Institutional Clinical Follow-Up",
+      "paciente": "Patient Information",
+      "respuesta": "Patient Response",
+      "fecha": "Registration Date",
+      "medico": "Responsible Doctor",
+      "firma": "Digital Signature & Traceability"
+    }
+  }
+}
