@@ -185,27 +185,34 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                            {(() => {
-                            let datos: Record<string, any> = {}
+                        {(() => {
+                          let datos: Record<string, any> = {}
 
-                            try {
-                                datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
-                            } catch (error) {
-                                datos = {}
-                            }
+                          try {
+                            datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
+                          } catch (error) {
+                            datos = {}
+                          }
 
-                            let plantilla = t(`logs.descripciones.${log.accion}`)
+                          const plantillaCruda = t(`logs.descripciones.${log.accion}`)
+                          const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
-                            if (!plantilla || typeof plantilla !== 'string') return log.accion
+                          const placeholders = {
+                            '{{nombre}}': datos.nombre || '—',
+                            '{{nombre_paciente}}': datos.nombre_paciente || '—',
+                            '{{telefono}}': datos.telefono || '—',
+                            '{{email}}': datos.email || '—',
+                            '{{nombre_usuario}}': datos.nombre_usuario || '—',
+                            '{{entidad_id}}': datos.entidad_id || '—',
+                            '{{id}}': datos.id || '—'
+                          }
 
-                            // Reemplazo dinámico de todas las variables {{...}}
-                            Object.entries(datos).forEach(([clave, valor]) => {
-                                plantilla = plantilla.replaceAll(`{{${clave}}}`, valor ?? '')
-                            })
-
-                            return plantilla
-                            })()}
-                        </td>
+                          return Object.entries(placeholders).reduce(
+                            (acc, [clave, valor]) => acc.replaceAll(clave, valor),
+                            plantilla
+                          )
+                        })()}
+                      </td>
                     </tr>
                     ))}
                 </tbody>
