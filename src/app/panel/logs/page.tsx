@@ -196,9 +196,12 @@ export default function PanelLogs() {
                           }
 
                           const clave = `logs.descripciones.${log.accion?.trim()}`
-
                           const plantillaCruda = t(clave)
-                          const plantilla = typeof plantillaCruda === 'string' && !plantillaCruda.includes(clave) ? plantillaCruda : ''
+
+                          const esTraduccionValida = plantillaCruda && plantillaCruda !== clave
+                          if (!esTraduccionValida) return log.descripcion || '—'
+
+                          const plantilla = plantillaCruda
 
                           const placeholders: Record<string, string> = {
                             '{{nombre}}': datos.nombre || '—',
@@ -208,11 +211,6 @@ export default function PanelLogs() {
                             '{{nombre_usuario}}': datos.nombre_usuario || '—',
                             '{{entidad_id}}': datos.entidad_id || '—',
                             '{{id}}': datos.id || '—'
-                          }
-
-                          if (!plantilla) {
-                            console.warn('🔍 Traducción no encontrada para:', clave)
-                            return log.descripcion || '—'
                           }
 
                           return Object.entries(placeholders).reduce(
