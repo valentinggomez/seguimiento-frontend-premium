@@ -152,16 +152,16 @@ export default function Navbar() {
               {t('navbar.clinicas')}
             </Link>
           )}
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
+          className="ml-4 px-2 py-1 border rounded"
+        >
+          <option value="es">🇦🇷 Español</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
         </nav>
       </div>
-      <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
-        className="ml-4 px-2 py-1 border rounded"
-      >
-        <option value="es">🇦🇷 Español</option>
-        <option value="en">🇺🇸 English</option>
-      </select>
     </header>
   )
 }
