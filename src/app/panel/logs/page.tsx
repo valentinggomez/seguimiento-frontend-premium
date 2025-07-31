@@ -194,13 +194,9 @@ export default function PanelLogs() {
                             datos = {}
                           }
 
-                          const clave = `logs.descripciones.${log.accion?.trim()}`
+                          const clave = `logs.descripciones.${log.accion}`
                           const plantillaCruda = t(clave)
-
-                          const esTraduccionValida = plantillaCruda && plantillaCruda !== clave
-                          if (!esTraduccionValida) return log.descripcion || '—'  // ← Fallback real
-
-                          const plantilla = plantillaCruda
+                          const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
                           const placeholders: Record<string, string> = {
                             '{{nombre}}': datos.nombre || '—',
@@ -212,10 +208,16 @@ export default function PanelLogs() {
                             '{{id}}': datos.id || '—'
                           }
 
-                          return Object.entries(placeholders).reduce(
-                            (acc, [clave, valor]) => acc.replaceAll(clave, valor),
-                            plantilla
-                          )
+                          // Si la plantilla existe (es distinta a la clave), usamos traducción dinámica
+                          if (plantilla && !plantilla.includes(clave)) {
+                            return Object.entries(placeholders).reduce(
+                              (acc, [clave, valor]) => acc.replaceAll(clave, valor),
+                              plantilla
+                            )
+                          }
+
+                          // Si no hay plantilla o clave inválida, mostramos descripción ya traducida por backend
+                          return log.descripcion || '—'
                         })()}
                       </td>
                     </tr>
