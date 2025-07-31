@@ -184,33 +184,34 @@ export default function PanelLogs() {
                             ? t(`logs.entidades.${log.entidad}`)
                             : log.entidad || '-'}
                         </td>
-                       <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {(() => {
-                          let datos: Record<string, any> = {}
+                       <td
+                          className={`px-4 py-2 text-slate-700 truncate max-w-xs ${
+                            log.descripcion?.includes(' ') ? 'text-red-600 font-semibold' : ''
+                          }`}
+                          title={log.descripcion}
+                        >
+                          {(() => {
+                            let datos: Record<string, any> = {}
 
-                          try {
-                            datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
-                          } catch (error) {
-                            console.error('❌ Error al parsear log.datos:', error)
-                            datos = {}
-                          }
+                            try {
+                              datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
+                            } catch {
+                              datos = {}
+                            }
 
-                          const clave = `logs.descripciones.${log.descripcion}`
-                          const plantillaTraducida = t(clave, datos)
+                            const clave = `logs.descripciones.${log.descripcion}`
+                            const plantillaTraducida = t(clave, datos)
 
-                          console.log('🧩 Log debug:')
-                          console.log('🔑 Clave de traducción:', clave)
-                          console.log('🌐 Idioma actual:', language)
-                          console.log('📦 Datos usados:', datos)
-                          console.log('📝 Resultado t():', plantillaTraducida)
+                            const esClaveValida = plantillaTraducida !== clave
 
-                          if (plantillaTraducida !== clave) {
-                            return plantillaTraducida
-                          }
+                            if (esClaveValida) {
+                              return plantillaTraducida
+                            }
 
-                          return log.descripcion || '—'
-                        })()}
-                      </td>
+                            // Logs no traducibles (antiguos) → marcar con ⚠️
+                            return `⚠️ ${log.descripcion || '—'}`
+                          })()}
+                        </td>
                     </tr>
                     ))}
                 </tbody>
