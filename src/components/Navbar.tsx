@@ -6,10 +6,12 @@ import { useEffect, useState } from 'react'
 import { eventBus } from '@/lib/eventBus'
 import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useTranslation } from '@/i18n/useTranslation'
 
 export default function Navbar() {
   const pathname = usePathname()
   const { clinica } = useClinica()
+  const { language, t, setLanguage } = useTranslation()
   const [rol, setRol] = useState<string | null>(null)
   const [tieneMensajesNoLeidos, setTieneMensajesNoLeidos] = useState(false)
 
@@ -116,26 +118,50 @@ export default function Navbar() {
 
         {/* Navegación */}
         <nav className="flex gap-1 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1">
-          <Link href="/panel" className={linkClasses('/panel')}>Inicio</Link>
-          <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>Registrar</Link>
-          <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>Respuestas</Link>
-          <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>Pacientes</Link>
+          <Link href="/panel" className={linkClasses('/panel')}>
+            {t('navbar.inicio')}
+          </Link>
+
+          <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>
+            {t('navbar.registrar')}
+          </Link>
+
+          <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>
+            {t('navbar.respuestas')}
+          </Link>
+
+          <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>
+            {t('navbar.pacientes')}
+          </Link>
+
           <Link href="/panel/interacciones" className={`${linkClasses('/panel/interacciones')} relative`}>
-            Interacciones
+            {t('navbar.interacciones')}
             {tieneMensajesNoLeidos && (
               <span className="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-sm"></span>
             )}
           </Link>
+
           {(rol === 'superadmin' || rol === 'admin') && (
             <Link href="/panel/logs" className={linkClasses('/panel/logs')}>
-              Logs
+              {t('navbar.logs')}
             </Link>
           )}
+
           {rol === 'superadmin' && (
-            <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>Clínicas</Link>
+            <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>
+              {t('navbar.clinicas')}
+            </Link>
           )}
         </nav>
       </div>
+      <select
+        value={language}
+        onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
+        className="ml-4 px-2 py-1 border rounded"
+      >
+        <option value="es">🇦🇷 Español</option>
+        <option value="en">🇺🇸 English</option>
+      </select>
     </header>
   )
 }
