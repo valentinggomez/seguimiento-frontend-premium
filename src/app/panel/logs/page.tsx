@@ -194,7 +194,7 @@ export default function PanelLogs() {
                             datos = {}
                           }
 
-                          const clave = `logs.descripciones.${log.accion}`
+                          const clave = `logs.descripciones.${log.descripcion}`
                           const plantillaCruda = t(clave)
                           const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
