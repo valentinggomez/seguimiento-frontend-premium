@@ -195,9 +195,10 @@ export default function PanelLogs() {
                             datos = {}
                           }
 
-                          const clave = `logs.descripciones.${log.accion}`
+                          const clave = `logs.descripciones.${log.accion?.trim()}`
+
                           const plantillaCruda = t(clave)
-                          const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
+                          const plantilla = typeof plantillaCruda === 'string' && !plantillaCruda.includes(clave) ? plantillaCruda : ''
 
                           const placeholders: Record<string, string> = {
                             '{{nombre}}': datos.nombre || '—',
@@ -209,8 +210,8 @@ export default function PanelLogs() {
                             '{{id}}': datos.id || '—'
                           }
 
-                          // Validar que la plantilla exista
-                          if (!plantilla || plantilla.includes(clave)) {
+                          if (!plantilla) {
+                            console.warn('🔍 Traducción no encontrada para:', clave)
                             return log.descripcion || '—'
                           }
 
