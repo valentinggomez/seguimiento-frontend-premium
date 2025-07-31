@@ -185,8 +185,8 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                        <td
-                          className={`px-4 py-2 text-slate-700 truncate max-w-xs ${
-                            log.descripcion?.includes(' ') ? 'text-red-600 font-semibold' : ''
+                          className={`px-4 py-2 truncate max-w-xs ${
+                            log.descripcion?.includes(' ') ? 'text-red-600 font-semibold' : 'text-slate-700'
                           }`}
                           title={log.descripcion}
                         >
@@ -195,20 +195,24 @@ export default function PanelLogs() {
 
                             try {
                               datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
-                            } catch {
+                            } catch (error) {
+                              console.error('❌ Error al parsear log.datos:', error)
                               datos = {}
                             }
 
                             const clave = `logs.descripciones.${log.descripcion}`
                             const plantillaTraducida = t(clave, datos)
 
-                            const esClaveValida = plantillaTraducida !== clave
+                            console.log('🧩 Log debug:')
+                            console.log('🔑 Clave de traducción:', clave)
+                            console.log('🌐 Idioma actual:', language)
+                            console.log('📦 Datos usados:', datos)
+                            console.log('📝 Resultado t():', plantillaTraducida)
 
-                            if (esClaveValida) {
+                            if (plantillaTraducida !== clave) {
                               return plantillaTraducida
                             }
 
-                            // Logs no traducibles (antiguos) → marcar con ⚠️
                             return `⚠️ ${log.descripcion || '—'}`
                           })()}
                         </td>
