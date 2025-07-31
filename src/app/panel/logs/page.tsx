@@ -198,7 +198,7 @@ export default function PanelLogs() {
                           const plantillaCruda = t(clave)
 
                           const esTraduccionValida = plantillaCruda && plantillaCruda !== clave
-                          if (!esTraduccionValida) return log.descripcion || '—'
+                          if (!esTraduccionValida) return log.descripcion || '—'  // ← Fallback real
 
                           const plantilla = plantillaCruda
 
