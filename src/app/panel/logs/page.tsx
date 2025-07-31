@@ -185,7 +185,8 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                        <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {(() => {
+                        {log.descripcion ||
+                        (() => {
                           let datos: Record<string, any> = {}
 
                           try {
@@ -194,10 +195,11 @@ export default function PanelLogs() {
                             datos = {}
                           }
 
-                          const plantillaCruda = t(`logs.descripciones.${log.accion}`)
+                          const clave = `logs.descripciones.${log.accion}`
+                          const plantillaCruda = t(clave)
                           const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
-                          const placeholders = {
+                          const placeholders: Record<string, string> = {
                             '{{nombre}}': datos.nombre || '—',
                             '{{nombre_paciente}}': datos.nombre_paciente || '—',
                             '{{telefono}}': datos.telefono || '—',
@@ -205,6 +207,11 @@ export default function PanelLogs() {
                             '{{nombre_usuario}}': datos.nombre_usuario || '—',
                             '{{entidad_id}}': datos.entidad_id || '—',
                             '{{id}}': datos.id || '—'
+                          }
+
+                          // Validar que la plantilla exista
+                          if (!plantilla || plantilla.includes(clave)) {
+                            return log.descripcion || '—'
                           }
 
                           return Object.entries(placeholders).reduce(
