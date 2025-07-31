@@ -185,8 +185,7 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                        <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {log.descripcion ||
-                        (() => {
+                        {(() => {
                           let datos: Record<string, any> = {}
 
                           try {
