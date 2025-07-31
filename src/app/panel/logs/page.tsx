@@ -183,27 +183,28 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                            {(() => {
-                                let datos: any = {}
+                        {(() => {
+                            let datos: any = {}
 
-                                try {
-                                datos = log.descripcion ? JSON.parse(log.descripcion) : {}
-                                } catch (error) {
-                                datos = {}
-                                }
+                            try {
+                            datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
+                            } catch (error) {
+                            datos = {}
+                            }
 
-                                const plantilla = t(`logs.descripciones.${log.accion}`)
+                            const plantilla = t(`logs.descripciones.${log.accion}`)
 
-                                if (!plantilla || typeof plantilla !== 'string') return log.accion
+                            if (!plantilla || typeof plantilla !== 'string') return log.accion
 
-                                return plantilla
-                                .replace('{{nombre}}', datos.nombre || '')
-                                .replace('{{nombre_paciente}}', datos.nombre_paciente || '')
-                                .replace('{{telefono}}', datos.telefono || '')
-                                .replace('{{email}}', datos.email || '')
-                                .replace('{{nombre_usuario}}', datos.nombre_usuario || '')
-                                .replace('{{entidad_id}}', datos.entidad_id || '')
-                            })()}
+                            return plantilla
+                            .replace('{{nombre}}', datos.nombre || '')
+                            .replace('{{nombre_paciente}}', datos.nombre_paciente || '')
+                            .replace('{{telefono}}', datos.telefono || '')
+                            .replace('{{email}}', datos.email || '')
+                            .replace('{{nombre_usuario}}', datos.nombre_usuario || '')
+                            .replace('{{entidad_id}}', datos.entidad_id || '')
+                            .replace('{{id}}', datos.id || '')
+                        })()}
                         </td>
                     </tr>
                     ))}
