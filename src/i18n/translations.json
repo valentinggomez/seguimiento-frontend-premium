@@ -144,6 +144,8 @@
         "entidad": "ENTITY",
         "descripcion": "DESCRIPTION"
       },
+      "ayuda_auditoria": "Each log shows an action performed by a user or the system, with its date, affected entity, and full traceability.",
+      "usuario_sistema": "Automated system",
       "paginacion": {
         "anterior": "Previous",
         "siguiente": "Next",
@@ -170,10 +172,6 @@
         "nota": "note",
         "log": "log"
       },
-      
-      "ayuda_auditoria": "Each log shows an action performed by a user or the system, with its date, affected entity, and full traceability.",
-      "usuario_sistema": "Automated system",
-
       "descripciones": {
         "registro_paciente": "User {{email}} registered patient {{nombre}}.",
         "registro_respuesta": "Initial response created for patient {{nombre}} (ID: {{id}}).",
