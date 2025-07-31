@@ -195,18 +195,12 @@ export default function PanelLogs() {
                           }
 
                           const clave = `logs.descripciones.${log.descripcion}`
-                          const plantillaCruda = t(clave)
-                          const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
+                          const plantillaTraducida = t(clave, datos)
 
-                          // Traducción dinámica si la clave existe
-                          if (plantilla && plantilla !== clave) {
-                            return plantilla.replace(/\{\{(.*?)\}\}/g, (_, variable) => {
-                              const valor = datos[variable.trim()]
-                              return valor !== undefined && valor !== null ? String(valor) : '—'
-                            })
+                          if (plantillaTraducida !== clave) {
+                            return plantillaTraducida
                           }
 
-                          // Fallback: muestra la clave si no hay traducción o deja la descripción
                           return log.descripcion || '—'
                         })()}
                       </td>

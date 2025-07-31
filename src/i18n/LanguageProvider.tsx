@@ -9,7 +9,7 @@ type Language = AvailableLanguages
 interface LanguageContextProps {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => string
+  t: (key: string, variables?: Record<string, string | number>) => string
 }
 
 const LanguageContext = createContext<LanguageContextProps>({
