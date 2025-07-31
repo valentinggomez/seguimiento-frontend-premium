@@ -74,8 +74,10 @@
         "nota": "nota",
         "log": "registro"
       },
+
       "ayuda_auditoria": "Cada log muestra una acción realizada por un usuario o por el sistema, con su fecha, entidad afectada y trazabilidad completa.",
       "usuario_sistema": "Sistema automático",
+
       "descripciones": {
         "registro_paciente": "El usuario {{email}} registró al paciente {{nombre}}.",
         "registro_respuesta": "Se creó la respuesta inicial para el paciente {{nombre}} (ID: {{id}}).",
@@ -85,7 +87,11 @@
         "paciente_eliminado": "El usuario {{email}} eliminó al paciente {{nombre}}.",
         "exportacion_logs": "Se exportaron los logs de auditoría a Google Sheets.",
         "login_usuario": "El usuario {{email}} inició sesión.",
-        "logout_usuario": "El usuario {{email}} cerró sesión."
+        "logout_usuario": "El usuario {{email}} cerró sesión.",
+        "nota_agregada": "El usuario {{nombre_usuario}} agregó una nota clínica.",
+        "interaccion_recibida": "El sistema recibió un nuevo mensaje del paciente {{nombre}} (Tel: {{telefono}}).",
+        "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre}} a nivel crítico.",
+        "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre}}."
         }
     }
   },
@@ -164,18 +170,24 @@
         "nota": "note",
         "log": "log"
       },
+      
       "ayuda_auditoria": "Each log shows an action performed by a user or the system, with its date, affected entity, and full traceability.",
       "usuario_sistema": "Automated system",
+
       "descripciones": {
         "registro_paciente": "User {{email}} registered patient {{nombre}}.",
         "registro_respuesta": "Initial response created for patient {{nombre}} (ID: {{id}}).",
-        "envio_whatsapp": "Follow-up link was sent via WhatsApp to patient {{nombre}}.",
-        "respuesta_guardada": "Postoperative response saved for patient {{nombre}}.",
-        "paciente_editado": "User {{email}} edited patient {{nombre}}.",
+        "envio_whatsapp": "Follow-up link sent via WhatsApp to patient {{nombre}}.",
+        "respuesta_guardada": "A postoperative response was saved for patient {{nombre}}.",
+        "paciente_editado": "User {{email}} edited the patient {{nombre}}.",
         "paciente_eliminado": "User {{email}} deleted patient {{nombre}}.",
         "exportacion_logs": "Audit logs exported to Google Sheets.",
         "login_usuario": "User {{email}} logged in.",
-        "logout_usuario": "User {{email}} logged out."
+        "logout_usuario": "User {{email}} logged out.",
+        "nota_agregada": "User {{nombre_usuario}} added a clinical note.",
+        "interaccion_recibida": "System received a new message from patient {{nombre}} (Tel: {{telefono}}).",
+        "alerta_escala_manual": "Doctor manually escalated alert of patient {{nombre}} to critical level.",
+        "analisis_ia_guardado": "AI analysis was saved for patient {{nombre}}."
       }
     }
   }

@@ -169,42 +169,42 @@ export default function PanelLogs() {
                     {logsPaginados.map((log, i) => (
                     <tr key={log.id} className={`hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                         <td className="px-4 py-2 text-slate-800 font-mono text-[13px]">
-                        {formatFechaLocal(log.fecha)}
+                            {formatFechaLocal(log.fecha)}
                         </td>
                         <td className="px-4 py-2 text-slate-700">
-                          {log.usuario_email === 'sistema' || !log.usuario_email
+                            {log.usuario_email === 'sistema' || !log.usuario_email
                             ? t('logs.usuario_sistema')
                             : log.usuario_email}
-                         </td>
-                        <td className="px-4 py-2">{t(`logs.acciones.${log.accion}`)}</td>
+                        </td>
                         <td className="px-4 py-2">
-                          {log.entidad && t(`logs.entidades.${log.entidad}`) !== `logs.entidades.${log.entidad}`
+                            {t(`logs.acciones.${log.accion}`)}
+                        </td>
+                        <td className="px-4 py-2">
+                            {log.entidad && t(`logs.entidades.${log.entidad}`) !== `logs.entidades.${log.entidad}`
                             ? t(`logs.entidades.${log.entidad}`)
                             : log.entidad || '-'}
                         </td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {(() => {
-                            let datos: any = {}
+                            {(() => {
+                            let datos: Record<string, any> = {}
 
                             try {
-                            datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
+                                datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
                             } catch (error) {
-                            datos = {}
+                                datos = {}
                             }
 
-                            const plantilla = t(`logs.descripciones.${log.accion}`)
+                            let plantilla = t(`logs.descripciones.${log.accion}`)
 
                             if (!plantilla || typeof plantilla !== 'string') return log.accion
 
+                            // Reemplazo dinámico de todas las variables {{...}}
+                            Object.entries(datos).forEach(([clave, valor]) => {
+                                plantilla = plantilla.replaceAll(`{{${clave}}}`, valor ?? '')
+                            })
+
                             return plantilla
-                            .replace('{{nombre}}', datos.nombre || '')
-                            .replace('{{nombre_paciente}}', datos.nombre_paciente || '')
-                            .replace('{{telefono}}', datos.telefono || '')
-                            .replace('{{email}}', datos.email || '')
-                            .replace('{{nombre_usuario}}', datos.nombre_usuario || '')
-                            .replace('{{entidad_id}}', datos.entidad_id || '')
-                            .replace('{{id}}', datos.id || '')
-                        })()}
+                            })()}
                         </td>
                     </tr>
                     ))}
