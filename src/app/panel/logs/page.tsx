@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import { formatearAccionLog } from '@/lib/formatearAccionLog'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
+  const t = useTranslations()
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
@@ -66,11 +68,11 @@ export default function PanelLogs() {
   return (
     <div className="p-6">
       <h1 className="text-center text-3xl font-bold tracking-tight text-[#003466] mb-2">
-        🩺 Auditoría Clínica
-        </h1>
-        <p className="text-center text-slate-600 mb-6">
-        Logs de trazabilidad legal y operativa del sistema.
-        </p>
+  🩺 {t('logs.titulo')}
+    </h1>
+    <p className="text-center text-slate-600 mb-6">
+    {t('logs.subtitulo')}
+    </p>
 
       {/* Buscador */}
       <div className="mb-6 flex max-w-xl mx-auto gap-2">
@@ -78,7 +80,7 @@ export default function PanelLogs() {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
             <Input
             type="text"
-            placeholder="Buscar por email, acción o descripción..."
+            placeholder={t('logs.buscar')}
             value={busqueda}
             onChange={(e) => {
                 setBusqueda(e.target.value)
@@ -92,7 +94,9 @@ export default function PanelLogs() {
       <div className="mb-6 flex flex-wrap justify-center gap-6 items-end">
         {/* Filtro por acción */}
         <div className="flex flex-col">
-            <label className="text-sm text-slate-700 font-medium mb-1">Filtrar por acción:</label>
+            <label className="text-sm text-slate-700 font-medium mb-1">
+              {t('logs.filtroAccion')}
+            </label>
             <select
             value={accionSeleccionada}
             onChange={(e) => {
@@ -101,19 +105,21 @@ export default function PanelLogs() {
             }}
             className="rounded-xl border border-slate-300 px-3 py-1 text-sm shadow-sm text-slate-700"
             >
-            <option value="">Todas</option>
-            <option value="registro_paciente">Registro de paciente</option>
-            <option value="edicion_paciente">Edición de paciente</option>
-            <option value="eliminacion_paciente">Eliminación de paciente</option>
-            <option value="registro_respuesta">Registro de respuesta</option>
-            <option value="envio_whatsapp">Envío por WhatsApp</option>
-            <option value="respuesta_guardada">Respuesta guardada</option>
+            <option value="">{t('logs.todas')}</option>
+            <option value="registro_paciente">{t('logs.acciones.registro_paciente')}</option>
+            <option value="edicion_paciente">{t('logs.acciones.paciente_editado')}</option>
+            <option value="eliminacion_paciente">{t('logs.acciones.paciente_eliminado')}</option>
+            <option value="registro_respuesta">{t('logs.acciones.registro_respuesta')}</option>
+            <option value="envio_whatsapp">{t('logs.acciones.envio_whatsapp')}</option>
+            <option value="respuesta_guardada">{t('logs.acciones.respuesta_guardada')}</option>
             </select>
         </div>
 
         {/* Filtro por fecha desde */}
         <div className="flex flex-col">
-            <label className="block text-sm text-slate-600 mb-1">Desde:</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('logs.desde')}
+            </label>
             <Input
             type="date"
             value={fechaDesde}
@@ -127,7 +133,9 @@ export default function PanelLogs() {
 
         {/* Filtro por fecha hasta */}
         <div className="flex flex-col">
-            <label className="block text-sm text-slate-600 mb-1">Hasta:</label>
+            <label className="block text-sm text-slate-600 mb-1">
+              {t('logs.hasta')}
+            </label>
             <Input
             type="date"
             value={fechaHasta}
@@ -150,11 +158,11 @@ export default function PanelLogs() {
             <table className="min-w-full rounded-2xl overflow-hidden text-sm bg-white shadow-md border border-slate-200">
                 <thead className="bg-slate-100 text-[#003466] font-semibold text-sm uppercase tracking-wide">
                     <tr className="border-b">
-                    <th className="px-4 py-2 border">Fecha</th>
-                    <th className="px-4 py-2 border">Usuario</th>
-                    <th className="px-4 py-2 border">Acción</th>
-                    <th className="px-4 py-2 border">Entidad</th>
-                    <th className="px-4 py-2 border">Descripción</th>
+                    <th className="px-4 py-2 border">{t('logs.columnas.fecha')}</th>
+                    <th className="px-4 py-2 border">{t('logs.columnas.usuario')}</th>
+                    <th className="px-4 py-2 border">{t('logs.columnas.accion')}</th>
+                    <th className="px-4 py-2 border">{t('logs.columnas.entidad')}</th>
+                    <th className="px-4 py-2 border">{t('logs.columnas.descripcion')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -182,17 +190,19 @@ export default function PanelLogs() {
                 onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
                 disabled={paginaActual === 1}
             >
-                ◀ Anterior
+                ◀ {t('logs.paginacion.anterior')}
             </Button>
-            <span className="font-medium">
-                Página {paginaActual} de {totalPaginas}
-            </span>
+
+                <span className="font-medium">
+                {t('logs.paginacion.pagina', { current: paginaActual, total: totalPaginas })}
+                </span>
+
             <Button
                 variant="ghost"
                 onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
                 disabled={paginaActual === totalPaginas}
             >
-                Siguiente ▶
+                {t('logs.paginacion.siguiente')} ▶
             </Button>
           </div>
         </>

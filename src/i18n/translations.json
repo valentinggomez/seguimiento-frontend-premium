@@ -30,6 +30,45 @@
       "fecha": "Fecha de registro",
       "medico": "Médico responsable",
       "firma": "Firma digital y trazabilidad"
+    },
+    "logs": {
+      "titulo": "Auditoría Clínica",
+      "subtitulo": "Logs de trazabilidad legal y operativa del sistema.",
+      "buscar": "Buscar por email, acción o descripción...",
+      "filtroAccion": "Filtrar por acción:",
+      "todas": "Todas",
+      "desde": "Desde",
+      "hasta": "Hasta",
+      "columnas": {
+        "fecha": "FECHA",
+        "usuario": "USUARIO",
+        "accion": "ACCIÓN",
+        "entidad": "ENTIDAD",
+        "descripcion": "DESCRIPCIÓN"
+      },
+      "paginacion": {
+        "anterior": "Anterior",
+        "siguiente": "Siguiente",
+        "pagina": "Página {{current}} de {{total}}"
+      },
+      "acciones": {
+        "registro_paciente": "Registro de paciente",
+        "registro_respuesta": "Registro de respuesta",
+        "envio_whatsapp": "Envío por WhatsApp",
+        "respuesta_guardada": "Respuesta guardada",
+        "paciente_editado": "Edición de paciente",
+        "paciente_eliminado": "Eliminación de paciente",
+        "exportacion_logs": "Exportación de logs",
+        "login_usuario": "Inicio de sesión",
+        "logout_usuario": "Cierre de sesión"
+      },
+      "entidades": {
+        "paciente": "paciente",
+        "respuesta": "respuesta",
+        "sistema": "sistema",
+        "clinica": "clínica",
+        "usuario": "usuario"
+      }
     }
   },
   "en": {
@@ -63,6 +102,45 @@
       "fecha": "Registration Date",
       "medico": "Responsible Doctor",
       "firma": "Digital Signature & Traceability"
+    },
+    "logs": {
+      "titulo": "Clinical Audit",
+      "subtitulo": "Legal and operational traceability logs of the system.",
+      "buscar": "Search by email, action or description...",
+      "filtroAccion": "Filter by action:",
+      "todas": "All",
+      "desde": "From",
+      "hasta": "To",
+      "columnas": {
+        "fecha": "DATE",
+        "usuario": "USER",
+        "accion": "ACTION",
+        "entidad": "ENTITY",
+        "descripcion": "DESCRIPTION"
+      },
+      "paginacion": {
+        "anterior": "Previous",
+        "siguiente": "Next",
+        "pagina": "Page {{current}} of {{total}}"
+      },
+      "acciones": {
+        "registro_paciente": "Patient registration",
+        "registro_respuesta": "Response registration",
+        "envio_whatsapp": "Sent via WhatsApp",
+        "respuesta_guardada": "Response saved",
+        "paciente_editado": "Patient edited",
+        "paciente_eliminado": "Patient deleted",
+        "exportacion_logs": "Logs exported",
+        "login_usuario": "User login",
+        "logout_usuario": "User logout"
+      },
+      "entidades": {
+        "paciente": "patient",
+        "respuesta": "response",
+        "sistema": "system",
+        "clinica": "clinic",
+        "usuario": "user"
+      }
     }
   }
 }
