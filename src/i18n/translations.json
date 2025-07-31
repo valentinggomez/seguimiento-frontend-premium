@@ -79,19 +79,19 @@
       "usuario_sistema": "Sistema automático",
 
       "descripciones": {
-        "registro_paciente": "El usuario {{email}} registró al paciente {{nombre}}.",
-        "registro_respuesta": "Se creó la respuesta inicial para el paciente {{nombre}} (ID: {{id}}).",
-        "envio_whatsapp": "Se envió el link de seguimiento automático por WhatsApp al paciente {{nombre}}.",
-        "respuesta_guardada": "Se guardó una respuesta postoperatoria para el paciente {{nombre}}.",
-        "paciente_editado": "El usuario {{email}} editó los datos del paciente {{nombre}}.",
-        "paciente_eliminado": "El usuario {{email}} eliminó al paciente {{nombre}}.",
+        "registro_paciente": "El usuario {{email}} registró al paciente {{nombre_paciente}}.",
+        "registro_respuesta": "Se creó la respuesta inicial para el paciente {{nombre_paciente}} (ID: {{id}}).",
+        "envio_whatsapp": "Se envió el link de seguimiento automático por WhatsApp al paciente {{nombre_paciente}}.",
+        "respuesta_guardada": "Se guardó una respuesta postoperatoria para el paciente {{nombre_paciente}}.",
+        "paciente_editado": "El usuario {{email}} editó los datos del paciente {{nombre_paciente}}.",
+        "paciente_eliminado": "El usuario {{email}} eliminó al paciente {{nombre_paciente}}.",
         "exportacion_logs": "Se exportaron los logs de auditoría a Google Sheets.",
         "login_usuario": "El usuario {{email}} inició sesión.",
         "logout_usuario": "El usuario {{email}} cerró sesión.",
         "nota_agregada": "El usuario {{nombre_usuario}} agregó una nota clínica.",
-        "interaccion_recibida": "El sistema recibió un nuevo mensaje del paciente {{nombre}} (Tel: {{telefono}}).",
-        "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre}} a nivel crítico.",
-        "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre}}."
+        "interaccion_recibida": "El sistema recibió un nuevo mensaje del paciente {{nombre_paciente}} (Tel: {{telefono}}).",
+        "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre_paciente}} a nivel crítico.",
+        "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre_paciente}}."
         }
     }
   },
@@ -173,19 +173,19 @@
         "log": "log"
       },
       "descripciones": {
-        "registro_paciente": "User {{email}} registered patient {{nombre}}.",
+        "registro_paciente": "User {{email}} registered patient {{nombre_paciente}}.",
         "registro_respuesta": "Initial response created for patient {{nombre}} (ID: {{id}}).",
-        "envio_whatsapp": "Follow-up link sent via WhatsApp to patient {{nombre}}.",
-        "respuesta_guardada": "A postoperative response was saved for patient {{nombre}}.",
-        "paciente_editado": "User {{email}} edited the patient {{nombre}}.",
-        "paciente_eliminado": "User {{email}} deleted patient {{nombre}}.",
+        "envio_whatsapp": "Follow-up link sent via WhatsApp to patient {{nombre_paciente}}.",
+        "respuesta_guardada": "A postoperative response was saved for patient {{nombre_paciente}}.",
+        "paciente_editado": "User {{email}} edited the patient {{nombre_paciente}}.",
+        "paciente_eliminado": "User {{email}} deleted patient {{nombre_paciente}}.",
         "exportacion_logs": "Audit logs exported to Google Sheets.",
         "login_usuario": "User {{email}} logged in.",
         "logout_usuario": "User {{email}} logged out.",
         "nota_agregada": "User {{nombre_usuario}} added a clinical note.",
-        "interaccion_recibida": "System received a new message from patient {{nombre}} (Tel: {{telefono}}).",
-        "alerta_escala_manual": "Doctor manually escalated alert of patient {{nombre}} to critical level.",
-        "analisis_ia_guardado": "AI analysis was saved for patient {{nombre}}."
+        "interaccion_recibida": "System received a new message from patient {{nombre_paciente}} (Tel: {{telefono}}).",
+        "alerta_escala_manual": "Doctor manually escalated alert of patient {{nombre_paciente}} to critical level.",
+        "analisis_ia_guardado": "AI analysis was saved for patient {{nombre_paciente}}."
       }
     }
   }
