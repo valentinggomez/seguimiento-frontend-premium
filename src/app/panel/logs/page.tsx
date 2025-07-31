@@ -171,11 +171,19 @@ export default function PanelLogs() {
                         <td className="px-4 py-2 text-slate-800 font-mono text-[13px]">
                         {formatFechaLocal(log.fecha)}
                         </td>
-                        <td className="px-4 py-2 text-slate-700">{log.usuario_email}</td>
+                        <td className="px-4 py-2 text-slate-700">
+                        {log.usuario_email || t('logs.usuario_sistema')}
+                        </td>
                         <td className="px-4 py-2">{t(`logs.acciones.${log.accion}`)}</td>
-                        <td className="px-4 py-2">{t(`logs.entidades.${log.entidad}`)}</td>
+                        <td className="px-4 py-2">
+                          {log.entidad && t(`logs.entidades.${log.entidad}`) !== `logs.entidades.${log.entidad}`
+                            ? t(`logs.entidades.${log.entidad}`)
+                            : log.entidad || '-'}
+                        </td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {log.descripcion}
+                          {t(`logs.descripciones.${log.descripcion}`) !== `logs.descripciones.${log.descripcion}`
+                            ? t(`logs.descripciones.${log.descripcion}`)
+                            : log.descripcion}
                         </td>
                     </tr>
                     ))}
