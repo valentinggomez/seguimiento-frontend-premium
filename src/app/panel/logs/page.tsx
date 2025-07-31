@@ -172,8 +172,8 @@ export default function PanelLogs() {
                         {formatFechaLocal(log.fecha)}
                         </td>
                         <td className="px-4 py-2 text-slate-700">{log.usuario_email}</td>
-                        <td className="px-4 py-2">{formatearAccionLog(log.accion)}</td>
-                        <td className="px-4 py-2 text-slate-700">{log.entidad}</td>
+                        <td className="px-4 py-2">{t(`logs.acciones.${log.accion}`)}</td>
+                        <td className="px-4 py-2">{t(`logs.entidades.${log.entidad}`)}</td>
                         <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
                         {log.descripcion}
                         </td>
@@ -194,7 +194,11 @@ export default function PanelLogs() {
             </Button>
 
                 <span className="font-medium">
-                  {t('logs.paginacion.pagina')}: {paginaActual} / {totalPaginas}
+                  <span className="font-medium">
+                    {t('logs.paginacion.pagina')
+                        .replace('{{current}}', paginaActual.toString())
+                        .replace('{{total}}', totalPaginas.toString())}
+                    </span>
                 </span>
 
             <Button
