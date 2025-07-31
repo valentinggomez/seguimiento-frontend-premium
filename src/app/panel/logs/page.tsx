@@ -185,34 +185,33 @@ export default function PanelLogs() {
                             : log.entidad || '-'}
                         </td>
                        <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
-                        {log.descripcion ||
-                          (() => {
-                            let datos: Record<string, any> = {}
+                        {(() => {
+                          let datos: Record<string, any> = {}
 
-                            try {
-                              datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
-                            } catch (error) {
-                              datos = {}
-                            }
+                          try {
+                            datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
+                          } catch (error) {
+                            datos = {}
+                          }
 
-                            const plantillaCruda = t(`logs.descripciones.${log.accion}`)
-                            const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
+                          const plantillaCruda = t(`logs.descripciones.${log.accion}`)
+                          const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
-                            const placeholders = {
-                              '{{nombre}}': datos.nombre || '—',
-                              '{{nombre_paciente}}': datos.nombre_paciente || '—',
-                              '{{telefono}}': datos.telefono || '—',
-                              '{{email}}': datos.email || '—',
-                              '{{nombre_usuario}}': datos.nombre_usuario || '—',
-                              '{{entidad_id}}': datos.entidad_id || '—',
-                              '{{id}}': datos.id || '—'
-                            }
+                          const placeholders = {
+                            '{{nombre}}': datos.nombre || '—',
+                            '{{nombre_paciente}}': datos.nombre_paciente || '—',
+                            '{{telefono}}': datos.telefono || '—',
+                            '{{email}}': datos.email || '—',
+                            '{{nombre_usuario}}': datos.nombre_usuario || '—',
+                            '{{entidad_id}}': datos.entidad_id || '—',
+                            '{{id}}': datos.id || '—'
+                          }
 
-                            return Object.entries(placeholders).reduce(
-                              (acc, [clave, valor]) => acc.replaceAll(clave, valor),
-                              plantilla
-                            )
-                          })()}
+                          return Object.entries(placeholders).reduce(
+                            (acc, [clave, valor]) => acc.replaceAll(clave, valor),
+                            plantilla
+                          )
+                        })()}
                       </td>
                     </tr>
                     ))}
