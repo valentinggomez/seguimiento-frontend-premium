@@ -33,21 +33,30 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
     localStorage.setItem('lang', lang)
   }
 
-  const t = (key: string): string => {
+  const t = (key: string, variables?: Record<string, string | number>): string => {
     const parts = key.split('.')
-    const root = translations[language] ?? translations['es'] // fallback seguro
+    const root = translations[language] ?? translations['es']
     let value: any = root
 
     for (const part of parts) {
-      if (value && typeof value === 'object' && part in value) {
+        if (value && typeof value === 'object' && part in value) {
         value = value[part]
-      } else {
+        } else {
         return key
-      }
+        }
     }
 
-    return typeof value === 'string' ? value : key
-  }
+    if (typeof value !== 'string') return key
+
+    // Reemplazo de variables tipo {{nombre}}, {{edad}}, etc.
+    if (variables) {
+        return value.replace(/\{\{(.*?)\}\}/g, (_, varName) =>
+        variables[varName.trim()]?.toString() ?? ''
+        )
+    }
+
+    return value
+    }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage: changeLanguage, t }}>
