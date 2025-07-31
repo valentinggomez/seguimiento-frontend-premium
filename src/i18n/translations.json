@@ -39,6 +39,8 @@
       "todas": "Todas",
       "desde": "Desde",
       "hasta": "Hasta",
+      "cargando": "Cargando logs...",
+      "no_registros": "No hay registros de auditoría aún.",
       "columnas": {
         "fecha": "FECHA",
         "usuario": "USUARIO",
@@ -111,6 +113,8 @@
       "todas": "All",
       "desde": "From",
       "hasta": "To",
+      "cargando": "Loading logs...",
+      "no_registros": "No audit records yet.",
       "columnas": {
         "fecha": "DATE",
         "usuario": "USER",

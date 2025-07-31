@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { toast } from 'sonner'
-import { useTranslations } from 'next-intl'
+import { useTranslation } from '@/i18n/useTranslation'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,7 @@ import { formatearAccionLog } from '@/lib/formatearAccionLog'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
-  const t = useTranslations()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
@@ -149,9 +149,9 @@ export default function PanelLogs() {
         </div>
 
       {loading ? (
-        <p className="text-center text-gray-500">Cargando logs...</p>
+        <p className="text-center text-gray-500">{t('logs.cargando')}</p>
       ) : logs.length === 0 ? (
-        <p className="text-center text-gray-500">No hay registros de auditoría aún.</p>
+        <p className="text-center text-gray-500">{t('logs.no_registros')}</p>
       ) : (
         <>
           <div className="overflow-x-auto">
@@ -194,7 +194,7 @@ export default function PanelLogs() {
             </Button>
 
                 <span className="font-medium">
-                {t('logs.paginacion.pagina', { current: paginaActual, total: totalPaginas })}
+                  {t('logs.paginacion.pagina')}: {paginaActual} / {totalPaginas}
                 </span>
 
             <Button
