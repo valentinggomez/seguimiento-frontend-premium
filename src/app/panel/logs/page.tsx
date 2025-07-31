@@ -12,7 +12,7 @@ import { formatearAccionLog } from '@/lib/formatearAccionLog'
 
 export default function PanelLogs() {
   const [logs, setLogs] = useState<any[]>([])
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const [paginaActual, setPaginaActual] = useState(1)
@@ -191,11 +191,18 @@ export default function PanelLogs() {
                           try {
                             datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
                           } catch (error) {
+                            console.error('❌ Error al parsear log.datos:', error)
                             datos = {}
                           }
 
                           const clave = `logs.descripciones.${log.descripcion}`
                           const plantillaTraducida = t(clave, datos)
+
+                          console.log('🧩 Log debug:')
+                          console.log('🔑 Clave de traducción:', clave)
+                          console.log('🌐 Idioma actual:', language)
+                          console.log('📦 Datos usados:', datos)
+                          console.log('📝 Resultado t():', plantillaTraducida)
 
                           if (plantillaTraducida !== clave) {
                             return plantillaTraducida
