@@ -82,7 +82,7 @@
         "registro_paciente": "El usuario {{email}} registró al paciente {{nombre_paciente}}.",
         "registro_respuesta": "Se creó la respuesta inicial para el paciente {{nombre_paciente}} (ID: {{id}}).",
         "envio_whatsapp": "Se envió el link de seguimiento automático por WhatsApp al paciente {{nombre_paciente}}.",
-        "respuesta_guardada": "Se guardó una respuesta postoperatoria para el paciente {{nombre_paciente}}.",
+        "respuesta_guardada": "⚠️ Se guardó una respuesta postoperatoria para el paciente {{nombre_paciente}}",
         "paciente_editado": "El usuario {{email}} editó los datos del paciente {{nombre_paciente}}.",
         "paciente_eliminado": "El usuario {{email}} eliminó al paciente {{nombre_paciente}}.",
         "exportacion_logs": "Se exportaron los logs de auditoría a Google Sheets.",
@@ -91,7 +91,8 @@
         "nota_agregada": "El usuario {{nombre_usuario}} agregó una nota clínica.",
         "interaccion_recibida": "El sistema recibió un nuevo mensaje del paciente {{nombre_paciente}} (Tel: {{telefono}}).",
         "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre_paciente}} a nivel crítico.",
-        "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre_paciente}}."
+        "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre_paciente}}.",
+        "eliminacion_respuestas": "⚠️ Se eliminaron {{cantidad}} respuestas"
         }
     }
   },
@@ -176,7 +177,7 @@
         "registro_paciente": "User {{email}} registered patient {{nombre_paciente}}.",
         "registro_respuesta": "Initial response created for patient {{nombre}} (ID: {{id}}).",
         "envio_whatsapp": "Follow-up link sent via WhatsApp to patient {{nombre_paciente}}.",
-        "respuesta_guardada": "A postoperative response was saved for patient {{nombre_paciente}}.",
+        "respuesta_guardada": "⚠️ A postoperative response was saved for patient {{nombre_paciente}}",
         "paciente_editado": "User {{email}} edited the patient {{nombre_paciente}}.",
         "paciente_eliminado": "User {{email}} deleted patient {{nombre_paciente}}.",
         "exportacion_logs": "Audit logs exported to Google Sheets.",
@@ -185,7 +186,8 @@
         "nota_agregada": "User {{nombre_usuario}} added a clinical note.",
         "interaccion_recibida": "System received a new message from patient {{nombre_paciente}} (Tel: {{telefono}}).",
         "alerta_escala_manual": "Doctor manually escalated alert of patient {{nombre_paciente}} to critical level.",
-        "analisis_ia_guardado": "AI analysis was saved for patient {{nombre_paciente}}."
+        "analisis_ia_guardado": "AI analysis was saved for patient {{nombre_paciente}}.",
+        "eliminacion_respuestas": "⚠️ {{nombre_usuario}} deleted {{cantidad}} responses"
       }
     }
   }
