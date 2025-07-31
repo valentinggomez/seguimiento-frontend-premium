@@ -184,33 +184,24 @@ export default function PanelLogs() {
                             ? t(`logs.entidades.${log.entidad}`)
                             : log.entidad || '-'}
                         </td>
-                        <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
+                       <td className="px-4 py-2 text-slate-700 truncate max-w-xs" title={log.descripcion}>
                         {(() => {
                           let datos: Record<string, any> = {}
 
                           try {
                             datos = typeof log.datos === 'string' ? JSON.parse(log.datos) : log.datos || {}
-                          } catch (error) {
+                          } catch {
                             datos = {}
                           }
 
                           const plantillaCruda = t(`logs.descripciones.${log.accion}`)
                           const plantilla = typeof plantillaCruda === 'string' ? plantillaCruda : ''
 
-                          const placeholders = {
-                            '{{nombre}}': datos.nombre || '—',
-                            '{{nombre_paciente}}': datos.nombre_paciente || '—',
-                            '{{telefono}}': datos.telefono || '—',
-                            '{{email}}': datos.email || '—',
-                            '{{nombre_usuario}}': datos.nombre_usuario || '—',
-                            '{{entidad_id}}': datos.entidad_id || '—',
-                            '{{id}}': datos.id || '—'
-                          }
-
-                          return Object.entries(placeholders).reduce(
-                            (acc, [clave, valor]) => acc.replaceAll(clave, valor),
-                            plantilla
-                          )
+                          // Reemplaza todos los {{clave}} que existan en la plantilla, dinámicamente
+                          return plantilla.replace(/{{(.*?)}}/g, (_, clave) => {
+                            const valor = datos[clave]
+                            return valor !== undefined && valor !== null ? valor.toString() : '—'
+                          })
                         })()}
                       </td>
                     </tr>
