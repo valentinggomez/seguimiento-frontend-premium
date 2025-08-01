@@ -61,7 +61,7 @@ export default function InteraccionesPage() {
   const prevMensajesRef = useRef<string[]>([])
   const { reproducir, desbloquear } = useSonidoNotificacion()
   const { t } = useTranslation()
-  
+
   // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
   useEffect(() => {
     document.addEventListener('click', desbloquear)
@@ -244,47 +244,47 @@ export default function InteraccionesPage() {
             className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900
                       data-[state=active]:font-semibold text-sm text-gray-600 px-5 py-1.5 rounded-lg transition-all"
           >
-            🟢 Activas
+            {t('interacciones.tab_activas')}
           </TabsTrigger>
           <TabsTrigger
             value="archivadas"
             className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900
                       data-[state=active]:font-semibold text-sm text-gray-600 px-5 py-1.5 rounded-lg transition-all"
           >
-            🗃 Archivadas
+            {t('interacciones.tab_archivadas')}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activas" className="space-y-4">
-          {activas.length === 0 ? (
-            <p className="text-muted-foreground">No hay mensajes activos.</p>
-          ) : (
-            Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
-              const alertaGlobal = getAlertaGlobal(mensajes)
-              const { nombre, fecha } = mensajes[mensajes.length - 1]
-              
-              return (
-                <TarjetaInteraccionSupreme
-                  key={index}
-                  nombre={nombre}
-                  telefono={telefono}
-                  alerta={alertaGlobal}
-                  fecha={new Date(fecha).toLocaleString()}
-                  mensajes={mensajes}
-                  paciente_id={mensajes[0].paciente_id}
-                  onArchivar={async () => {
-                    await fetch(
-                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
-                      {
-                        method: 'PATCH',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ archivado: true }),
-                      }
-                    )
-                    setActivas((prev) =>
-                      prev.filter((i) => i.telefono !== telefono)
-                    )
-                  }}
+       <TabsContent value="activas" className="space-y-4">
+        {activas.length === 0 ? (
+          <p className="text-muted-foreground">{t('interacciones.sin_mensajes_activos')}</p>
+        ) : (
+          Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
+            const alertaGlobal = getAlertaGlobal(mensajes)
+            const { nombre, fecha } = mensajes[mensajes.length - 1]
+            
+            return (
+              <TarjetaInteraccionSupreme
+                key={index}
+                nombre={nombre}
+                telefono={telefono}
+                alerta={alertaGlobal}
+                fecha={new Date(fecha).toLocaleString()}
+                mensajes={mensajes}
+                paciente_id={mensajes[0].paciente_id}
+                onArchivar={async () => {
+                  await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
+                    {
+                      method: 'PATCH',
+                      headers: getAuthHeaders(),
+                      body: JSON.stringify({ archivado: true }),
+                    }
+                  )
+                  setActivas((prev) =>
+                    prev.filter((i) => i.telefono !== telefono)
+                  )
+                }}
                   onEscalarAlerta={async (color: 'rojo' | 'amarillo' | 'verde') => {
                     console.log(`🟠 Intentando escalar alerta a: ${color}`)
 
@@ -298,7 +298,7 @@ export default function InteraccionesPage() {
                     console.log('📬 Respuesta del backend:', res.status, data)
 
                     if (res.ok) {
-                      toast.success(`✅ Alerta escalada a ${color.toUpperCase()}`)
+                      toast.success(t('interacciones.alerta_escalada_ok').replace('{{color}}', color.toUpperCase()))
                       setActivas((prev) =>
                         prev.map((i) =>
                           i.paciente_id === mensajes[0].paciente_id
@@ -307,11 +307,12 @@ export default function InteraccionesPage() {
                         )
                       )
                     } else {
-                      alert('❌ Error al escalar alerta')
+                      alert(t('interacciones.alerta_escalada_error'))
                     }
                   }}
+
                   onReenviarFormulario={async () => {
-                    const toastId = toast.loading('⏳ Reenviando formulario...')
+                    const toastId = toast.loading(t('interacciones.reenviando_formulario'))
 
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                       method: 'POST',
@@ -325,10 +326,10 @@ export default function InteraccionesPage() {
                     toast.dismiss(toastId)
 
                     if (res.ok) {
-                      toast.success('📤 Formulario reenviado por WhatsApp')
+                      toast.success(t('interacciones.formulario_reenviado'))
                       await fetchInteracciones()
                     } else {
-                      toast.error('❌ Error al reenviar el formulario')
+                      toast.error(t('interacciones.formulario_error'))
                     }
                   }}
                 />
@@ -358,10 +359,10 @@ export default function InteraccionesPage() {
                 toast.dismiss(toastId)
 
                 if (res.ok) {
-                  toast.success('📤 Formulario reenviado por WhatsApp')
+                  toast.success(t('interacciones.formulario_reenviado'))
                   await fetchInteracciones()
                 } else {
-                  toast.error('❌ Error al reenviar el formulario')
+                  toast.error(t('interacciones.formulario_error'))
                 }
               }}
             />
@@ -370,7 +371,7 @@ export default function InteraccionesPage() {
 
         <TabsContent value="archivadas" className="space-y-4">
           {archivadas.length === 0 ? (
-            <p className="text-muted-foreground">No hay interacciones archivadas.</p>
+            <p className="text-muted-foreground">{t('interacciones.no_archivadas')}</p>
           ) : (
             Object.entries(agruparPorTelefono(archivadas)).map(([telefono, mensajes], index) => {
               const alertaGlobal = getAlertaGlobal(mensajes)
