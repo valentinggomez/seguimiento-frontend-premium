@@ -148,7 +148,7 @@
     },
     "pacientes": {
       "nombre": "Full Name",
-      "dni": "ID Number",
+      "dni": "National ID",
       "telefono": "Phone Number",
       "edad": "Age",
         "errores": {
