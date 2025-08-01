@@ -31,11 +31,14 @@
       "medico": "Médico responsable",
       "firma": "Firma digital y trazabilidad"
     },
-    "paciente": {
+    "pacientes": {
       "nombre": "Nombre completo",
       "dni": "DNI",
       "telefono": "Teléfono",
       "edad": "Edad",
+        "errores": {
+          "edad_maxima": "La edad no puede ser mayor a 130 años."
+        },
       "sexo": "Sexo",
       "peso": "Peso (kg)",
       "altura": "Altura (m)",
@@ -148,6 +151,9 @@
       "dni": "ID Number",
       "telefono": "Phone Number",
       "edad": "Age",
+        "errores": {
+          "edad_maxima": "Age cannot be greater than 130."
+        },
       "sexo": "Gender",
       "peso": "Weight (kg)",
       "altura": "Height (m)",

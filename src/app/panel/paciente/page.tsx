@@ -141,30 +141,30 @@ export default function RegistroPaciente() {
 
             {/* EDAD */}
             <div className="relative">
-                <input
+              <input
                 type="number"
                 name="edad"
                 required
                 value={form.edad || ''}
                 onChange={(e) => {
-                    const edad = parseInt(e.target.value)
-                    setForm({ ...form, edad: e.target.value })
-                    setErrores((prev) => ({
+                  const edad = parseInt(e.target.value)
+                  setForm({ ...form, edad: e.target.value })
+                  setErrores((prev) => ({
                     ...prev,
-                    edad: edad > 130 ? 'La edad no puede ser mayor a 130 años.' : ''
-                    }))
+                    edad: edad > 130 ? t('pacientes.errores.edad_maxima') : ''
+                  }))
                 }}
                 placeholder=" "
                 autoComplete="off"
                 className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all ${
-                    errores.edad ? 'border-red-500' : 'border-gray-300'
+                  errores.edad ? 'border-red-500' : 'border-gray-300'
                 }`}
-                />
-                {errores.edad && (
-                  <p className="text-red-600 text-sm mt-1">{errores.edad}</p>
-                )}
+              />
+              {errores.edad && (
+                <p className="text-red-600 text-sm mt-1">{errores.edad}</p>
+              )}
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Edad
+                {t('pacientes.edad')}
               </label>
             </div>
 
