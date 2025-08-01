@@ -459,7 +459,7 @@ export default function RegistroPaciente() {
               type="submit"
               className="w-full mt-6 bg-[#004080] text-white py-3 rounded-lg hover:bg-[#003466] transition font-semibold shadow"
             >
-              {t('registro.guardar_y_generar')}
+              {t('pacientes.registro.guardar_y_generar')}
             </button>
           </div>
         </form>
@@ -481,11 +481,11 @@ export default function RegistroPaciente() {
               </motion.div>
 
               <h2 className="text-2xl font-bold tracking-tight text-green-700 mb-2">
-                {t('registro.titulo_exito')}
+                {t('pacientes.registro.titulo_exito')}
               </h2>
 
               <p className="text-gray-700 mb-4 text-sm max-w-md mx-auto">
-                {t('registro.instruccion_link')}
+                {t('pacientes.registro.instruccion_link')}
               </p>
 
               <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-800 font-mono overflow-x-auto shadow-sm">
@@ -503,7 +503,7 @@ export default function RegistroPaciente() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-green-600 font-medium text-sm mt-2"
                 >
-                  {t('registro.link_copiado')}
+                  {t('pacientes.registro.link_copiado')}
                 </motion.div>
               )}
 
@@ -516,10 +516,10 @@ export default function RegistroPaciente() {
                         setTimeout(() => setCopiado(false), 2000)
                       })
                       .catch(() => {
-                        alert(t('registro.error_copiar'))
+                        alert(t('pacientes.registro.error_copiar'))
                       })
                   } else {
-                    alert(t('registro.no_compatible'))
+                    alert(t('pacientes.registro.no_compatible'))
                   }
                 }}
                 animate={copiado ? { scale: [1, 1.05, 1], backgroundColor: "#16a34a" } : {}}
@@ -528,7 +528,7 @@ export default function RegistroPaciente() {
                   copiado ? 'bg-green-600 hover:bg-green-700' : 'bg-[#004080] hover:bg-[#003466]'
                 }`}
               >
-                {copiado ? '✅ ' + t('registro.link_copiado_boton') : '📋 ' + t('registro.boton_copiar')}
+                {copiado ? '✅ ' + t('pacientes.registro.link_copiado_boton') : '📋 ' + t('pacientes.registro.boton_copiar')}
               </motion.button>
 
               <button
@@ -540,15 +540,15 @@ export default function RegistroPaciente() {
                 }}
                 className="w-full mt-4 px-5 py-2 rounded-lg bg-white border border-gray-300 text-[#004080] hover:bg-gray-50 hover:shadow transition font-medium"
               >
-                {t('registro.boton_nuevo')}
+                {t('pacientes.registro.boton_nuevo')}
               </button>
 
               <button
                 type="button"
-                onClick={() => alert(t('registro.alerta_ver_paciente'))}
+                onClick={() => alert(t('pacientes.registro.alerta_ver_paciente'))}
                 className="w-full mt-3 px-5 py-2 rounded-lg bg-[#f0f4f8] border border-gray-300 text-[#004080] hover:bg-gray-100 hover:shadow transition font-medium"
               >
-                🔍 {t('registro.boton_ver')}
+                🔍 {t('pacientes.registro.boton_ver')}
               </button>
             </div>
           </motion.div>
