@@ -129,7 +129,6 @@ export default function RegistroPaciente() {
               <input
                 type="text"
                 name="nombre"
-                required
                 value={form.nombre || ''}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                 placeholder=" "
@@ -146,7 +145,6 @@ export default function RegistroPaciente() {
               <input
                 type="number"
                 name="edad"
-                required
                 value={form.edad || ''}
                 onChange={(e) => {
                   const edad = parseInt(e.target.value)
@@ -206,7 +204,6 @@ export default function RegistroPaciente() {
             <div className="relative">
               <select
                 name="sexo"
-                required
                 value={form.sexo || ''}
                 onChange={(e) => setForm({ ...form, sexo: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
@@ -224,7 +221,6 @@ export default function RegistroPaciente() {
                 type="number"
                 step="any"
                 name="peso"
-                required
                 value={form.peso || ''}
                 onChange={(e) => {
                   const peso = e.target.value
@@ -253,7 +249,6 @@ export default function RegistroPaciente() {
                 type="number"
                 step="any"
                 name="altura"
-                required
                 value={form.altura || ''}
                 onChange={(e) => {
                   const altura = e.target.value
@@ -299,7 +294,6 @@ export default function RegistroPaciente() {
               <input
                 type="tel"
                 name="telefono"
-                required
                 value={form.telefono || ''}
                 onChange={(e) => setForm({ ...form, telefono: e.target.value })}
                 placeholder=" "
@@ -319,7 +313,6 @@ export default function RegistroPaciente() {
               <input
                 type="text"
                 name="cirugia"
-                required
                 value={form.cirugia || ''}
                 onChange={(e) => setForm({ ...form, cirugia: e.target.value })}
                 placeholder=" "
@@ -339,7 +332,6 @@ export default function RegistroPaciente() {
               <input
                 type="text"
                 name="fecha_cirugia"
-                required
                 value={form.fecha_cirugia || ''}
                 maxLength={10}
                 placeholder=""
@@ -436,7 +428,6 @@ export default function RegistroPaciente() {
                 <input
                   type="text"
                   name="nombre_medico"
-                  required
                   value={form.nombre_medico || ''}
                   onChange={(e) => setForm({ ...form, nombre_medico: e.target.value })}
                   placeholder=" "
