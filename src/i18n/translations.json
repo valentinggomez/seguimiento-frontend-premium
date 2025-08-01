@@ -25,8 +25,8 @@
       "con_alertas": "Con alertas clínicas",
       "encuestas": "Encuestas completadas",
       "ultima_cirugia": "Última cirugía",
-      "registrar": "➕ Registrar paciente",
-      "ver_respuestas": "📊 Ver respuestas clínicas",
+      "registrar": "Registrar paciente",
+      "ver_respuestas": "Ver respuestas clínicas",
       "mensaje_institucional": "Esta aplicación está diseñada para garantizar el seguimiento postoperatorio de forma segura, profesional y completamente automatizada.",
       "error_carga_stats": "❌ No se pudieron cargar las estadísticas.",
       "reintentar": "Por favor, intentá nuevamente en unos segundos."
@@ -192,8 +192,8 @@
       "con_alertas": "With clinical alerts",
       "encuestas": "Completed surveys",
       "ultima_cirugia": "Last surgery",
-      "registrar": "➕ Register patient",
-      "ver_respuestas": "📊 View clinical responses",
+      "registrar": "Register patient",
+      "ver_respuestas": "View clinical responses",
       "mensaje_institucional": "This application is designed to ensure safe, professional, and fully automated postoperative follow-up.",
       "error_carga_stats": "❌ Failed to load statistics.",
       "reintentar": "Please try again in a few seconds."
