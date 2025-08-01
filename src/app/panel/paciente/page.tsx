@@ -218,48 +218,60 @@ export default function RegistroPaciente() {
 
             {/* PESO */}
             <div className="relative">
-                <input
+              <input
                 type="number"
                 step="any"
                 name="peso"
                 required
                 value={form.peso || ''}
                 onChange={(e) => {
-                    const peso = e.target.value
-                    const altura = form.altura?.replace(',', '.')
-                    const imcCalc = peso && altura ? (parseFloat(peso.replace(',', '.')) / Math.pow(parseFloat(altura), 2)).toFixed(2) : ''
-                    setForm({ ...form, peso, imc: imcCalc })
+                  const peso = e.target.value
+                  const altura = form.altura?.replace(',', '.')
+                  const imcCalc =
+                    peso && altura
+                      ? (
+                          parseFloat(peso.replace(',', '.')) /
+                          Math.pow(parseFloat(altura), 2)
+                        ).toFixed(2)
+                      : ''
+                  setForm({ ...form, peso, imc: imcCalc })
                 }}
                 placeholder=" "
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-                />
-                <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Peso (kg)
-                </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.peso')} (kg)
+              </label>
             </div>
 
             {/* ALTURA */}
             <div className="relative">
-                <input
+              <input
                 type="number"
                 step="any"
                 name="altura"
                 required
                 value={form.altura || ''}
                 onChange={(e) => {
-                    const altura = e.target.value
-                    const peso = form.peso?.replace(',', '.')
-                    const imcCalc = peso && altura ? (parseFloat(peso) / Math.pow(parseFloat(altura.replace(',', '.')), 2)).toFixed(2) : ''
-                    setForm({ ...form, altura, imc: imcCalc })
+                  const altura = e.target.value
+                  const peso = form.peso?.replace(',', '.')
+                  const imcCalc =
+                    peso && altura
+                      ? (
+                          parseFloat(peso) /
+                          Math.pow(parseFloat(altura.replace(',', '.')), 2)
+                        ).toFixed(2)
+                      : ''
+                  setForm({ ...form, altura, imc: imcCalc })
                 }}
                 placeholder=" "
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-                />
-                <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Altura (m)
-                </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.altura')} (m)
+              </label>
             </div>
 
             {/* IMC - Solo lectura */}
