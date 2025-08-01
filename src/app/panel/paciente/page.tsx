@@ -104,8 +104,12 @@ export default function RegistroPaciente() {
         className="w-full max-w-2xl bg-white/90 border border-gray-200 backdrop-blur-md shadow-xl rounded-3xl p-10"
       >
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-[#003466] tracking-tight">Registro de Paciente</h1>
-          <p className="text-sm text-gray-500 mt-1">Seguimiento postoperatorio</p>
+          <h1 className="text-4xl font-bold text-[#003466] tracking-tight">
+            {t('registro.titulo')}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t('registro.subtitulo')}
+          </p>
         </div>
 
         {!enviado ? (
@@ -117,7 +121,7 @@ export default function RegistroPaciente() {
                 exit={{ opacity: 0 }}
                 className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-xl shadow-sm text-sm"
             >
-                <span className="font-medium">⚠️ Error:</span> {mensajeError}
+                {t('registro.error_generico', { mensaje: mensajeError })}
             </motion.div>
             )}
 

@@ -67,7 +67,10 @@
         "no_compatible": "⚠️ Tu navegador no permite copiar al portapapeles",
         "boton_nuevo": "+ Cargar otro paciente",
         "boton_ver": "Ver paciente cargado",
-        "alerta_ver_paciente": "🔍 Esta sección mostrará los datos completos del paciente registrado."
+        "alerta_ver_paciente": "🔍 Esta sección mostrará los datos completos del paciente registrado.",
+        "titulo": "Registro de Paciente",
+        "subtitulo": "Seguimiento postoperatorio",
+        "error_generico": "⚠️ Error: {{mensaje}}"
       }
     },
     "logs": {
@@ -204,7 +207,10 @@
         "no_compatible": "⚠️ Your browser does not support clipboard copy",
         "boton_nuevo": "+ Register another patient",
         "boton_ver": "View registered patient",
-        "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient."
+        "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient.",
+        "titulo": "Patient Registration",
+        "subtitulo": "Postoperative follow-up",
+        "error_generico": "⚠️ Error: {{mensaje}}"
       }
     },
     "logs": {
