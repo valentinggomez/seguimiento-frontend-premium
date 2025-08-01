@@ -76,6 +76,7 @@
       "masculino": "Masculino",
       "femenino": "Femenino",
       "otro": "Otro",
+      "editar_paciente": "Editar paciente",
       "cirugia": "Tipo de cirugía",
       "fecha": "Fecha de cirugía (dd/mm/aaaa)",
       "error_fecha": "La fecha debe ser válida y no futura.",
@@ -98,7 +99,20 @@
         "titulo": "Registro de Paciente",
         "subtitulo": "Seguimiento postoperatorio",
         "error_generico": "⚠️ Error: {{mensaje}}"
-      }
+      },
+      "toast_actualizado": "Paciente actualizado correctamente",
+      "toast_error_guardar": "Error al guardar cambios",
+      "toast_eliminado": "✅ Paciente eliminado correctamente",
+      "toast_error_eliminar": "❌ Error al eliminar paciente",
+      "toast_error_cargar": "Error al cargar pacientes",
+      "titulo": "Pacientes registrados",
+      "placeholder_busqueda": "Buscar por nombre, DNI, cirugía, teléfono u obra social...",
+      "cargando": "Cargando pacientes...",
+      "sin_registros": "No hay pacientes registrados aún.",
+      "acciones": "Acciones"
+    },
+    "comun": {
+      "vacio": "—"
     },
     "logs": {
       "titulo": "Auditoría Clínica",
@@ -120,7 +134,8 @@
       "paginacion": {
         "anterior": "Anterior",
         "siguiente": "Siguiente",
-        "pagina": "Página {{current}} de {{total}}"
+        "pagina": "Página {{current}} de {{total}}",
+        "pagina_de": "Página {{actual}} de {{total}}"
       },
       "acciones": {
         "registro_paciente": "Registro de paciente",
@@ -132,7 +147,11 @@
         "exportacion_logs": "Exportación de logs",
         "login_usuario": "Inicio de sesión",
         "logout_usuario": "Cierre de sesión",
-        "respuestas_eliminadas": "Eliminación de respuestas"
+        "respuestas_eliminadas": "Eliminación de respuestas",
+        "editar": "Editar",
+        "eliminar": "Eliminar",
+        "cancelar": "Cancelar",
+        "guardar": "Guardar"
       },
       "entidades": {
         "paciente": "paciente",
@@ -264,7 +283,17 @@
         "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient.",
         "titulo": "Patient Registration",
         "subtitulo": "Postoperative follow-up"
-      }
+      },
+      "toast_actualizado": "Patient updated successfully",
+      "toast_error_guardar": "Error saving changes",
+      "toast_eliminado": "✅ Patient deleted successfully",
+      "toast_error_eliminar": "❌ Error deleting patient",
+      "toast_error_cargar": "Error loading patients",
+      "titulo": "Registered Patients",
+      "placeholder_busqueda": "Search by name, ID, surgery, phone or health insurance...",
+      "cargando": "Loading patients...",
+      "sin_registros": "No patients registered yet.",
+      "acciones": "Actions"
     },
     "logs": {
       "titulo": "Clinical Audit",
@@ -288,7 +317,8 @@
       "paginacion": {
         "anterior": "Previous",
         "siguiente": "Next",
-        "pagina": "Page {{current}} of {{total}}"
+        "pagina": "Page {{current}} of {{total}}",
+        "pagina_de": "Page {{actual}} of {{total}}"
       },
       "acciones": {
         "registro_paciente": "Patient registration",
@@ -300,7 +330,11 @@
         "exportacion_logs": "Logs exported",
         "login_usuario": "User login",
         "logout_usuario": "User logout",
-        "respuestas_eliminadas": "Responses deleted"
+        "respuestas_eliminadas": "Responses deleted",
+        "editar": "Edit",
+        "eliminar": "Delete",
+        "cancelar": "Cancel",
+        "guardar": "Save"
       },
       "entidades": {
         "paciente": "patient",
