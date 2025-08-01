@@ -1,9 +1,4 @@
 'use client'
-
-const sonidoNuevoMensaje = typeof Audio !== 'undefined'
-  ? new Audio('/sounds/notificacion.wav')
-  : null
-
 import { useEffect, useState, useRef } from 'react'
 import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 import {
@@ -13,6 +8,9 @@ import {
   TabsContent,
 } from '@/components/ui/tabs'
 import { toast } from 'sonner'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useSonidoNotificacion } from '@/hooks/useSonidoNotificacion'
+import { useTranslation } from '@/i18n/useTranslation'
 
 type Interaccion = {
   paciente_id: string
@@ -61,34 +59,16 @@ export default function InteraccionesPage() {
   const [buscando, setBuscando] = useState(false)
   const [, setForceUpdate] = useState(0)
   const prevMensajesRef = useRef<string[]>([])
-
+  const { reproducir, desbloquear } = useSonidoNotificacion()
+  const { t } = useTranslation()
+  
   // 🔊 Desbloquear audio en primer click (Chrome lo requiere)
   useEffect(() => {
-    const activarSonido = () => {
-      // Solo intenta desbloquear una vez sin reproducir realmente
-      if (sonidoNuevoMensaje) {
-        sonidoNuevoMensaje.play().then(() => {
-          sonidoNuevoMensaje.pause()
-          sonidoNuevoMensaje.currentTime = 0
-        }).catch(() => {})
-      }
-
-      // Remover listener para no repetir
-      document.removeEventListener('click', activarSonido)
+    document.addEventListener('click', desbloquear)
+    return () => {
+      document.removeEventListener('click', desbloquear)
     }
-
-    // Requiere interacción para desbloquear el audio
-    document.addEventListener('click', activarSonido)
-  }, [])
-
-  function getAuthHeaders(contentType = 'application/json'): HeadersInit {
-    const token = localStorage.getItem('token')
-    return {
-      'Content-Type': contentType,
-      'x-clinica-host': window.location.hostname,
-      'Authorization': `Bearer ${token}`,
-    }
-  }
+  }, [desbloquear])
 
   const fetchInteracciones = async () => {
     try {
@@ -146,12 +126,7 @@ export default function InteraccionesPage() {
 
         if (!prevMensajesRef.current.includes(idMensajeNuevo)) {
           // 🔊 Sonido sutil
-          if (sonidoNuevoMensaje) {
-            sonidoNuevoMensaje.currentTime = 0
-            sonidoNuevoMensaje.play().catch((err) => {
-              console.warn('🔇 Error al reproducir sonido:', err)
-            })
-          }
+          reproducir()
 
           // 🔁 Refrescar panel
           fetchInteracciones()
@@ -192,12 +167,14 @@ export default function InteraccionesPage() {
   const pacientesSinMensajes = pacientes.filter(p => !telefonosConMensajes.has(p.telefono))
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">📱 Interacciones por WhatsApp</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {t('interacciones.titulo')}
+      </h1>
 
       <div className="mb-6 text-center">
         <button
           onClick={async () => {
-            const toastId = toast.loading('⏳ Exportando interacciones a Sheets...')
+            const toastId = toast.loading(t('interacciones.exportando'))
 
             try {
               const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/exportar`, {
@@ -209,23 +186,21 @@ export default function InteraccionesPage() {
               toast.dismiss(toastId)
 
               if (data?.status === 'ok') {
-                toast.success('✅ Interacciones exportadas correctamente')
+                toast.success(t('interacciones.exportado_ok'))
               } else if (data?.status === 'empty') {
-                toast('ℹ️ No hay nuevas interacciones para exportar', {
-                  icon: '🟡',
-                })
+                toast(t('interacciones.exportado_vacio'), { icon: '🟡' })
               } else {
-                toast.error('❌ Error al exportar interacciones')
+                toast.error(t('interacciones.exportado_error'))
               }
             } catch (err) {
               toast.dismiss(toastId)
-              toast.error('❌ Error de conexión al exportar')
+              toast.error(t('interacciones.error_conexion'))
               console.error('Error:', err)
             }
           }}
           className="px-4 py-2 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 shadow-sm transition-all"
         >
-          📤 Exportar interacciones a Sheets
+          {t('interacciones.exportar')}
         </button>
       </div>
 
@@ -233,7 +208,7 @@ export default function InteraccionesPage() {
       <div className="max-w-xl mx-auto mb-6">
         <input
           type="text"
-          placeholder="🔍 Buscar por nombre, teléfono o mensaje..."
+          placeholder={t('interacciones.buscador_placeholder')}
           value={query}
           onChange={(e) => buscarInteracciones(e.target.value)}
           className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -241,7 +216,9 @@ export default function InteraccionesPage() {
       </div>
       {resultados.length > 0 && (
         <div className="mb-6 space-y-4">
-          <h2 className="text-lg font-semibold">📂 Resultados encontrados</h2>
+          <h2 className="text-lg font-semibold">
+            {t('interacciones.resultados')}
+          </h2>
           {Object.entries(agruparPorTelefono(resultados)).map(([telefono, mensajes], index) => {
             mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
             const alertaGlobal = getAlertaGlobal(mensajes)
@@ -405,7 +382,7 @@ export default function InteraccionesPage() {
                   nombre={nombre}
                   telefono={telefono}
                   alerta={alertaGlobal}
-                  fecha={new Date(fecha).toLocaleString()}
+                  fecha={new Date(fecha).toLocaleString()} 
                   mensajes={mensajes}
                   paciente_id={mensajes[0].paciente_id}
                 />

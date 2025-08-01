@@ -190,7 +190,18 @@
         "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre_paciente}} a nivel crítico.",
         "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre_paciente}}.",
         "respuestas_eliminadas": "⚠️ {{cantidad}} respuestas fueron eliminadas por {{nombre_usuario}}."
-        }
+      }
+    },
+    "interacciones": {
+      "titulo": "📱 Interacciones por WhatsApp",
+      "exportar": "📤 Exportar interacciones a Sheets",
+      "exportando": "⏳ Exportando interacciones a Sheets...",
+      "exportado_ok": "✅ Interacciones exportadas correctamente",
+      "exportado_vacio": "ℹ️ No hay nuevas interacciones para exportar",
+      "exportado_error": "❌ Error al exportar interacciones",
+      "error_conexion": "❌ Error de conexión al exportar",
+      "buscador_placeholder": "🔍 Buscar por nombre, teléfono o mensaje...",
+      "resultados": "📂 Resultados encontrados"
     }
   },
   "en": {
@@ -381,6 +392,17 @@
         "analisis_ia_guardado": "AI analysis was saved for patient {{nombre_paciente}}.",
         "respuestas_eliminadas": "⚠️ {{cantidad}} responses were deleted by {{nombre_usuario}}."
       }
+    },
+    "interacciones": {
+      "titulo": "📱 WhatsApp Interactions",
+      "exportar": "📤 Export interactions to Sheets",
+      "exportando": "⏳ Exporting interactions to Sheets...",
+      "exportado_ok": "✅ Interactions successfully exported",
+      "exportado_vacio": "ℹ️ No new interactions to export",
+      "exportado_error": "❌ Error while exporting interactions",
+      "error_conexion": "❌ Connection error during export",
+      "buscador_placeholder": "🔍 Search by name, phone number or message...",
+      "resultados": "📂 Results found"
     }
   }
 }
