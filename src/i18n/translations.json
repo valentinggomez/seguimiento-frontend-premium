@@ -56,8 +56,8 @@
       "medico_nombre": "Nombre del médico",
       "avanzado_titulo": "Datos clínicos avanzados",
       "avanzado_vacio": "(Esta sección puede personalizarse con los campos que desee la clínica)",
-      "guardar_y_generar": "Guardar paciente y generar link",
       "registro": {
+        "guardar_y_generar": "Guardar paciente y generar link",
         "titulo_exito": "Paciente registrado correctamente",
         "instruccion_link": "Compartí este enlace con el paciente para que complete su formulario postoperatorio:",
         "link_copiado": "📋 Link copiado al portapapeles",
@@ -193,8 +193,8 @@
       "medico_nombre": "Physician's name",
       "avanzado_titulo": "Advanced clinical data",
       "avanzado_vacio": "(This section can be customized with the fields your clinic needs)",
-      "guardar_y_generar": "Save patient and generate link",
       "registro": {
+        "guardar_y_generar": "Save patient and generate link",
         "titulo_exito": "Patient successfully registered",
         "instruccion_link": "Share this link with the patient to complete their postoperative form:",
         "link_copiado": "📋 Link copied to clipboard",
