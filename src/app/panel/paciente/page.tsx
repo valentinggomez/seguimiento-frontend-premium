@@ -25,7 +25,7 @@ export default function RegistroPaciente() {
     console.log("🧾 Datos form frontend antes de enviar:", form)
     const vacios = campos.filter(([_, val]) => val === '')
     if (vacios.length > 0) {
-      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.faltan_campos') }))
+      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
       return
     }
 
