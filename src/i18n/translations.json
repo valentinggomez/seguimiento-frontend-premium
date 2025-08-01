@@ -62,7 +62,8 @@
         "paciente_eliminado": "Eliminación de paciente",
         "exportacion_logs": "Exportación de logs",
         "login_usuario": "Inicio de sesión",
-        "logout_usuario": "Cierre de sesión"
+        "logout_usuario": "Cierre de sesión",
+        "respuestas_eliminadas": "Eliminación de respuestas"
       },
       "entidades": {
         "paciente": "paciente",
@@ -92,7 +93,7 @@
         "interaccion_recibida": "El sistema recibió un nuevo mensaje del paciente {{nombre_paciente}} (Tel: {{telefono}}).",
         "alerta_escala_manual": "El médico escaló manualmente la alerta del paciente {{nombre_paciente}} a nivel crítico.",
         "analisis_ia_guardado": "Se guardó el análisis IA para el paciente {{nombre_paciente}}.",
-        "eliminacion_respuestas": "⚠️ Se eliminaron {{cantidad}} respuestas"
+        "respuestas_eliminadas": "⚠️ {{cantidad}} respuestas fueron eliminadas por {{nombre_usuario}}."
         }
     }
   },
@@ -161,7 +162,8 @@
         "paciente_eliminado": "Patient deleted",
         "exportacion_logs": "Logs exported",
         "login_usuario": "User login",
-        "logout_usuario": "User logout"
+        "logout_usuario": "User logout",
+        "respuestas_eliminadas": "Responses deleted"
       },
       "entidades": {
         "paciente": "patient",
@@ -187,7 +189,7 @@
         "interaccion_recibida": "System received a new message from patient {{nombre_paciente}} (Tel: {{telefono}}).",
         "alerta_escala_manual": "Doctor manually escalated alert of patient {{nombre_paciente}} to critical level.",
         "analisis_ia_guardado": "AI analysis was saved for patient {{nombre_paciente}}.",
-        "eliminacion_respuestas": "⚠️ {{nombre_usuario}} deleted {{cantidad}} responses"
+        "respuestas_eliminadas": "⚠️ {{cantidad}} responses were deleted by {{nombre_usuario}}."
       }
     }
   }
