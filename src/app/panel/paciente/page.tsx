@@ -196,24 +196,24 @@ export default function RegistroPaciente() {
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Obra social
+                {t('pacientes.obra_social')}
               </label>
             </div>
 
             {/* SEXO */}
             <div className="relative">
-                <select
+              <select
                 name="sexo"
                 required
                 value={form.sexo || ''}
                 onChange={(e) => setForm({ ...form, sexo: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
-                >
-                <option value="" disabled hidden>Seleccionar sexo</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Otro">Otro</option>
-                </select>
+              >
+                <option value="" disabled hidden>{t('pacientes.seleccionar_sexo')}</option>
+                <option value="Masculino">{t('pacientes.masculino')}</option>
+                <option value="Femenino">{t('pacientes.femenino')}</option>
+                <option value="Otro">{t('pacientes.otro')}</option>
+              </select>
             </div>
 
             {/* PESO */}
