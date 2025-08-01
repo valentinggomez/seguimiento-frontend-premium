@@ -283,10 +283,10 @@ export default function PanelPacientes() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditando(false)}>
-              {t('acciones.cancelar')}
+              {t('logs.acciones.cancelar')}
             </Button>
             <Button onClick={guardarCambios}>
-              {t('acciones.guardar')}
+              {t('logs.acciones.guardar')}
             </Button>
           </DialogFooter>
         </DialogContent>
