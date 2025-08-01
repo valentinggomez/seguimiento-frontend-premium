@@ -17,12 +17,14 @@ import { toast } from 'react-hot-toast'
 import { useEffect } from 'react'
 import { getNotaPorPaciente } from '@/lib/getNotaPorPaciente';
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useTranslation } from '@/i18n/useTranslation'
 
 const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [nota, setNota] = useState('');
   const [fecha, setFecha] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
   const [cargando, setCargando] = useState(true);
+  const { t } = useTranslation()
   const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -48,37 +50,39 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
     });
 
     if (res.ok) {
-      toast.success('📝 Nota guardada correctamente');
+      toast.success(t('notas.guardada_ok'));
       setEditando(false);
       const now = new Date();
       setFecha(now.toISOString());
     } else {
-      toast.error('❌ Error al guardar la nota');
+      toast.error(t('notas.guardada_error'));
     }
   };
 
   if (cargando)
-    return <p className="text-sm text-gray-400">Cargando nota clínica...</p>;
+    return <p className="text-sm text-gray-400">{t('notas.cargando')}</p>;
 
   return (
     <div className="mt-6 bg-gray-50 p-4 rounded-xl border text-sm">
-      <label className="block font-medium mb-2 text-gray-700">📝 Nota interna del médico</label>
+      <label className="block font-medium mb-2 text-gray-700">
+        {t('notas.titulo')}
+      </label>
 
       {!editando ? (
         <>
           <div className="whitespace-pre-line text-gray-800 mb-2">
-            {nota || <span className="italic text-gray-500">Sin nota registrada.</span>}
+            {nota || <span className="italic text-gray-500">{t('notas.sin_nota')}</span>}
           </div>
           {fecha && (
             <p className="text-xs text-gray-500 italic mb-2">
-              🕓 Última actualización: {new Date(fecha).toLocaleString('es-AR')}
+              {t('notas.ultima_actualizacion').replace('{{fecha}}', new Date(fecha).toLocaleString())}
             </p>
           )}
           <button
             onClick={() => setEditando(true)}
             className="text-xs px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full"
           >
-            ✏️ Editar nota
+            {t('notas.editar')}
           </button>
         </>
       ) : (
@@ -87,7 +91,7 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             className="w-full p-2 border rounded-md text-sm"
-            placeholder="Anotar evolución, decisiones clínicas, seguimiento..."
+            placeholder={t('notas.placeholder')}
             rows={4}
           />
           <div className="flex gap-2 mt-2">
@@ -95,13 +99,13 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
               onClick={guardarNota}
               className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-1 rounded-md"
             >
-              💾 Guardar cambios
+              {t('notas.guardar')}
             </button>
             <button
               onClick={() => setEditando(false)}
               className="bg-gray-200 hover:bg-gray-300 text-sm px-4 py-1 rounded-md"
             >
-              ❌ Cancelar
+              {t('notas.cancelar')}
             </button>
           </div>
         </>
@@ -155,6 +159,7 @@ export const TarjetaInteraccionSupreme = ({
   paciente_id,
 }: Props) => {
   const [abierto, setAbierto] = useState(false)
+  const { t } = useTranslation()
   useEffect(() => {
     if (abierto && paciente_id) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/marcarLeido`, {
@@ -196,15 +201,15 @@ export const TarjetaInteraccionSupreme = ({
       })
 
       if (res.ok) {
-        toast.success('✅ Feedback guardado correctamente')
+        toast.success(t('interaccion.feedback_ok'))
       } else if (res.status === 409) {
-        toast('⚠️ Este mensaje ya fue marcado anteriormente', { icon: '⚠️' })
+        toast(t('interaccion.feedback_ya_marcado'), { icon: '⚠️' })
       } else {
-        toast.error('❌ Ocurrió un error al enviar el feedback')
+        toast.error(t('interaccion.feedback_error'))
       }
     } catch (err) {
       console.error('Error al enviar feedback:', err)
-      toast.error('❌ Error al conectar con el servidor')
+      toast.error(t('interaccion.feedback_conexion_error')) 
     }
   }
 

@@ -211,6 +211,18 @@
       "formulario_reenviado": "📤 Formulario reenviado por WhatsApp",
       "formulario_error": "❌ Error al reenviar el formulario",
       "no_archivadas": "No hay interacciones archivadas."
+    },
+    "notas": {
+      "titulo": "📝 Nota clínica",
+      "guardada_ok": "📝 Nota guardada correctamente",
+      "guardada_error": "❌ Error al guardar la nota",
+      "cargando": "Cargando nota clínica...",
+      "sin_nota": "Sin nota registrada.",
+      "ultima_actualizacion": "🕓 Última actualización: {{fecha}}",
+      "placeholder": "Anotar evolución, decisiones clínicas, seguimiento...",
+      "editar": "✏️ Editar nota",
+      "guardar": "💾 Guardar cambios",
+      "cancelar": "❌ Cancelar"
     }
   },
   "en": {
@@ -420,7 +432,23 @@
       "reenviando_formulario": "⏳ Resending form...",
       "formulario_reenviado": "📤 Form successfully resent via WhatsApp",
       "formulario_error": "❌ Failed to resend form",
-      "no_archivadas": "There are no archived interactions."
+      "no_archivadas": "There are no archived interactions.",
+      "feedback_ok": "✅ Feedback saved successfully",
+      "feedback_ya_marcado": "⚠️ This message has already been marked",
+      "feedback_error": "❌ An error occurred while submitting feedback",
+      "feedback_conexion_error": "❌ Failed to connect to the server"
+    },
+    "notas": {
+      "titulo": "📝 Clinical note",
+      "guardada_ok": "📝 Note saved successfully",
+      "guardada_error": "❌ Error saving the note",
+      "cargando": "Loading clinical note...",
+      "sin_nota": "No note recorded.",
+      "ultima_actualizacion": "🕓 Last updated: {{fecha}}",
+      "placeholder": "Record evolution, clinical decisions, follow-up...",
+      "editar": "✏️ Edit note",
+      "guardar": "💾 Save changes",
+      "cancelar": "❌ Cancel"
     }
   }
 }
