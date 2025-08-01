@@ -210,7 +210,22 @@
       "reenviando_formulario": "⏳ Reenviando formulario...",
       "formulario_reenviado": "📤 Formulario reenviado por WhatsApp",
       "formulario_error": "❌ Error al reenviar el formulario",
-      "no_archivadas": "No hay interacciones archivadas."
+      "no_archivadas": "No hay interacciones archivadas.",
+      "feedback_ok": "✅ Feedback guardado correctamente",
+      "feedback_ya_marcado": "⚠️ Este mensaje ya fue marcado anteriormente",
+      "feedback_error": "❌ Ocurrió un error al enviar el feedback",
+      "feedback_conexion_error": "❌ Error al conectar con el servidor",
+      "sin_respuesta": "🕓 Aún sin respuesta del paciente",
+      "score_ia": "Score IA:",
+      "nivel_evaluado": "Nivel evaluado:",
+      "tags_detectados": "Tags detectados:",
+      "sin_datos_ia": "Sin datos de IA para este mensaje.",
+      "no_respuesta_whatsapp": "Este paciente aún no respondió por WhatsApp.",
+      "paciente": "Paciente",
+      "respuesta_automatica": "Respuesta automática",
+      "feedback_bueno": "👍 Ejemplo bueno",
+      "feedback_malo": "👎 Ejemplo malo",
+      "ver_analisis_ia": "Ver análisis clínico IA"
     },
     "notas": {
       "titulo": "📝 Nota clínica",
@@ -436,7 +451,18 @@
       "feedback_ok": "✅ Feedback saved successfully",
       "feedback_ya_marcado": "⚠️ This message has already been marked",
       "feedback_error": "❌ An error occurred while submitting feedback",
-      "feedback_conexion_error": "❌ Failed to connect to the server"
+      "feedback_conexion_error": "❌ Failed to connect to the server",
+      "sin_respuesta": "🕓 No response from the patient yet",
+      "score_ia": "IA Score:",
+      "nivel_evaluado": "Evaluated level:",
+      "tags_detectados": "Detected tags:",
+      "sin_datos_ia": "No AI data available for this message.",
+      "no_respuesta_whatsapp": "This patient has not yet responded via WhatsApp.",
+      "paciente": "Patient",
+      "respuesta_automatica": "Automated response",
+      "feedback_bueno": "👍 Good example",
+      "feedback_malo": "👎 Bad example",
+      "ver_analisis_ia": "View clinical AI analysis"
     },
     "notas": {
       "titulo": "📝 Clinical note",

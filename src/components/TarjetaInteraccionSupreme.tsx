@@ -201,15 +201,15 @@ export const TarjetaInteraccionSupreme = ({
       })
 
       if (res.ok) {
-        toast.success(t('interaccion.feedback_ok'))
+        toast.success(t('interacciones.feedback_ok'))
       } else if (res.status === 409) {
-        toast(t('interaccion.feedback_ya_marcado'), { icon: '⚠️' })
+        toast(t('interacciones.feedback_ya_marcado'), { icon: '⚠️' })
       } else {
-        toast.error(t('interaccion.feedback_error'))
+        toast.error(t('interacciones.feedback_error'))
       }
     } catch (err) {
       console.error('Error al enviar feedback:', err)
-      toast.error(t('interaccion.feedback_conexion_error')) 
+      toast.error(t('interacciones.feedback_conexion_error')) 
     }
   }
 
@@ -229,7 +229,7 @@ export const TarjetaInteraccionSupreme = ({
             {clinica && <span className="italic ml-2">({clinica})</span>}
           </div>
           <p className="text-xs text-gray-500 mt-1 line-clamp-1 max-w-[250px]">
-            {sinMensajes ? '🕓 Aún sin respuesta del paciente' : ultimoMensaje?.mensaje}
+            {sinMensajes ? t('interacciones.sin_respuesta') : ultimoMensaje?.mensaje}
           </p>
         </div>
 
@@ -270,7 +270,7 @@ export const TarjetaInteraccionSupreme = ({
             <div className="mt-2 space-y-4 text-sm">
               {sinMensajes ? (
                 <div className="p-4 bg-gray-100 rounded-xl text-sm text-gray-600 text-center">
-                  Este paciente aún no respondió por WhatsApp.
+                  {t('interacciones.no_respuesta_whatsapp')}
                 </div>
               ) : (
                 mensajes.map((m, i) => (
@@ -281,7 +281,7 @@ export const TarjetaInteraccionSupreme = ({
                     <div className="flex items-start gap-2">
                       <MessageCircle className="w-4 h-4 mt-0.5 text-gray-500" />
                       <div>
-                        <span className="font-medium">Paciente:</span> <br />
+                        <span className="font-medium">{t('interacciones.paciente')}:</span> <br />
                         {m.mensaje}
                       </div>
                     </div>
@@ -290,9 +290,8 @@ export const TarjetaInteraccionSupreme = ({
                       <div className="flex items-start gap-2 mt-2">
                         <Bot className="w-4 h-4 mt-0.5 text-blue-500" />
                         <div>
-                          <span className="font-medium">Respuesta automática:</span> <br />
+                          <span className="font-medium">{t('interacciones.respuesta_automatica')}:</span> <br />
                           <span className="text-blue-700">{m.respuesta_enviada}</span>
-                          {/* Botones de feedback IA */}
                           <div className="flex gap-2 mt-2 ml-6">
                             <button
                               onClick={() => enviarFeedback(
@@ -303,7 +302,7 @@ export const TarjetaInteraccionSupreme = ({
                               )}
                               className="text-xs px-2 py-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
                             >
-                              👍 Ejemplo bueno
+                              {t('interacciones.feedback_bueno')}
                             </button>
                             <button
                               onClick={() => enviarFeedback(
@@ -314,13 +313,14 @@ export const TarjetaInteraccionSupreme = ({
                               )}
                               className="text-xs px-2 py-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
                             >
-                              👎 Ejemplo malo
+                              {t('interacciones.feedback_malo')}
                             </button>
                           </div>
                         </div>
                       </div>
-                    )}
-                    {/* Botón para ver análisis IA */}
+                      )}
+
+                      {/* Botón para ver análisis IA */}
                       <button
                         onClick={() => setAnalisisVisible(analisisVisible === i ? null : i)}
                         className="mt-3 ml-6 flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700 transition-all"
@@ -329,7 +329,7 @@ export const TarjetaInteraccionSupreme = ({
                           🔍
                         </div>
                         <span className="underline underline-offset-2">
-                          Ver análisis clínico IA
+                          {t('interacciones.ver_analisis_ia')}
                         </span>
                         {analisisVisible === i ? (
                           <ChevronUp className="w-4 h-4 text-blue-800" />
@@ -344,25 +344,25 @@ export const TarjetaInteraccionSupreme = ({
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-900 font-semibold bg-blue-100 px-2 py-0.5 rounded-md">
-                                  🔢 Score IA:
+                                  🔢 {t('interacciones.score_ia')}
                                 </span>
                                 <span className="text-blue-800">{m.score_ia}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-red-900 font-semibold bg-red-100 px-2 py-0.5 rounded-md">
-                                  🚦 Nivel evaluado:
+                                  🚦 {t('interacciones.nivel_evaluado')}
                                 </span>
                                 <span className="capitalize">{m.nivel_alerta_ia}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-700 font-semibold bg-yellow-100 px-2 py-0.5 rounded-md">
-                                  🏷️ Tags detectados:
+                                  🏷️ {t('interacciones.tags_detectados')}
                                 </span>
                                 <span>{m.tags_detectados?.join(', ')}</span>
                               </div>
                             </div>
                           ) : (
-                            <p className="italic text-gray-500">Sin datos de IA para este mensaje.</p>
+                            <p className="italic text-gray-500">{t('interacciones.sin_datos_ia')}</p>
                           )}
                         </div>
                       )}
@@ -383,7 +383,7 @@ export const TarjetaInteraccionSupreme = ({
                       onClick={onArchivar}
                       className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-full whitespace-nowrap"
                     >
-                      <Archive className="w-3 h-3" /> Archivar
+                      <Archive className="w-3 h-3" /> {t('interacciones.archivar')}
                     </button>
                   )}
                   {onEscalarAlerta && !sinMensajes && (
@@ -392,19 +392,19 @@ export const TarjetaInteraccionSupreme = ({
                         onClick={() => onEscalarAlerta('verde')}
                         className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 hover:bg-green-200 whitespace-nowrap"
                       >
-                        Escalar a Verde
+                        {t('interacciones.escalar_verde')}
                       </button>
                       <button
                         onClick={() => onEscalarAlerta('amarillo')}
                         className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 whitespace-nowrap"
                       >
-                        Escalar a Amarillo
+                        {t('interaccioes.escalar_amarillo')}
                       </button>
                       <button
                         onClick={() => onEscalarAlerta('rojo')}
                         className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200 whitespace-nowrap"
                       >
-                        Escalar a Rojo
+                        {t('interacciones.escalar_rojo')}
                       </button>
                     </>
                   )}
@@ -413,7 +413,7 @@ export const TarjetaInteraccionSupreme = ({
                       onClick={onAlertar}
                       className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 rounded-full whitespace-nowrap"
                     >
-                      <AlertTriangle className="w-3 h-3" /> Escalar alerta
+                      <AlertTriangle className="w-3 h-3" /> {t('interacciones.escalar_alerta')}
                     </button>
                   )}
                   {onReenviarFormulario && (
@@ -421,7 +421,7 @@ export const TarjetaInteraccionSupreme = ({
                       onClick={onReenviarFormulario}
                       className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full whitespace-nowrap"
                     >
-                      🔁 Reenviar formulario
+                      🔁 {t('interacciones.reenviar_formulario')}
                     </button>
                   )}
                 </div>
