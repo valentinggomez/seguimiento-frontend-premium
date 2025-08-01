@@ -155,13 +155,21 @@ export default function Inicio() {
       </div>
 
       {/* Accesos rápidos */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link href="/panel/paciente" className="bg-[#003466] text-white rounded-lg px-5 py-4 text-center font-medium hover:bg-[#002244] transition">
-          {t('inicio.registrar')}
-        </Link>
-        <Link href="/panel/respuestas" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
-          {t('inicio.ver_respuestas')}
-        </Link>
+      <div className="w-full flex justify-center mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md w-full">
+          <Link
+            href="/panel/paciente"
+            className="bg-[#003466] text-white rounded-xl px-6 py-4 text-center font-semibold hover:bg-[#002244] transition"
+          >
+            {t('inicio.registrar')}
+          </Link>
+          <Link
+            href="/panel/respuestas"
+            className="bg-gray-100 text-gray-800 rounded-xl px-6 py-4 text-center font-semibold hover:bg-gray-200 transition"
+          >
+            {t('inicio.ver_respuestas')}
+          </Link>
+        </div>
       </div>
 
       {/* Mensaje institucional */}
