@@ -89,7 +89,7 @@ export default function RegistroPaciente() {
       setEnviado(true)
     } catch (err) {
       console.error(err)
-      setMensajeError(t('pacientes.registro.error_inesperado'))
+      setMensajeError(t('pacientes.errores.error_inesperado'))
     }
   }
 
@@ -119,7 +119,7 @@ export default function RegistroPaciente() {
                 exit={{ opacity: 0 }}
                 className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-xl shadow-sm text-sm"
             >
-                {t('pacientes.registro.error_generico', { mensaje: mensajeError })}
+                {t('pacientes.errores.error_generico', { mensaje: mensajeError })}
             </motion.div>
             )}
 
