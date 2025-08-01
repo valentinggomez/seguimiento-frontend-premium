@@ -34,7 +34,7 @@
     "pacientes": {
       "nombre": "Nombre completo",
       "dni": "DNI",
-      "telefono": "Teléfono",
+      "telefono": "Teléfono de contacto",
       "edad": "Edad",
         "errores": {
           "edad_maxima": "La edad no puede ser mayor a 130 años."
@@ -42,15 +42,33 @@
       "sexo": "Sexo",
       "peso": "Peso (kg)",
       "altura": "Altura (m)",
-      "imc": "Índice de Masa Corporal (IMC)",
+      "imc": "IMC",
+      "calculado": "calculado",
       "obra_social": "Obra social",
       "seleccionar_sexo": "Seleccionar sexo",
       "masculino": "Masculino",
       "femenino": "Femenino",
       "otro": "Otro",
       "cirugia": "Tipo de cirugía",
-      "fecha_cirugia": "Fecha de cirugía",
-      "nombre_medico": "Nombre del médico"
+      "fecha": "Fecha de cirugía (dd/mm/aaaa)",
+      "error_fecha": "La fecha debe ser válida y no futura.",
+      "medico_titulo": "Datos del médico responsable",
+      "medico_nombre": "Nombre del médico",
+      "avanzado_titulo": "Datos clínicos avanzados",
+      "avanzado_vacio": "(Esta sección puede personalizarse con los campos que desee la clínica)",
+      "guardar_y_generar": "Guardar paciente y generar link",
+      "registro": {
+        "titulo_exito": "Paciente registrado correctamente",
+        "instruccion_link": "Compartí este enlace con el paciente para que complete su formulario postoperatorio:",
+        "link_copiado": "📋 Link copiado al portapapeles",
+        "boton_copiar": "Copiar link",
+        "link_copiado_boton": "Link copiado",
+        "error_copiar": "⚠️ No se pudo copiar el link",
+        "no_compatible": "⚠️ Tu navegador no permite copiar al portapapeles",
+        "boton_nuevo": "+ Cargar otro paciente",
+        "boton_ver": "Ver paciente cargado",
+        "alerta_ver_paciente": "🔍 Esta sección mostrará los datos completos del paciente registrado."
+      }
     },
     "logs": {
       "titulo": "Auditoría Clínica",
@@ -153,7 +171,7 @@
     "pacientes": {
       "nombre": "Full Name",
       "dni": "National ID",
-      "telefono": "Phone Number",
+      "telefono": "Contact phone",
       "edad": "Age",
         "errores": {
           "edad_maxima": "Age cannot be greater than 130."
@@ -161,15 +179,33 @@
       "sexo": "Gender",
       "peso": "Weight",
       "altura": "Height",
-      "imc": "Body Mass Index (BMI)",
+      "imc": "BMI",
+      "calculado": "calculated",
       "obra_social": "Health insurance",
       "seleccionar_sexo": "Select gender",
       "masculino": "Male",
       "femenino": "Female",
       "otro": "Other",
-      "cirugia": "Surgery Type",
-      "fecha_cirugia": "Surgery Date",
-      "nombre_medico": "Doctor's Name"
+      "cirugia": "Type of surgery",
+      "fecha": "Surgery date (dd/mm/yyyy)",
+      "error_fecha": "The date must be valid and not in the future.",
+      "medico_titulo": "Responsible physician data",
+      "medico_nombre": "Physician's name",
+      "avanzado_titulo": "Advanced clinical data",
+      "avanzado_vacio": "(This section can be customized with the fields your clinic needs)",
+      "guardar_y_generar": "Save patient and generate link",
+      "registro": {
+        "titulo_exito": "Patient successfully registered",
+        "instruccion_link": "Share this link with the patient to complete their postoperative form:",
+        "link_copiado": "📋 Link copied to clipboard",
+        "boton_copiar": "Copy link",
+        "link_copiado_boton": "Link copied",
+        "error_copiar": "⚠️ Could not copy the link",
+        "no_compatible": "⚠️ Your browser does not support clipboard copy",
+        "boton_nuevo": "+ Register another patient",
+        "boton_ver": "View registered patient",
+        "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient."
+      }
     },
     "logs": {
       "titulo": "Clinical Audit",

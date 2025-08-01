@@ -276,25 +276,25 @@ export default function RegistroPaciente() {
 
             {/* IMC - Solo lectura */}
             <div className="relative">
-                <input
+              <input
                 type="text"
                 name="imc"
                 readOnly
                 value={form.imc || ''}
                 placeholder=" "
                 className="w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
-                />
-                <label className="absolute left-3 top-2.5 text-sm text-gray-500">
-                IMC (calculado)
-                </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:text-[#004080]">
+                {t('pacientes.imc')} ({t('pacientes.calculado')})
+              </label>
             </div>
             {/* 
-            🧩 Teléfono del paciente
-            Campo simple para ingresar el número de contacto. 
-            Se puede adaptar luego a validación por país si se desea internacionalizar.
+              🧩 Teléfono del paciente
+              Campo simple para ingresar el número de contacto. 
+              Se puede adaptar luego a validación por país si se desea internacionalizar.
             */}
             <div className="relative">
-            <input
+              <input
                 type="tel"
                 name="telefono"
                 required
@@ -303,18 +303,18 @@ export default function RegistroPaciente() {
                 placeholder=" "
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-            />
-            <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Teléfono de contacto
-            </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.telefono')}
+              </label>
             </div>
 
             {/* 
-            ⚕️ Tipo de cirugía
-            Campo libre para que el médico ingrese manualmente qué tipo de procedimiento se realizó.
+              ⚕️ Tipo de cirugía
+              Campo libre para que el médico ingrese manualmente qué tipo de procedimiento se realizó.
             */}
             <div className="relative">
-            <input
+              <input
                 type="text"
                 name="cirugia"
                 required
@@ -323,18 +323,18 @@ export default function RegistroPaciente() {
                 placeholder=" "
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-            />
-            <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Tipo de cirugía
-            </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.cirugia')}
+              </label>
             </div>
 
             {/* 
-            📅 Fecha de cirugía con formato dd/mm/aaaa
-            Se puede mejorar más adelante con validación progresiva y formato automático.
+              📅 Fecha de cirugía con formato dd/mm/aaaa
+              Se puede mejorar más adelante con validación progresiva y formato automático.
             */}
             <div className="relative">
-            <input
+              <input
                 type="text"
                 name="fecha_cirugia"
                 required
@@ -342,48 +342,46 @@ export default function RegistroPaciente() {
                 maxLength={10}
                 placeholder=""
                 onChange={(e) => {
-                let val = e.target.value.replace(/\D/g, '')
-                if (val.length >= 3 && val.length <= 4)
-                  val = val.replace(/(\d{2})(\d+)/, '$1/$2')
-                else if (val.length >= 5)
-                  val = val.replace(/(\d{2})(\d{2})(\d+)/, '$1/$2/$3')
+                  let val = e.target.value.replace(/\D/g, '')
+                  if (val.length >= 3 && val.length <= 4)
+                    val = val.replace(/(\d{2})(\d+)/, '$1/$2')
+                  else if (val.length >= 5)
+                    val = val.replace(/(\d{2})(\d{2})(\d+)/, '$1/$2/$3')
 
+                  const fecha = val.slice(0, 10)
+                  setForm({ ...form, fecha_cirugia: fecha })
 
-                const fecha = val.slice(0, 10)
-                setForm({ ...form, fecha_cirugia: fecha })
+                  const [d, m, y] = fecha.split('/')
+                  const dia = parseInt(d, 10)
+                  const mes = parseInt(m, 10)
+                  const anio = parseInt(y, 10)
+                  const hoy = new Date()
+                  hoy.setHours(0, 0, 0, 0)
+                  const fechaIngresada = new Date(`${anio}-${mes}-${dia}`)
 
-                // Validación progresiva visual mientras escribe
-                const [d, m, y] = fecha.split('/')
-                const dia = parseInt(d, 10)
-                const mes = parseInt(m, 10)
-                const anio = parseInt(y, 10)
-                const hoy = new Date()
-                hoy.setHours(0, 0, 0, 0)
-                const fechaIngresada = new Date(`${anio}-${mes}-${dia}`)
+                  let esInvalida = false
+                  if (fecha.length >= 2 && (dia < 1 || dia > 31)) esInvalida = true
+                  if (fecha.length >= 5 && (mes < 1 || mes > 12)) esInvalida = true
+                  if (fecha.length === 10 && fechaIngresada > hoy) esInvalida = true
 
-                let esInvalida = false
-                if (fecha.length >= 2 && (dia < 1 || dia > 31)) esInvalida = true
-                if (fecha.length >= 5 && (mes < 1 || mes > 12)) esInvalida = true
-                if (fecha.length === 10 && fechaIngresada > hoy) esInvalida = true
-
-                setErrores((prev) => ({
+                  setErrores((prev) => ({
                     ...prev,
-                    fecha_cirugia: esInvalida ? 'La fecha debe ser válida y no futura.' : ''
-                }))
+                    fecha_cirugia: esInvalida ? t('pacientes.error_fecha') : ''
+                  }))
                 }}
                 autoComplete="off"
                 className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all ${
                   errores.fecha_cirugia ? 'border-red-500' : 'border-gray-300'
                 }`}
+              />
 
-            />
-            {errores.fecha_cirugia && (
-              <p className="text-red-600 text-sm mt-1">{errores.fecha_cirugia}</p>
-            )}
+              {errores.fecha_cirugia && (
+                <p className="text-red-600 text-sm mt-1">{errores.fecha_cirugia}</p>
+              )}
 
-            <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Fecha de cirugía (dd/mm/aaaa)
-            </label>
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.fecha')}
+              </label>
             </div>
             {/* 
             🧪 Zona de datos clínicos avanzados (editable por clínica)
@@ -391,38 +389,36 @@ export default function RegistroPaciente() {
             Cada institución puede definir qué mediciones quiere registrar (bloqueo, dosis, fármacos, escalas, etc.)
             */}
             <div className="border border-gray-200 rounded-xl px-4 py-6 shadow-sm bg-blue-50 mt-8">
-            <h3 className="text-[#004080] font-semibold mb-3 text-sm">
-                Datos clínicos avanzados
-            </h3>
-              
-            {camposPersonalizados.length > 0 ? (
-              camposPersonalizados.map((campo: string, index: number) => {
-                const campoKey = campo.trim()
+              <h3 className="text-[#004080] font-semibold mb-3 text-sm">
+                {t('pacientes.avanzado_titulo')}
+              </h3>
 
-                return (
-                  <div key={index} className="relative mb-5">
-                    <input
-                      type="text"
-                      name={campoKey}
-                      value={form[campoKey] || ''}
-                      onChange={(e) => setForm({ ...form, [campoKey]: e.target.value })}
-                      placeholder=" "
-                      autoComplete="off"
-                      className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-                    />
-                    <label
-                      className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all"
-                    >
-                      {campoKey}
-                    </label>
-                  </div>
-                )
-              })
-            ) : (
-              <div className="text-gray-500 text-sm italic">
-                (Esta sección puede personalizarse con los campos que desee la clínica)
-              </div>
-            )}
+              {camposPersonalizados.length > 0 ? (
+                camposPersonalizados.map((campo: string, index: number) => {
+                  const campoKey = campo.trim()
+
+                  return (
+                    <div key={index} className="relative mb-5">
+                      <input
+                        type="text"
+                        name={campoKey}
+                        value={form[campoKey] || ''}
+                        onChange={(e) => setForm({ ...form, [campoKey]: e.target.value })}
+                        placeholder=" "
+                        autoComplete="off"
+                        className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                      />
+                      <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                        {campoKey}
+                      </label>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-gray-500 text-sm italic">
+                  {t('pacientes.avanzado_vacio')}
+                </div>
+              )}
             </div>
             {/* 
             👨‍⚕️ Datos del médico responsable
@@ -430,28 +426,28 @@ export default function RegistroPaciente() {
             Puede usarse para trazabilidad legal, firma o historial.
             */}
             <div className="border border-gray-200 rounded-xl p-4 shadow-sm bg-blue-50 mt-8">
-            <h3 className="text-[#004080] font-semibold mb-3 text-sm">
-                Datos del médico responsable
-            </h3>
+              <h3 className="text-[#004080] font-semibold mb-3 text-sm">
+                {t('pacientes.medico_titulo')}
+              </h3>
 
-            <div className="relative mb-3">
+              <div className="relative mb-3">
                 <input
-                type="text"
-                name="nombre_medico"
-                required
-                value={form.nombre_medico || ''}
-                onChange={(e) => setForm({ ...form, nombre_medico: e.target.value })}
-                placeholder=" "
-                autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                  type="text"
+                  name="nombre_medico"
+                  required
+                  value={form.nombre_medico || ''}
+                  onChange={(e) => setForm({ ...form, nombre_medico: e.target.value })}
+                  placeholder=" "
+                  autoComplete="off"
+                  className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
                 />
                 <label
-                htmlFor="nombre_medico"
-                className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all"
+                  htmlFor="nombre_medico"
+                  className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all"
                 >
-                Nombre del médico
+                  {t('pacientes.medico_nombre')}
                 </label>
-            </div>
+              </div>
             </div>
 
             {/* 
@@ -460,10 +456,10 @@ export default function RegistroPaciente() {
             Luego mostrará el link de seguimiento generado.
             */}
             <button
-            type="submit"
-            className="w-full mt-6 bg-[#004080] text-white py-3 rounded-lg hover:bg-[#003466] transition font-semibold shadow"
+              type="submit"
+              className="w-full mt-6 bg-[#004080] text-white py-3 rounded-lg hover:bg-[#003466] transition font-semibold shadow"
             >
-            Guardar paciente y generar link
+              {t('registro.guardar_y_generar')}
             </button>
           </div>
         </form>
@@ -485,11 +481,11 @@ export default function RegistroPaciente() {
               </motion.div>
 
               <h2 className="text-2xl font-bold tracking-tight text-green-700 mb-2">
-                Paciente registrado correctamente
+                {t('registro.titulo_exito')}
               </h2>
 
               <p className="text-gray-700 mb-4 text-sm max-w-md mx-auto">
-                Compartí este enlace con el paciente para que complete su formulario postoperatorio:
+                {t('registro.instruccion_link')}
               </p>
 
               <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-800 font-mono overflow-x-auto shadow-sm">
@@ -497,11 +493,9 @@ export default function RegistroPaciente() {
                 <span className="select-all">{link}</span>
               </div>
 
-
               <div className="mt-5 border border-gray-300 p-3 inline-block rounded-xl shadow-sm bg-white">
                 <QRCode value={link} size={120} fgColor="#003466" bgColor="#ffffff" />
               </div>
-
 
               {copiado && (
                 <motion.div
@@ -509,7 +503,7 @@ export default function RegistroPaciente() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-green-600 font-medium text-sm mt-2"
                 >
-                  📋 Link copiado al portapapeles
+                  {t('registro.link_copiado')}
                 </motion.div>
               )}
 
@@ -522,10 +516,10 @@ export default function RegistroPaciente() {
                         setTimeout(() => setCopiado(false), 2000)
                       })
                       .catch(() => {
-                        alert('⚠️ No se pudo copiar el link')
+                        alert(t('registro.error_copiar'))
                       })
                   } else {
-                    alert('⚠️ Tu navegador no permite copiar al portapapeles')
+                    alert(t('registro.no_compatible'))
                   }
                 }}
                 animate={copiado ? { scale: [1, 1.05, 1], backgroundColor: "#16a34a" } : {}}
@@ -534,7 +528,7 @@ export default function RegistroPaciente() {
                   copiado ? 'bg-green-600 hover:bg-green-700' : 'bg-[#004080] hover:bg-[#003466]'
                 }`}
               >
-                {copiado ? '✅ Link copiado' : '📋 Copiar link'}
+                {copiado ? '✅ ' + t('registro.link_copiado_boton') : '📋 ' + t('registro.boton_copiar')}
               </motion.button>
 
               <button
@@ -546,15 +540,15 @@ export default function RegistroPaciente() {
                 }}
                 className="w-full mt-4 px-5 py-2 rounded-lg bg-white border border-gray-300 text-[#004080] hover:bg-gray-50 hover:shadow transition font-medium"
               >
-                + Cargar otro paciente
+                {t('registro.boton_nuevo')}
               </button>
 
               <button
                 type="button"
-                onClick={() => alert('🔍 Esta sección mostrará los datos completos del paciente registrado.')}
+                onClick={() => alert(t('registro.alerta_ver_paciente'))}
                 className="w-full mt-3 px-5 py-2 rounded-lg bg-[#f0f4f8] border border-gray-300 text-[#004080] hover:bg-gray-100 hover:shadow transition font-medium"
               >
-                🔍 Ver paciente cargado
+                🔍 {t('registro.boton_ver')}
               </button>
             </div>
           </motion.div>
