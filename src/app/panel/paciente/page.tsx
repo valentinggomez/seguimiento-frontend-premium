@@ -25,10 +25,9 @@ export default function RegistroPaciente() {
     console.log("🧾 Datos form frontend antes de enviar:", form)
     const vacios = campos.filter(([_, val]) => val === '')
     if (vacios.length > 0) {
-      setMensajeError('Por favor, completá todos los campos obligatorios.')
-    return
+      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.faltan_campos') }))
+      return
     }
-
 
     const [d, m, y] = (form.fecha_cirugia || '').split('/')
     const dia = parseInt(d, 10)
@@ -37,31 +36,30 @@ export default function RegistroPaciente() {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     const fechaIngresada = new Date(`${anio}-${mes}-${dia}`)
-    
+
     if (
       isNaN(dia) || isNaN(mes) || isNaN(anio) ||
       dia < 1 || dia > 31 ||
       mes < 1 || mes > 12 ||
       fechaIngresada > hoy
-      ) {
+    ) {
       setErrores((prev) => ({
-          ...prev,
-          fecha_cirugia: 'La fecha debe ser válida y no futura.'
+        ...prev,
+        fecha_cirugia: t('pacientes.errores.error_fecha')
       }))
       return
-      } else {
-        setErrores((prev) => ({ ...prev, fecha_cirugia: '' }))
-      }
-
+    } else {
+      setErrores((prev) => ({ ...prev, fecha_cirugia: '' }))
+    }
 
     if (parseInt(form.edad) < 0 || parseInt(form.edad) > 120) {
-      setErrores({ ...errores, edad: 'Edad fuera de rango válido' })
-      setMensajeError('La edad ingresada no es válida.')
+      setErrores({ ...errores, edad: t('pacientes.errores.edad_maxima') })
+      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.edad_maxima') }))
       return
     }
 
     if (!clinica?.id) {
-      setMensajeError('No se pudo identificar la clínica actual.')
+      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.no_clinica') }))
       return
     }
 
@@ -81,7 +79,7 @@ export default function RegistroPaciente() {
       const resultado = await res.json()
 
       if (!res.ok) {
-        setMensajeError('Ocurrió un error al guardar el paciente.')
+        setMensajeError(t('pacientes.errores.error_guardado'))
         console.error(resultado.error)
         return
       }
@@ -91,7 +89,7 @@ export default function RegistroPaciente() {
       setEnviado(true)
     } catch (err) {
       console.error(err)
-      setMensajeError('Error inesperado. Reintentá más tarde.')
+      setMensajeError(t('pacientes.registro.error_inesperado'))
     }
   }
 

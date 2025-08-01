@@ -37,7 +37,13 @@
       "telefono": "Teléfono de contacto",
       "edad": "Edad",
         "errores": {
-          "edad_maxima": "La edad no puede ser mayor a 130 años."
+          "edad_maxima": "La edad no puede ser mayor a 130 años.",
+          "error_generico": "⚠️ Error: {{mensaje}}",
+          "error_fecha": "La fecha debe ser válida y no futura.",
+          "no_clinica": "No se pudo identificar la clínica actual.",
+          "error_guardado": "Ocurrió un error al guardar el paciente.",
+          "error_inesperado": "Error inesperado. Reintentá más tarde.",
+          "faltan_campos": "Por favor, completá todos los campos obligatorios."
         },
       "sexo": "Sexo",
       "peso": "Peso (kg)",
@@ -177,7 +183,13 @@
       "telefono": "Contact phone",
       "edad": "Age",
         "errores": {
-          "edad_maxima": "Age cannot be greater than 130."
+          "edad_maxima": "Age cannot be greater than 130.",
+          "error_generico": "⚠️ Error: {{mensaje}}",
+          "error_fecha": "The date must be valid and not in the future.",
+          "no_clinica": "The current clinic could not be identified.",
+          "error_guardado": "An error occurred while saving the patient.",
+          "error_inesperado": "Unexpected error. Please try again later.",
+          "faltan_campos": "Please complete all required fields."
         },
       "sexo": "Gender",
       "peso": "Weight",
@@ -209,8 +221,7 @@
         "boton_ver": "View registered patient",
         "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient.",
         "titulo": "Patient Registration",
-        "subtitulo": "Postoperative follow-up",
-        "error_generico": "⚠️ Error: {{mensaje}}"
+        "subtitulo": "Postoperative follow-up"
       }
     },
     "logs": {
