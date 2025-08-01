@@ -185,7 +185,7 @@ export default function PanelPacientes() {
                         setEditando(true)
                       }}
                     >
-                      ✏️ {t('acciones.editar')}
+                      ✏️ {t('logs.acciones.editar')}
                     </Button>
 
                     <Button
@@ -196,7 +196,7 @@ export default function PanelPacientes() {
                         setMostrarModalEliminar(true)
                       }}
                     >
-                      🗑️ {t('acciones.eliminar')}
+                      🗑️ {t('logs.acciones.eliminar')}
                     </Button>
                   </td>
                 </tr>
@@ -209,10 +209,10 @@ export default function PanelPacientes() {
               onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
               disabled={paginaActual === 1}
             >
-              ⬅️ {t('paginacion.anterior')}
+              ⬅️ {t('logs.paginacion.anterior')}
             </Button>
             <span className="text-slate-600 font-medium">
-              {t('paginacion.pagina_de', {
+              {t('logs.paginacion.pagina_de', {
                 actual: paginaActual,
                 total: totalPaginas,
               })}
@@ -222,7 +222,7 @@ export default function PanelPacientes() {
               onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
               disabled={paginaActual === totalPaginas}
             >
-              {t('paginacion.siguiente')} ➡️
+              {t('logs.paginacion.siguiente')} ➡️
             </Button>
           </div>
         </div>

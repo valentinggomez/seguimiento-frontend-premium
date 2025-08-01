@@ -295,6 +295,9 @@
       "sin_registros": "No patients registered yet.",
       "acciones": "Actions"
     },
+    "comun": {
+      "vacio": "—"
+    },
     "logs": {
       "titulo": "Clinical Audit",
       "subtitulo": "Legal and operational traceability logs of the system.",
