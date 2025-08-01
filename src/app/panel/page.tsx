@@ -109,11 +109,13 @@ export default function Inicio() {
         )}
 
         <div className="text-sm text-gray-600">
-          <span className="font-medium">Dominio:</span> {clinica.dominio} — 
-          <span className="ml-2 font-medium">Licencia:</span> {clinica.licencia_activa ? 'Activa ✅' : 'Vencida ❌'}
+          <span className="font-medium">{t("inicio.dominio")}:</span> {clinica.dominio} —
+          <span className="ml-2 font-medium">{t("inicio.licencia")}:</span>{" "}
+          {clinica.licencia_activa ? t("inicio.activa") : t("inicio.vencida")}
         </div>
+
         <p className="text-gray-600 text-sm sm:text-base">
-          Sistema premium de seguimiento postoperatorio – SEGUIR+IA™
+          {t("inicio.subtitulo")}
         </p>
       <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-6 py-4 text-sm text-red-800 shadow-sm">
         <p className="font-semibold mb-1">{t('inicio.alertas_activas')}</p>
