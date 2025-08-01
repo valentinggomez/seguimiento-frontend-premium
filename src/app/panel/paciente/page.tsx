@@ -105,10 +105,10 @@ export default function RegistroPaciente() {
       >
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-[#003466] tracking-tight">
-            {t('registro.titulo')}
+            {t('pacientes.registro.titulo')}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {t('registro.subtitulo')}
+            {t('pacientes.registro.subtitulo')}
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function RegistroPaciente() {
                 exit={{ opacity: 0 }}
                 className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-xl shadow-sm text-sm"
             >
-                {t('registro.error_generico', { mensaje: mensajeError })}
+                {t('pacientes.registro.error_generico', { mensaje: mensajeError })}
             </motion.div>
             )}
 
