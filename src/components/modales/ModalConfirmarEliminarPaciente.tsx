@@ -1,10 +1,17 @@
 'use client'
 
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState } from "react"
+import { useTranslation } from "@/i18n/useTranslation"
 
 interface ModalProps {
   open: boolean
@@ -13,8 +20,14 @@ interface ModalProps {
   nombrePaciente: string
 }
 
-export const ModalConfirmarEliminarPaciente = ({ open, onClose, onConfirm, nombrePaciente }: ModalProps) => {
+export const ModalConfirmarEliminarPaciente = ({
+  open,
+  onClose,
+  onConfirm,
+  nombrePaciente,
+}: ModalProps) => {
   const [loading, setLoading] = useState(false)
+  const { t } = useTranslation()
 
   const handleConfirm = async () => {
     setLoading(true)
@@ -37,16 +50,18 @@ export const ModalConfirmarEliminarPaciente = ({ open, onClose, onConfirm, nombr
               <DialogHeader className="flex flex-col items-center text-center">
                 <ExclamationTriangleIcon className="w-8 h-8 text-red-600 mb-2" />
                 <DialogTitle className="text-xl font-semibold text-red-700">
-                  ¿Eliminar paciente "{nombrePaciente}"?
+                  {t("eliminar_paciente.titulo", {
+                    nombre: nombrePaciente,
+                  })}
                 </DialogTitle>
               </DialogHeader>
 
               <p className="text-sm text-gray-600 mt-2 text-center">
-                Esta acción marcará al paciente como eliminado en la base de datos.
+                {t("eliminar_paciente.descripcion")}
               </p>
 
               <p className="text-xs text-gray-400 text-center mt-1">
-                Esta acción será registrada con fecha, hora y usuario responsable.
+                {t("eliminar_paciente.trazabilidad")}
               </p>
 
               <DialogFooter className="mt-6 flex justify-center gap-4">
@@ -55,14 +70,16 @@ export const ModalConfirmarEliminarPaciente = ({ open, onClose, onConfirm, nombr
                   onClick={onClose}
                   className="border-gray-300 text-gray-700 hover:bg-gray-100"
                 >
-                  Cancelar
+                  {t("eliminar_paciente.cancelar")}
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
                   className="bg-red-600 text-white shadow-md hover:brightness-110 transition"
                 >
-                  {loading ? "Eliminando..." : "Sí, eliminar"}
+                  {loading
+                    ? t("eliminar_paciente.eliminando")
+                    : t("eliminar_paciente.confirmar")}
                 </Button>
               </DialogFooter>
             </motion.div>

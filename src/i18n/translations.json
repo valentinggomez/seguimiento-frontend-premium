@@ -114,6 +114,14 @@
     "comun": {
       "vacio": "—"
     },
+    "eliminar_paciente": {
+      "titulo": "¿Eliminar paciente \"{{nombre}}\"?",
+      "descripcion": "Esta acción marcará al paciente como eliminado en la base de datos.",
+      "trazabilidad": "Esta acción será registrada con fecha, hora y usuario responsable.",
+      "cancelar": "Cancelar",
+      "confirmar": "Sí, eliminar",
+      "eliminando": "Eliminando..."
+    },
     "logs": {
       "titulo": "Auditoría Clínica",
       "subtitulo": "Logs de trazabilidad legal y operativa del sistema.",
@@ -297,6 +305,14 @@
     },
     "comun": {
       "vacio": "—"
+    },
+    "eliminar_paciente": {
+      "titulo": "Delete patient \"{{nombre}}\"?",
+      "descripcion": "This action will mark the patient as deleted in the database.",
+      "trazabilidad": "This action will be logged with date, time and responsible user.",
+      "cancelar": "Cancel",
+      "confirmar": "Yes, delete",
+      "eliminando": "Deleting..."
     },
     "logs": {
       "titulo": "Clinical Audit",
