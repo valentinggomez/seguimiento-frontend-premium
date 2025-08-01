@@ -159,8 +159,8 @@
           "edad_maxima": "Age cannot be greater than 130."
         },
       "sexo": "Gender",
-      "peso": "Weight (kg)",
-      "altura": "Height (m)",
+      "peso": "Weight",
+      "altura": "Height",
       "imc": "Body Mass Index (BMI)",
       "obra_social": "Health insurance",
       "seleccionar_sexo": "Select gender",
