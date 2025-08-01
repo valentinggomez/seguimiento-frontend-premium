@@ -154,19 +154,21 @@ export default function Inicio() {
         />
       </div>
 
-      {/* Accesos rápidos */}
-      <div className="w-full flex justify-center mt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md w-full">
+      {/* 🔗 Accesos rápidos centrados */}
+      <div className="mt-8 w-full flex justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl w-full">
           <Link
             href="/panel/paciente"
-            className="bg-[#003466] text-white rounded-xl px-6 py-4 text-center font-semibold hover:bg-[#002244] transition"
+            className="flex items-center justify-center gap-2 bg-[#003466] text-white rounded-2xl px-6 py-5 text-lg font-semibold shadow-md hover:bg-[#002244] transition"
           >
+            <span className="text-xl">➕</span>
             {t('inicio.registrar')}
           </Link>
           <Link
             href="/panel/respuestas"
-            className="bg-gray-100 text-gray-800 rounded-xl px-6 py-4 text-center font-semibold hover:bg-gray-200 transition"
+            className="flex items-center justify-center gap-2 bg-gray-100 text-gray-800 rounded-2xl px-6 py-5 text-lg font-semibold shadow-md hover:bg-gray-200 transition"
           >
+            <span className="text-xl">📊</span>
             {t('inicio.ver_respuestas')}
           </Link>
         </div>
