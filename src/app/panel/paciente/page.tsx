@@ -5,10 +5,12 @@ import { motion } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useTranslation } from '@/i18n/useTranslation'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({})
   const [enviado, setEnviado] = useState(false)
+  const { t } = useTranslation()
   const [link, setLink] = useState('')
   const [copiado, setCopiado] = useState(false)
   const [errores, setErrores] = useState<{ fecha_cirugia?: string; edad?: string }>({})
@@ -122,7 +124,7 @@ export default function RegistroPaciente() {
           <div className="space-y-6">
             {/* NOMBRE COMPLETO */}
             <div className="relative">
-                <input
+              <input
                 type="text"
                 name="nombre"
                 required
@@ -131,10 +133,10 @@ export default function RegistroPaciente() {
                 placeholder=" "
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-                />
-                <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                Nombre completo
-                </label>
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.nombre')}
+              </label>
             </div>
 
             {/* EDAD */}

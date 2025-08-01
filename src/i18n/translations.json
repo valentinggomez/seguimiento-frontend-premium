@@ -31,6 +31,20 @@
       "medico": "Médico responsable",
       "firma": "Firma digital y trazabilidad"
     },
+    "paciente": {
+      "nombre": "Nombre completo",
+      "dni": "DNI",
+      "telefono": "Teléfono",
+      "edad": "Edad",
+      "sexo": "Sexo",
+      "peso": "Peso (kg)",
+      "altura": "Altura (m)",
+      "imc": "Índice de Masa Corporal (IMC)",
+      "obra_social": "Obra social",
+      "cirugia": "Tipo de cirugía",
+      "fecha_cirugia": "Fecha de cirugía",
+      "nombre_medico": "Nombre del médico"
+    },
     "logs": {
       "titulo": "Auditoría Clínica",
       "subtitulo": "Logs de trazabilidad legal y operativa del sistema.",
@@ -128,6 +142,20 @@
       "fecha": "Registration Date",
       "medico": "Responsible Doctor",
       "firma": "Digital Signature & Traceability"
+    },
+    "paciente": {
+      "nombre": "Full Name",
+      "dni": "ID Number",
+      "telefono": "Phone Number",
+      "edad": "Age",
+      "sexo": "Gender",
+      "peso": "Weight (kg)",
+      "altura": "Height (m)",
+      "imc": "Body Mass Index (BMI)",
+      "obra_social": "Health Insurance",
+      "cirugia": "Surgery Type",
+      "fecha_cirugia": "Surgery Date",
+      "nombre_medico": "Doctor's Name"
     },
     "logs": {
       "titulo": "Clinical Audit",
