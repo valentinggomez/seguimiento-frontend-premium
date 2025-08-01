@@ -6,10 +6,12 @@ import { useClinica } from '@/lib/ClinicaProvider'
 import { getDashboardStats } from '@/lib/getDashboardStats';
 import { getRespuestasAlertas } from '@/lib/getRespuestasAlertas';
 import { getInteraccionesNoleidas } from '@/lib/getInteraccionesNoleidas';
+import { useTranslation } from '@/i18n/useTranslation'
 
 export default function Inicio() {
   const clinicaContext = useClinica()
   const clinica = clinicaContext?.clinica
+  const { t } = useTranslation()
 
   const [stats, setStats] = useState({
     registradosHoy: 0,
@@ -73,19 +75,21 @@ export default function Inicio() {
     cargarNoleidas();
   }, [clinica?.id]);
 
+  // 🔄 Traducción de estado de carga institucional
   if (!clinica) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">
-        Cargando datos institucionales...
+        {t('inicio.cargando_institucional')}
       </div>
     )
   }
 
+  // 🔴 Traducción del error de carga
   if (errorStats) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-red-700 text-center space-y-4">
-        <p className="text-lg font-semibold">❌ No se pudieron cargar las estadísticas.</p>
-        <p className="text-sm">Por favor, intentá nuevamente en unos segundos o revisá la conexión con el backend.</p>
+        <p className="text-lg font-semibold">{t('inicio.error_carga_stats')}</p>
+        <p className="text-sm">{t('inicio.reintentar')}</p>
       </div>
     )
   }
@@ -94,7 +98,7 @@ export default function Inicio() {
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-10">
       <div className="text-center space-y-2">
         <h1 className="text-3xl sm:text-4xl font-bold text-[#003466] tracking-tight">
-          Bienvenido a {clinica.nombre_clinica}
+          {t('inicio.bienvenida', { nombre_clinica: clinica.nombre_clinica })}
         </h1>
         {clinica.logo_url && (
           <img
@@ -112,11 +116,11 @@ export default function Inicio() {
           Sistema premium de seguimiento postoperatorio – SEGUIR+IA™
         </p>
       <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-6 py-4 text-sm text-red-800 shadow-sm">
-        <p className="font-semibold mb-1">🚨 Alertas clínicas activas</p>
+        <p className="font-semibold mb-1">{t('inicio.alertas_activas')}</p>
         <div className="flex gap-6 text-sm sm:text-base">
-          <span>🔴 <strong>{alertas.rojo}</strong> críticas</span>
-          <span>🟡 <strong>{alertas.amarillo}</strong> moderadas</span>
-          <span>🟢 <strong>{alertas.verde}</strong> leves</span>
+          <span>🔴 <strong>{alertas.rojo}</strong> {t('inicio.alertas_criticas')}</span>
+          <span>🟡 <strong>{alertas.amarillo}</strong> {t('inicio.alertas_moderadas')}</span>
+          <span>🟢 <strong>{alertas.verde}</strong> {t('inicio.alertas_leves')}</span>
         </div>
       </div>
       </div>
@@ -125,22 +129,22 @@ export default function Inicio() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <ResumenCard
           icon={<CheckCircle className="text-green-600 w-6 h-6" />}
-          titulo="Registrados hoy"
+          titulo={t('inicio.registrados_hoy')}
           valor={stats.registradosHoy.toString()}
         />
         <ResumenCard
           icon={<AlertTriangle className="text-yellow-500 w-6 h-6" />}
-          titulo="Con alertas clínicas"
+          titulo={t('inicio.con_alertas')}
           valor={stats.conAlertas.toString()}
         />
         <ResumenCard
           icon={<ClipboardList className="text-blue-500 w-6 h-6" />}
-          titulo="Encuestas completadas"
+          titulo={t('inicio.encuestas')}
           valor={stats.encuestasCompletadas.toString()}
         />
         <ResumenCard
           icon={<Calendar className="text-gray-500 w-6 h-6" />}
-          titulo="Última cirugía"
+          titulo={t('inicio.ultima_cirugia')}
           valor={stats?.ultimaCirugia
             ? new Date(new Date(stats.ultimaCirugia).getTime() + 3 * 60 * 60 * 1000).toLocaleDateString('es-AR')
             : '—'}
@@ -151,21 +155,16 @@ export default function Inicio() {
       {/* Accesos rápidos */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link href="/panel/paciente" className="bg-[#003466] text-white rounded-lg px-5 py-4 text-center font-medium hover:bg-[#002244] transition">
-          ➕ Registrar paciente
+          {t('inicio.registrar')}
         </Link>
         <Link href="/panel/respuestas" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
-          📊 Ver respuestas clínicas
-        </Link>
-        <Link href="#" className="bg-gray-100 text-gray-800 rounded-lg px-5 py-4 text-center font-medium hover:bg-gray-200 transition">
-          🔍 Buscar paciente
+          {t('inicio.ver_respuestas')}
         </Link>
       </div>
 
       {/* Mensaje institucional */}
       <div className="mt-12 bg-blue-50 border border-blue-200 p-5 rounded-lg text-sm text-blue-900 shadow-sm">
-        <p>
-          Esta aplicación está diseñada para garantizar el seguimiento postoperatorio de forma segura, profesional y completamente automatizada.
-        </p>
+        <p>{t('inicio.mensaje_institucional')}</p>
       </div>
     </div>
   )
