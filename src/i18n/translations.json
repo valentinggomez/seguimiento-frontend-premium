@@ -143,7 +143,7 @@
       "medico": "Responsible Doctor",
       "firma": "Digital Signature & Traceability"
     },
-    "paciente": {
+    "pacientes": {
       "nombre": "Full Name",
       "dni": "ID Number",
       "telefono": "Phone Number",
