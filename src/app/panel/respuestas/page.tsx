@@ -222,14 +222,21 @@ export default function PanelRespuestas() {
                     )
                   }
 
-                  return claves.map((labelVisible) => (
-                    <div key={labelVisible}>
-                      <strong>{t(`campos_formulario.${labelVisible}`) || labelVisible}:</strong>
-                      {campos[labelVisible] != null && campos[labelVisible] !== ''
-                        ? campos[labelVisible]
-                        : t('respuestas.no_registrado')}
-                    </div>
-                  ))
+                  return claves.map((labelVisible) => {
+                    const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
+                    const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
+                      ? posibleTraduccion
+                      : labelVisible
+
+                    return (
+                      <div key={labelVisible}>
+                        <strong>{mostrarLabel}:</strong>{' '}
+                        {campos[labelVisible] != null && campos[labelVisible] !== ''
+                          ? campos[labelVisible]
+                          : t('respuestas.no_registrado')}
+                      </div>
+                    )
+                  })
                 })()}
               </motion.div>
 
