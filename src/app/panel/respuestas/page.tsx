@@ -219,25 +219,6 @@ export default function PanelRespuestas() {
                     ))}
                 </motion.div>
 
-                {r.score_ia !== undefined && (
-                  <div
-                    className="inline-block mt-4 px-4 py-1 rounded-full text-white text-sm shadow-md"
-                    style={{
-                      backgroundColor:
-                        r.score_ia >= 7 ? '#dc2626' :
-                        r.score_ia >= 4 ? '#facc15' :
-                        '#22c55e'
-                    }}
-                  >
-                    🧠 {t('respuestas.score_ia')} {r.score_ia >= 7 ? t('respuestas.alto') : r.score_ia >= 4 ? t('respuestas.medio') : t('respuestas.bajo')} ({r.score_ia})
-                  </div>
-                )}
-                {r.sugerencia_ia && (
-                  <p className="mt-2 text-sm text-gray-800 flex items-center gap-2">
-                    <span className="font-medium">💡 {r.sugerencia_ia}</span>
-                  </p>
-                )}
-
                 <div className="mt-4">
                   <button
                     onClick={() =>
