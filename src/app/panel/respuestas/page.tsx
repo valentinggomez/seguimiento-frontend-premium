@@ -38,11 +38,13 @@ function ModalConfirmacion({
   cantidad,
   onConfirmar,
   onCancelar,
+  t, // ✅ Pasar la función de traducción como prop
 }: {
   mostrar: boolean
   cantidad: number
   onConfirmar: () => void
   onCancelar: () => void
+  t: (clave: string, variables?: any) => string
 }) {
   if (!mostrar) return null
 
@@ -270,6 +272,7 @@ export default function PanelRespuestas() {
             mostrar={mostrarModal}
             cantidad={seleccionadas.length}
             onCancelar={() => setMostrarModal(false)}
+            t={t}
             onConfirmar={async () => {
               try {
                 const res = await fetchConToken('/api/respuestas', {
