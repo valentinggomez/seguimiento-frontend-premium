@@ -32,7 +32,6 @@ interface Respuesta {
   score_ia?: number
     sugerencia_ia?: string
 }
-const { t } = useTranslation()
 function ModalConfirmacion({
   mostrar,
   cantidad,
