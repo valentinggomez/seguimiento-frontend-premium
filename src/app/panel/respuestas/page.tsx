@@ -32,6 +32,7 @@ interface Respuesta {
   score_ia?: number
     sugerencia_ia?: string
   respuestas_formulario?: Record<string, string | number | null>
+  campos_personalizados?: Record<string, any> | string | null 
 }
 function ModalConfirmacion({
   mostrar,
@@ -116,6 +117,25 @@ export default function PanelRespuestas() {
     return 'border-green-400 bg-green-50'
   }
 
+  // Justo antes del return (dentro del map):
+  const getCamposPersonalizados = (r: Respuesta): Record<string, any> => {
+    try {
+      if (typeof r.campos_personalizados === 'string') {
+        return JSON.parse(r.campos_personalizados)
+      }
+      if (
+        typeof r.campos_personalizados === 'object' &&
+        !Array.isArray(r.campos_personalizados) &&
+        r.campos_personalizados !== null
+      ) {
+        return r.campos_personalizados
+      }
+    } catch (err) {
+      console.warn(`❌ Error parseando campos_personalizados para respuesta ${r.id}`, err)
+    }
+    return {}
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-[#003366]">
@@ -185,19 +205,19 @@ export default function PanelRespuestas() {
 
             {expandedId === r.id && (
               <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
-                >
-                  {r.respuestas_formulario &&
-                    Object.entries(r.respuestas_formulario).map(([clave, valor]) => (
-                      <div key={clave}>
-                        <strong>{t(`formulario.${clave}` as any) || clave}:</strong>{' '}
-                        {valor != null && valor !== '' ? valor : t('respuestas.no_registrado')}
-                      </div>
-                    ))}
-                </motion.div>
+               {/* 🔁 Render seguro de campos personalizados */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
+              >
+                {Object.entries(getCamposPersonalizados(r)).map(([labelVisible, valor]) => (
+                  <div key={labelVisible}>
+                    <strong>{labelVisible}:</strong>{' '}
+                    {valor != null && valor !== '' ? valor : t('respuestas.no_registrado')}
+                  </div>
+                ))}
+              </motion.div>
 
                 <div className="mt-4">
                   <button
