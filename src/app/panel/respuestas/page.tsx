@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useTranslation } from '@/i18n/useTranslation'
 
 interface Respuesta {
   id: string
@@ -31,7 +32,7 @@ interface Respuesta {
   score_ia?: number
     sugerencia_ia?: string
 }
-
+const { t } = useTranslation()
 function ModalConfirmacion({
   mostrar,
   cantidad,
@@ -48,22 +49,24 @@ function ModalConfirmacion({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 shadow-xl max-w-md w-full space-y-4 animate-fadeIn">
-        <h3 className="text-lg font-semibold text-red-700">¿Eliminar respuestas seleccionadas?</h3>
+        <h3 className="text-lg font-semibold text-red-700">
+          {t('respuestas.confirmar_eliminacion_titulo')}
+        </h3>
         <p className="text-sm text-gray-700">
-          Esta acción eliminará <strong>{cantidad}</strong> respuestas clínicas del sistema. ¿Estás seguro que deseas continuar?
+          {t('respuestas.confirmar_eliminacion_descripcion', { cantidad })}
         </p>
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onCancelar}
             className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
           >
-            Cancelar
+            {t('respuestas.cancelar')}
           </button>
           <button
             onClick={onConfirmar}
             className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
           >
-            Eliminar
+            {t('respuestas.eliminar')}
           </button>
         </div>
       </div>
@@ -77,6 +80,7 @@ export default function PanelRespuestas() {
   const [modoEdicion, setModoEdicion] = useState(false)
   const [seleccionadas, setSeleccionadas] = useState<string[]>([])
   const [mostrarModal, setMostrarModal] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const fetchRespuestas = async () => {
@@ -112,9 +116,13 @@ export default function PanelRespuestas() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-[#003366]">Respuestas postoperatorias</h1>
+      <h1 className="text-2xl font-bold mb-6 text-[#003366]">
+        {t('respuestas.titulo')}
+      </h1>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-[#003366]">Respuestas postoperatorias</h2>
+        <h2 className="text-lg font-semibold text-[#003366]">
+          {t('respuestas.titulo')}
+        </h2>
         <button
           onClick={() => {
             setModoEdicion(!modoEdicion)
@@ -122,7 +130,7 @@ export default function PanelRespuestas() {
           }}
           className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
         >
-          {modoEdicion ? 'Cancelar edición' : '🗑️ Editar respuestas'}
+          {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
         </button>
       </div>
 
@@ -153,7 +161,7 @@ export default function PanelRespuestas() {
                   />
                 )}
                 <h2 className="font-semibold text-[#663300] flex items-center gap-2">
-                  📄 Seguimiento de {r.paciente_nombre}
+                  📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
                   {typeof r.score_ia === 'number' && (
                     <span
                       className="ml-2 px-2 py-0.5 text-xs rounded-full text-white shadow-sm"
@@ -164,23 +172,32 @@ export default function PanelRespuestas() {
                           '#22c55e'
                       }}
                     >
-                      🧠 {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'}
+                      🧠 {r.score_ia >= 7
+                          ? t('respuestas.riesgo_alto')
+                          : r.score_ia >= 4
+                          ? t('respuestas.riesgo_medio')
+                          : t('respuestas.riesgo_bajo')}
                     </span>
                   )}
                   {r.sugerencia_ia && (
                     <span className="ml-2 text-sm text-gray-600">💡 {r.sugerencia_ia}</span>
                   )}
-                </h2>
-                <p className="text-sm text-gray-700">
-                  {r.tipo_cirugia} • {r.edad} años<br />
-                  Sexo: {r.sexo} • Peso: {r.peso}kg • Altura: {r.altura}m • <span className="text-green-600 font-semibold">IMC: {r.imc}</span>
-                </p>
-              </div>
-              <div className="text-sm text-gray-500">
-                {new Date(r.creado_en).toLocaleString('es-AR', {
-                  day: '2-digit', month: '2-digit', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                })}
+                  </h2>
+
+                  <p className="text-sm text-gray-700">
+                    {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
+                    {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">IMC: {r.imc}</span>
+                  </p>
+
+                  <div className="text-sm text-gray-500">
+                    {new Date(r.creado_en).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
               </div>
             </div>
 
@@ -191,14 +208,14 @@ export default function PanelRespuestas() {
                   animate={{ opacity: 1 }}
                   className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
                 >
-                  <div><strong>Dolor 6h:</strong> {r.dolor_6h}</div>
-                  <div><strong>Dolor 24h:</strong> {r.dolor_24h}</div>
-                  <div><strong>¿Dolor mayor a 7?</strong> {r.dolor_mayor_7 || 'No registrado'}</div>
-                  <div><strong>Náuseas:</strong> {r.nausea}</div>
-                  <div><strong>Vómitos:</strong> {r.vomitos || 'No registrado'}</div>
-                  <div><strong>Somnolencia:</strong> {r.somnolencia}</div>
-                  <div><strong>Satisfacción:</strong> {r.satisfaccion ?? 'No registrado'}</div>
-                  <div><strong>Observaciones:</strong> {r.observacion || 'No'}</div>
+                  <div><strong>{t('respuestas.dolor_6h')}:</strong> {r.dolor_6h}</div>
+                  <div><strong>{t('respuestas.dolor_24h')}:</strong> {r.dolor_24h}</div>
+                  <div><strong>{t('respuestas.dolor_mayor_7')}:</strong> {r.dolor_mayor_7 || t('respuestas.no_registrado')}</div>
+                  <div><strong>{t('respuestas.nauseas')}:</strong> {r.nausea}</div>
+                  <div><strong>{t('respuestas.vomitos')}:</strong> {r.vomitos || t('respuestas.no_registrado')}</div>
+                  <div><strong>{t('respuestas.somnolencia')}:</strong> {r.somnolencia}</div>
+                  <div><strong>{t('respuestas.satisfaccion')}:</strong> {r.satisfaccion ?? t('respuestas.no_registrado')}</div>
+                  <div><strong>{t('respuestas.observaciones')}:</strong> {r.observacion || t('respuestas.no')}</div>
                 </motion.div>
 
                 {r.score_ia !== undefined && (
@@ -211,20 +228,26 @@ export default function PanelRespuestas() {
                         '#22c55e'
                     }}
                   >
-                    🧠 Score IA: {r.score_ia >= 7 ? 'Alto' : r.score_ia >= 4 ? 'Medio' : 'Bajo'} ({r.score_ia})
+                    🧠 {t('respuestas.score_ia')} {r.score_ia >= 7 ? t('respuestas.alto') : r.score_ia >= 4 ? t('respuestas.medio') : t('respuestas.bajo')} ({r.score_ia})
                   </div>
                 )}
                 {r.sugerencia_ia && (
                   <p className="mt-2 text-sm text-gray-800 flex items-center gap-2">
-                     <span className="font-medium">{r.sugerencia_ia}</span>
+                    <span className="font-medium">💡 {r.sugerencia_ia}</span>
                   </p>
                 )}
+
                 <div className="mt-4">
                   <button
-                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}?host=${window.location.hostname}`, '_blank')}
+                    onClick={() =>
+                      window.open(
+                        `${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}?host=${window.location.hostname}`,
+                        '_blank'
+                      )
+                    }
                     className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
                   >
-                    📄 Ver PDF institucional
+                    📄 {t('respuestas.ver_pdf')}
                   </button>
                 </div>
               </>
@@ -234,13 +257,14 @@ export default function PanelRespuestas() {
       </div>
       {modoEdicion && seleccionadas.length > 0 && (
         <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-center space-y-3">
-          <p className="text-sm text-red-700">Seleccionadas: {seleccionadas.length}</p>
+          <p className="text-sm text-red-700">
+            {t('respuestas.seleccionadas')}: {seleccionadas.length}
+          </p>
           <button
             onClick={() => setMostrarModal(true)}
-
             className="bg-red-600 text-white font-semibold px-6 py-2 rounded-xl hover:bg-red-700 transition"
           >
-            Eliminar respuestas seleccionadas
+            {t('respuestas.eliminar_respuestas_seleccionadas')}
           </button>
           <ModalConfirmacion
             mostrar={mostrarModal}
@@ -259,10 +283,10 @@ export default function PanelRespuestas() {
                   setModoEdicion(false)
                   setMostrarModal(false)
                 } else {
-                  alert('❌ Error al eliminar respuestas')
+                  alert('❌ ' + t('respuestas.error_eliminar'))
                 }
               } catch (e) {
-                alert('❌ Error al conectar con el servidor')
+                alert('❌ ' + t('respuestas.error_servidor'))
               }
             }}
           />
