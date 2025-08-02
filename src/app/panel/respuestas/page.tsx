@@ -205,18 +205,32 @@ export default function PanelRespuestas() {
 
             {expandedId === r.id && (
               <>
-               {/* 🔁 Render seguro de campos personalizados */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
               >
-                {Object.entries(getCamposPersonalizados(r)).map(([labelVisible, valor]) => (
-                  <div key={labelVisible}>
-                    <strong>{labelVisible}:</strong>{' '}
-                    {valor != null && valor !== '' ? valor : t('respuestas.no_registrado')}
-                  </div>
-                ))}
+                {(() => {
+                  const campos = getCamposPersonalizados(r)
+                  const claves = Object.keys(campos)
+
+                  if (claves.length === 0) {
+                    return (
+                      <div className="text-gray-500 italic col-span-2">
+                        {t('respuestas.sin_campos')}
+                      </div>
+                    )
+                  }
+
+                  return claves.map((labelVisible) => (
+                    <div key={labelVisible}>
+                      <strong>{labelVisible}:</strong>{' '}
+                      {campos[labelVisible] != null && campos[labelVisible] !== ''
+                        ? campos[labelVisible]
+                        : t('respuestas.no_registrado')}
+                    </div>
+                  ))
+                })()}
               </motion.div>
 
                 <div className="mt-4">
