@@ -31,6 +31,7 @@ interface Respuesta {
   nivel_alerta: string
   score_ia?: number
     sugerencia_ia?: string
+  respuestas_formulario?: Record<string, string | number | null>
 }
 function ModalConfirmacion({
   mostrar,
@@ -209,14 +210,13 @@ export default function PanelRespuestas() {
                   animate={{ opacity: 1 }}
                   className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
                 >
-                  <div><strong>{t('respuestas.dolor_6h')}:</strong> {r.dolor_6h}</div>
-                  <div><strong>{t('respuestas.dolor_24h')}:</strong> {r.dolor_24h}</div>
-                  <div><strong>{t('respuestas.dolor_mayor_7')}:</strong> {r.dolor_mayor_7 || t('respuestas.no_registrado')}</div>
-                  <div><strong>{t('respuestas.nauseas')}:</strong> {r.nausea}</div>
-                  <div><strong>{t('respuestas.vomitos')}:</strong> {r.vomitos || t('respuestas.no_registrado')}</div>
-                  <div><strong>{t('respuestas.somnolencia')}:</strong> {r.somnolencia}</div>
-                  <div><strong>{t('respuestas.satisfaccion')}:</strong> {r.satisfaccion ?? t('respuestas.no_registrado')}</div>
-                  <div><strong>{t('respuestas.observaciones')}:</strong> {r.observacion || t('respuestas.no')}</div>
+                  {r.respuestas_formulario &&
+                    Object.entries(r.respuestas_formulario).map(([clave, valor]) => (
+                      <div key={clave}>
+                        <strong>{t(`formulario.${clave}` as any) || clave}:</strong>{' '}
+                        {valor != null && valor !== '' ? valor : t('respuestas.no_registrado')}
+                      </div>
+                    ))}
                 </motion.div>
 
                 {r.score_ia !== undefined && (
