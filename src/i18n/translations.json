@@ -274,6 +274,18 @@
       "eliminar_respuestas_seleccionadas": "Eliminar respuestas seleccionadas",
       "error_eliminar": "Error al eliminar respuestas",
       "error_servidor": "Error al conectar con el servidor"
+    },
+    "campos_formulario": {
+      "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
+      "🤢 ¿Tuviste náuseas?": "🤢 ¿Tuviste náuseas?",
+      "🤮 ¿Tuviste vómitos?": "🤮 ¿Tuviste vómitos?",
+      "😴 ¿Tuviste somnolencia?": "😴 ¿Tuviste somnolencia?",
+      "💊 ¿Requirió más medicación?": "💊 ¿Requirió más medicación?",
+      "🌙 ¿Se despertó por dolor?": "🌙 ¿Se despertó por dolor?",
+      "🔥 Nivel de dolor a las 24h": "🔥 Nivel de dolor a las 24h",
+      "🤕 Nivel de dolor a las 6h": "🤕 Nivel de dolor a las 6h",
+      "📄 Observaciones (opcional)": "📄 Observaciones (opcional)",
+      "🏃 ¿Horas hasta mover extremidades?": "🏃 ¿Horas hasta mover extremidades?"
     }
   },
   "en": {
@@ -547,6 +559,18 @@
       "eliminar_respuestas_seleccionadas": "Delete selected responses",
       "error_eliminar": "Error deleting responses",
       "error_servidor": "Error connecting to the server"
+    },
+    "campos_formulario": {
+      "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
+      "🤢 ¿Tuviste náuseas?": "🤢 Did you experience nausea?",
+      "🤮 ¿Tuviste vómitos?": "🤮 Did you experience vomiting?",
+      "😴 ¿Tuviste somnolencia?": "😴 Did you feel drowsy?",
+      "💊 ¿Requirió más medicación?": "💊 Required additional medication?",
+      "🌙 ¿Se despertó por dolor?": "🌙 Woke up due to pain?",
+      "🔥 Nivel de dolor a las 24h": "🔥 Pain level at 24h",
+      "🤕 Nivel de dolor a las 6h": "🤕 Pain level at 6h",
+      "📄 Observaciones (opcional)": "📄 Observations (optional)",
+      "🏃 ¿Horas hasta mover extremidades?": "🏃 Hours until limb movement"
     }
   }
 }

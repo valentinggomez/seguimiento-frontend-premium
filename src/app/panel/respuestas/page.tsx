@@ -224,7 +224,7 @@ export default function PanelRespuestas() {
 
                   return claves.map((labelVisible) => (
                     <div key={labelVisible}>
-                      <strong>{labelVisible}:</strong>{' '}
+                      <strong>{t(`campos_formulario.${labelVisible}`) || labelVisible}:</strong>
                       {campos[labelVisible] != null && campos[labelVisible] !== ''
                         ? campos[labelVisible]
                         : t('respuestas.no_registrado')}
