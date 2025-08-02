@@ -164,26 +164,6 @@ export default function PanelRespuestas() {
                 )}
                 <h2 className="font-semibold text-[#663300] flex items-center gap-2">
                   📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
-                  {typeof r.score_ia === 'number' && (
-                    <span
-                      className="ml-2 px-2 py-0.5 text-xs rounded-full text-white shadow-sm"
-                      style={{
-                        backgroundColor:
-                          r.score_ia >= 7 ? '#dc2626' :
-                          r.score_ia >= 4 ? '#facc15' :
-                          '#22c55e'
-                      }}
-                    >
-                      🧠 {r.score_ia >= 7
-                          ? t('respuestas.riesgo_alto')
-                          : r.score_ia >= 4
-                          ? t('respuestas.riesgo_medio')
-                          : t('respuestas.riesgo_bajo')}
-                    </span>
-                  )}
-                  {r.sugerencia_ia && (
-                    <span className="ml-2 text-sm text-gray-600">💡 {r.sugerencia_ia}</span>
-                  )}
                   </h2>
 
                   <p className="text-sm text-gray-700">
