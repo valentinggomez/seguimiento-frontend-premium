@@ -250,7 +250,8 @@ export default function PanelRespuestas() {
                         return
                       }
 
-                      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}?host=${window.location.hostname}&token=${token}`
+                      const lang = localStorage.getItem('lang') || 'es'
+                      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/pdf/${r.id}?host=${window.location.hostname}&token=${token}&lang=${lang}`
                       window.open(url, '_blank')
                     }}
                     className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
