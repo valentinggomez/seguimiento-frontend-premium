@@ -231,9 +231,11 @@ export default function PanelRespuestas() {
                     return (
                       <div key={labelVisible}>
                         <strong>{mostrarLabel}:</strong>{' '}
-                        {campos[labelVisible] != null && campos[labelVisible] !== ''
-                          ? campos[labelVisible]
-                          : t('respuestas.no_registrado')}
+                        {typeof campos[labelVisible] === 'object'
+                          ? JSON.stringify(campos[labelVisible])
+                          : campos[labelVisible] != null && campos[labelVisible] !== ''
+                            ? String(campos[labelVisible])
+                            : t('respuestas.no_registrado')}
                       </div>
                     )
                   })

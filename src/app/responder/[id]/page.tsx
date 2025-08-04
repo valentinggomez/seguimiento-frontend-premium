@@ -158,7 +158,7 @@ export default function ResponderPage() {
     const payload = {
       paciente_id: id,
       clinica_id: clinica?.id,
-      respuestas_formulario: camposFinalMapped
+      ...camposFinalMapped
     }
 
     try {
