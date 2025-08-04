@@ -395,7 +395,11 @@ export default function SeccionAdminClinicas() {
                     onClick={() =>
                       setCamposForm([
                         ...camposForm,
-                        { nombre: "", label: "", tipo: "text" } // 👈 ahora incluye label también
+                        {
+                          nombre: `campo_${camposForm.length + 1}`,
+                          label: `Campo ${camposForm.length + 1}`,
+                          tipo: "text"
+                        }
                       ])
                     }
                   >
@@ -653,7 +657,11 @@ export default function SeccionAdminClinicas() {
                           onClick={() =>
                             setCamposForm([
                               ...camposForm,
-                              { nombre: "", label: "", tipo: "text" } // 👈 ahora incluye label también
+                              {
+                                nombre: `campo_${camposForm.length + 1}`,
+                                label: `Campo ${camposForm.length + 1}`,
+                                tipo: "text"
+                              }
                             ])
                           }
                         >
