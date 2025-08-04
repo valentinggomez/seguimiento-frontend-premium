@@ -92,12 +92,15 @@ export default function ResponderPage() {
 
   const camposExtras = camposConfigurados
     .map((c: string) => {
-      const [name, tipo = 'text'] = c.split(':')
+      const [nombreYLabel, tipoRaw = 'text'] = c.split(':')
+      const [name, labelRaw] = nombreYLabel.split('|')
+      const tipo = tipoRaw.trim()
+
       return {
         name: name.trim(),
-        label: name.trim().replace(/_/g, ' '),
-        type: tipo.trim(),
-        numeric: tipo.trim() === 'number'
+        label: (labelRaw || name).trim(),
+        type: tipo,
+        numeric: tipo === 'number'
       }
     })
     .filter((campo: any) => campo.name && !camposBase.some(cb => cb.name === campo.name))
