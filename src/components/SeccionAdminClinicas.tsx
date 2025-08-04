@@ -185,15 +185,7 @@ export default function SeccionAdminClinicas() {
         : [];
     }
 
-    const campos_formulario = Object.fromEntries(
-      camposForm.map(c => [
-        c.nombre.trim(),
-        {
-          label: c.nombre.trim(),
-          tipo: c.tipo?.trim() || 'text'
-        }
-      ])
-    );
+    const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
 
     try {
       const endpoint = selected?.id
