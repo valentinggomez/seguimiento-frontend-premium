@@ -106,7 +106,15 @@ export default function ResponderPage() {
     .filter((campo: any) => campo.name && !camposBase.some(cb => cb.name === campo.name))
 
   const camposFinal = [...camposBase, ...camposExtras]
-
+  
+  const camposFormulario = camposFinal.reduce((acc, campo) => {
+    acc[campo.name] = {
+      label: campo.label,
+      tipo: campo.name in camposBase.map(c => c.name) ? 'fijo' : 'personalizado',
+    }
+    return acc
+  }, {} as Record<string, { label: string, tipo: string }>)
+  
   const campoActivo = (nombre: string) =>
     !clinica?.campos_formulario || camposConfigurados.some((c: string) => c.startsWith(nombre))
 
@@ -147,18 +155,24 @@ export default function ResponderPage() {
 
     setEstado('enviando')
 
-    const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
-      const campo = camposFinal.find(c => c.name === key)
-      if (campo?.label) {
-        acc[campo.label] = value  // usa el label como nombre real del campo
+    const respuestasFormulario: Record<string, any> = {}
+    const camposPersonalizados: Record<string, any> = {}
+
+    for (const [key, value] of Object.entries(form)) {
+      if (key in camposFormulario) {
+        // Está definido por la clínica → va a respuestas_formulario
+        respuestasFormulario[key] = value
+      } else {
+        // No está en config → lo consideramos campo personalizado
+        camposPersonalizados[key] = value
       }
-      return acc
-    }, {} as Record<string, any>)
+    }
 
     const payload = {
       paciente_id: id,
       clinica_id: clinica?.id,
-      respuestas_formulario: camposFinalMapped
+      respuestas_formulario: respuestasFormulario,
+      campos_personalizados: camposPersonalizados
     }
 
     try {
