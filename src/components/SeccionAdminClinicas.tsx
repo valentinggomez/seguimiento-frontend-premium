@@ -47,13 +47,13 @@ const OPCIONES_TIPO_CAMPO = ["text", "number", "select", "textarea"]
 export default function SeccionAdminClinicas() {
   const [clinicas, setClinicas] = useState<any[]>([])
   const [selected, setSelected] = useState<any | null>(null)
-  const [camposForm, setCamposForm] = useState<{ nombre: string; tipo: string }[]>([])
+  const [camposForm, setCamposForm] = useState<{ nombre: string; label: string; tipo: string }[]>([])
   const [camposAvanzados, setCamposAvanzados] = useState<string>("")
   const [errores, setErrores] = useState<{ [key: string]: string }>({})
   const [hojasDisponibles, setHojasDisponibles] = useState<string[]>([])
   const [cargandoHojas, setCargandoHojas] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
-
+  
   useEffect(() => {
     const cargarClinicas = async () => {
       try {
@@ -83,15 +83,25 @@ export default function SeccionAdminClinicas() {
 
   useEffect(() => {
     if (!selected) return
-    const campos = Array.isArray(selected.campos_formulario)
+
+    const camposRaw = Array.isArray(selected.campos_formulario)
       ? selected.campos_formulario
       : typeof selected.campos_formulario === 'string'
         ? selected.campos_formulario.split(',')
         : []
-    const convertidos = campos.map((c: string) => {
-      const [nombre, tipo = 'text'] = c.split(':')
-      return { nombre: nombre.trim(), tipo: tipo.trim() }
+
+    const convertidos = camposRaw.map((c: string) => {
+      const [raw, tipo = 'text'] = c.split(':')
+      const partes = raw.includes('|') ? raw.split('|') : [raw, raw] // nombre|label o solo nombre
+      const nombre = partes[0]?.trim() || ''
+      const label = partes[1]?.trim() || nombre
+      return {
+        nombre,
+        label,
+        tipo: tipo.trim()
+      }
     })
+
     setCamposForm(convertidos)
     setCamposAvanzados(selected.campos_avanzados || "")
     setErrores({})
@@ -185,7 +195,9 @@ export default function SeccionAdminClinicas() {
         : [];
     }
 
-    const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
+   const campos_formulario = camposForm
+    .filter(c => c && typeof c.nombre === 'string' && typeof c.label === 'string' && typeof c.tipo === 'string')
+    .map(c => `${c.nombre.trim()}|${c.label.trim()}:${c.tipo.trim()}`);
 
     try {
       const endpoint = selected?.id
@@ -377,7 +389,16 @@ export default function SeccionAdminClinicas() {
                       </button>
                     </div>
                   ))}
-                  <Button variant="outline" className="mt-2" onClick={() => setCamposForm([...camposForm, { nombre: "", tipo: "text" }])}>
+                  <Button
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() =>
+                      setCamposForm([
+                        ...camposForm,
+                        { nombre: "", label: "", tipo: "text" } // 👈 ahora incluye label también
+                      ])
+                    }
+                  >
                     <Plus size={16} className="mr-1" /> Agregar campo
                   </Button>
                 </div>
@@ -595,7 +616,16 @@ export default function SeccionAdminClinicas() {
                             </button>
                           </div>
                         ))}
-                        <Button variant="outline" className="mt-2" onClick={() => setCamposForm([...camposForm, { nombre: "", tipo: "text" }])}>
+                        <Button
+                          variant="outline"
+                          className="mt-2"
+                          onClick={() =>
+                            setCamposForm([
+                              ...camposForm,
+                              { nombre: "", label: "", tipo: "text" } // 👈 ahora incluye label también
+                            ])
+                          }
+                        >
                           <Plus size={16} className="mr-1" /> Agregar campo
                         </Button>
                         <h3 className="text-xl font-semibold text-[#003366] mt-8">🔎 Previsualización del formulario</h3>
