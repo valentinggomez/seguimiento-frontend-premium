@@ -158,13 +158,14 @@ export default function ResponderPage() {
     const respuestasFormulario: Record<string, any> = {}
     const camposPersonalizados: Record<string, any> = {}
 
-    for (const [key, value] of Object.entries(form)) {
-      if (key in camposFormulario) {
-        // Está definido por la clínica → va a respuestas_formulario
-        respuestasFormulario[key] = value
-      } else {
-        // No está en config → lo consideramos campo personalizado
-        camposPersonalizados[key] = value
+    for (const campo of camposFinal) {
+      const valor = form[campo.name]
+      if (valor !== undefined && valor !== null && valor !== '') {
+        if (campoActivo(campo.name)) {
+          respuestasFormulario[campo.name] = valor
+        } else {
+          camposPersonalizados[campo.name] = valor
+        }
       }
     }
 
