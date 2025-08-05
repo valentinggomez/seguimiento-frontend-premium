@@ -148,10 +148,7 @@ export default function ResponderPage() {
     setEstado('enviando')
 
     const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
-      const campo = camposFinal.find(c => c.name === key)
-      if (campo?.label) {
-        acc[campo.label] = value  // usa el label como nombre real del campo
-      }
+      acc[key] = value // ✅ usamos el name real, no el label visible
       return acc
     }, {} as Record<string, any>)
 
