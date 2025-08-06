@@ -389,7 +389,7 @@ export default function SeccionAdminClinicas() {
                   <div>
                     <h4 className="text-md font-semibold text-[#003366] mb-2">🧍 Datos del paciente</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion', 'codigo_verificador'].map(campo => (
+                      {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'dni', 'obra_social', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion', 'codigo_verificador'].map(campo => (
                         <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox
                             checked={(selected?.columnas_exportables || []).includes(campo)}
@@ -451,6 +451,21 @@ export default function SeccionAdminClinicas() {
                             {campo.nombre}
                           </label>
                         ))}
+
+                        {/* 🗣 Campo adicional: Transcripción por voz */}
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={(selected?.columnas_exportables || []).includes('🗣 Transcripción por voz')}
+                            onChange={(e) => {
+                              const checked = e.target.checked
+                              const columnas = new Set(selected?.columnas_exportables || [])
+                              if (checked) columnas.add('🗣 Transcripción por voz')
+                              else columnas.delete('🗣 Transcripción por voz')
+                              setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
+                            }}
+                          />
+                          🗣 Transcripción por voz
+                        </label>
                       </div>
                     </div>
                   )}
