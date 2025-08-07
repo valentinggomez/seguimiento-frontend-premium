@@ -273,7 +273,9 @@
       "seleccionadas": "Seleccionadas",
       "eliminar_respuestas_seleccionadas": "Eliminar respuestas seleccionadas",
       "error_eliminar": "Error al eliminar respuestas",
-      "error_servidor": "Error al conectar con el servidor"
+      "error_servidor": "Error al conectar con el servidor",
+      "transcripcion_voz": "Transcripción por voz",
+      "sintomas_detectados_ia": "Síntomas detectados por IA"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
@@ -558,9 +560,7 @@
       "seleccionadas": "Selected",
       "eliminar_respuestas_seleccionadas": "Delete selected responses",
       "error_eliminar": "Error deleting responses",
-      "error_servidor": "Error connecting to the server",
-      "transcripcion_voz": "Transcripción por voz",
-      "sintomas_detectados_ia": "Síntomas detectados por IA"
+      "error_servidor": "Error connecting to the server"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
