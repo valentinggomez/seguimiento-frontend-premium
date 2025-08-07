@@ -560,7 +560,9 @@
       "seleccionadas": "Selected",
       "eliminar_respuestas_seleccionadas": "Delete selected responses",
       "error_eliminar": "Error deleting responses",
-      "error_servidor": "Error connecting to the server"
+      "error_servidor": "Error connecting to the server",
+      "transcripcion_voz": "Voice transcription",
+      "sintomas_detectados_ia": "Symptoms detected by AI"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
