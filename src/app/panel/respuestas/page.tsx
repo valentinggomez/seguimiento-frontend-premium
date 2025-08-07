@@ -226,32 +226,34 @@ export default function PanelRespuestas() {
                   }
 
                  return claves
-                    .filter((key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia')
-                    .map((labelVisible) => {
-                      const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
-                      const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
-                        ? posibleTraduccion
-                        : labelVisible
+                  .filter((key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia')
+                  .map((labelVisible) => {
+                    const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
+                    const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
+                      ? posibleTraduccion
+                      : labelVisible
 
-                      return (
-                        <div key={labelVisible}>
-                          <strong>{mostrarLabel}:</strong>{' '}
-                          {typeof campos[labelVisible] === 'object'
-                            ? JSON.stringify(campos[labelVisible])
-                            : campos[labelVisible] != null && campos[labelVisible] !== ''
-                              ? String(campos[labelVisible])
-                              : t('respuestas.no_registrado')}
-                        </div>
-                      )
-                    })
+                    return (
+                      <div key={labelVisible}>
+                        <strong>{mostrarLabel}:</strong>{' '}
+                        {typeof campos[labelVisible] === 'object'
+                          ? JSON.stringify(campos[labelVisible])
+                          : campos[labelVisible] != null && campos[labelVisible] !== ''
+                            ? String(campos[labelVisible])
+                            : t('respuestas.no_registrado')}
+                      </div>
+                    )
+                  })
                 })()}
               </motion.div>
               {/* 🗣 Transcripción por voz */}
-              {typeof r.campos_personalizados === 'object' && r.campos_personalizados?.transcripcion_voz && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4">
-                  <p className="text-sm font-semibold text-slate-800 mb-1">🗣️ {t('respuestas.transcripcion_voz')}:</p>
-                  <p className="text-sm text-slate-700 whitespace-pre-line">
-                    {r.campos_personalizados.transcripcion_voz}
+              {typeof r.campos_personalizados === 'object' && r.campos_personalizados?.transcripcion && (
+                <div className="bg-[#fefefe] border border-blue-100 rounded-xl p-6 mt-4 shadow-sm">
+                  <p className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-1">
+                    🗣️ {t('respuestas.transcripcion_voz')}:
+                  </p>
+                  <p className="text-[15px] leading-relaxed text-slate-700 whitespace-pre-line italic border-l-4 border-blue-300 pl-3">
+                    {r.campos_personalizados.transcripcion}
                   </p>
                 </div>
               )}
