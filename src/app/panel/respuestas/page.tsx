@@ -226,6 +226,9 @@ export default function PanelRespuestas() {
                   }
 
                   return claves.map((labelVisible) => {
+                    const claves = Object.keys(campos).filter(
+                      (key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia'
+                    )
                     const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
                     const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
                       ? posibleTraduccion
