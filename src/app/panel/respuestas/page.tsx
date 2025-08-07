@@ -226,7 +226,7 @@ export default function PanelRespuestas() {
                   }
 
                  return claves
-                  .filter((key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia')
+                  .filter((key) => key !== 'transcripcion' && key !== 'sintomas_ia')
                   .map((labelVisible) => {
                     const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
                     const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
