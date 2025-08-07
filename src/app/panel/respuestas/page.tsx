@@ -191,7 +191,7 @@ export default function PanelRespuestas() {
 
                   <p className="text-sm text-gray-700">
                     {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
-                    {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">IMC: {r.imc}</span>
+                    {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
                   </p>
 
                   <div className="text-sm text-gray-500">
