@@ -225,26 +225,25 @@ export default function PanelRespuestas() {
                     )
                   }
 
-                  return claves.map((labelVisible) => {
-                    const claves = Object.keys(campos).filter(
-                      (key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia'
-                    )
-                    const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
-                    const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
-                      ? posibleTraduccion
-                      : labelVisible
+                 return claves
+                    .filter((key) => key !== 'transcripcion_voz' && key !== 'sintomas_ia')
+                    .map((labelVisible) => {
+                      const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
+                      const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
+                        ? posibleTraduccion
+                        : labelVisible
 
-                    return (
-                      <div key={labelVisible}>
-                        <strong>{mostrarLabel}:</strong>{' '}
-                        {typeof campos[labelVisible] === 'object'
-                          ? JSON.stringify(campos[labelVisible])
-                          : campos[labelVisible] != null && campos[labelVisible] !== ''
-                            ? String(campos[labelVisible])
-                            : t('respuestas.no_registrado')}
-                      </div>
-                    )
-                  })
+                      return (
+                        <div key={labelVisible}>
+                          <strong>{mostrarLabel}:</strong>{' '}
+                          {typeof campos[labelVisible] === 'object'
+                            ? JSON.stringify(campos[labelVisible])
+                            : campos[labelVisible] != null && campos[labelVisible] !== ''
+                              ? String(campos[labelVisible])
+                              : t('respuestas.no_registrado')}
+                        </div>
+                      )
+                    })
                 })()}
               </motion.div>
               {/* 🗣 Transcripción por voz */}
