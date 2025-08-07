@@ -541,6 +541,7 @@
       "años": "years",
       "sexo": "Sex",
       "peso": "Weight",
+      "imc": "BMI",
       "altura": "Height",
       "dolor_6h": "Pain at 6h",
       "dolor_24h": "Pain at 24h",
