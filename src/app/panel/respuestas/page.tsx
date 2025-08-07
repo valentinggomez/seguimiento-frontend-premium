@@ -245,24 +245,20 @@ export default function PanelRespuestas() {
                 })()}
               </motion.div>
               {/* 🗣 Transcripción por voz */}
-              {typeof r.campos_personalizados === 'object' &&
-                r.campos_personalizados?.transcripcion_voz && (
+              {typeof r.campos_personalizados === 'object' && r.campos_personalizados?.transcripcion_voz && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4">
-                  <p className="text-sm font-semibold text-slate-800 mb-1">
-                    {t('respuestas.transcripcion_voz')}:
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800 mb-1">🗣️ {t('respuestas.transcripcion_voz')}:</p>
                   <p className="text-sm text-slate-700 whitespace-pre-line">
                     {r.campos_personalizados.transcripcion_voz}
                   </p>
                 </div>
               )}
 
-              {/* 🔬 Síntomas detectados por IA */}
               {typeof r.campos_personalizados === 'object' &&
               Array.isArray(r.campos_personalizados?.sintomas_ia) &&
               r.campos_personalizados.sintomas_ia.length > 0 && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4">
-                  <p className="text-sm font-semibold text-slate-800 mb-1">🔬 Síntomas detectados por IA:</p>
+                  <p className="text-sm font-semibold text-slate-800 mb-1">🔬 {t('respuestas.sintomas_detectados_ia')}:</p>
                   <ul className="list-disc list-inside text-sm text-slate-700">
                     {r.campos_personalizados.sintomas_ia.map((tag: string, i: number) => (
                       <li key={i}>{tag}</li>

@@ -558,7 +558,9 @@
       "seleccionadas": "Selected",
       "eliminar_respuestas_seleccionadas": "Delete selected responses",
       "error_eliminar": "Error deleting responses",
-      "error_servidor": "Error connecting to the server"
+      "error_servidor": "Error connecting to the server",
+      "transcripcion_voz": "Transcripción por voz",
+      "sintomas_detectados_ia": "Síntomas detectados por IA"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
