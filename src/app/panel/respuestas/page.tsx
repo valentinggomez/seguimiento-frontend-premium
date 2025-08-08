@@ -141,37 +141,46 @@ export default function PanelRespuestas() {
   const getCamposPersonalizados = (r: Respuesta): Record<string, any> => {
     try {
       let obj: any = r.campos_personalizados;
-
-      // Si viene como string JSON → parsear
       if (typeof obj === 'string') obj = JSON.parse(obj);
-
-      // Si no es objeto plano → nada
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
 
-      // ⚠️ Caso problemático: viene un “envoltorio” con otra clave igual adentro
-      // ej: { clinica_id: '...', campos_personalizados: { transcripcion: '...' } }
+      // des-anidar si vino envuelto
       if (obj.campos_personalizados && typeof obj.campos_personalizados === 'object') {
         obj = obj.campos_personalizados;
       }
 
-      // 🧹 Sanitizar: eliminar claves internas si se colaron
+      // limpiar claves internas
       const ocultos = new Set([
         'clinica_id',
-        'campos_personalizados', // evita reimprimir el objeto anidado
+        'campos_personalizados',
         'respuestas_formulario',
-        'id',
-        'creado_en',
-        'paciente_nombre',
-        'nivel_alerta',
-        'alerta',
-        'score_ia',
-        'sugerencia_ia',
+        'id','creado_en','paciente_nombre',
+        'nivel_alerta','alerta','score_ia','sugerencia_ia',
       ]);
 
       const limpio: Record<string, any> = {};
       for (const k of Object.keys(obj)) {
         if (!ocultos.has(k)) limpio[k] = obj[k];
       }
+
+      // 🔧 Normalizar sintomas_ia (soportar distintos formatos)
+      let s = limpio.sintomas_ia ?? limpio.sintomasIA ?? null;
+
+      if (typeof s === 'string') {
+        // si viene como JSON string o CSV
+        try { s = JSON.parse(s); } catch {
+          s = s.split(/[,\|;]+/).map((x: string) => x.trim()).filter(Boolean);
+        }
+      }
+      if (s && typeof s === 'object' && !Array.isArray(s)) {
+        s = Object.values(s).map(String);
+      }
+      if (Array.isArray(s)) {
+        limpio.sintomas_ia = s.map(String).filter(Boolean);
+      } else {
+        delete limpio.sintomas_ia;
+      }
+
       return limpio;
     } catch (err) {
       console.warn(`❌ Error parseando campos_personalizados para respuesta ${r.id}`, err);
