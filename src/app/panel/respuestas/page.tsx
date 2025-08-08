@@ -113,10 +113,28 @@ export default function PanelRespuestas() {
     setExpandedId(prev => (prev === id ? null : id))
   }
 
+  const prioridad = { verde: 0, amarillo: 1, rojo: 2 } as const
+
+  function alertaPorTexto(texto?: string): 'verde'|'amarillo'|'rojo'|null {
+    if (!texto) return null
+    const t = texto.toLowerCase()
+    const pideAyuda = /(necesito ayuda|auxilio|urgente|no puedo|desmayo|sangrado|no respiro)/
+    const dolor = /(me duele|dolor)/
+    const fuerte = /(mucho|muy|fuerte|intenso|terrible)/
+    if (pideAyuda.test(t)) return 'rojo'
+    if (dolor.test(t) && fuerte.test(t)) return 'rojo'
+    if (dolor.test(t)) return 'amarillo'
+    return null
+  }
+
   const getColorClass = (r: Respuesta) => {
-    const nivel = r.nivel_alerta?.toLowerCase().trim()
-    if (nivel === 'rojo') return 'border-red-400 bg-red-50'
-    if (nivel === 'amarillo') return 'border-yellow-300 bg-yellow-50'
+    const base = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
+    const campos = getCamposPersonalizados(r)
+    const porTexto = alertaPorTexto(campos?.transcripcion)
+    const final = porTexto && prioridad[porTexto] > prioridad[base] ? porTexto : base
+
+    if (final === 'rojo') return 'border-red-400 bg-red-50'
+    if (final === 'amarillo') return 'border-yellow-300 bg-yellow-50'
     return 'border-green-400 bg-green-50'
   }
 
