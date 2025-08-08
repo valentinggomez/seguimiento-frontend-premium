@@ -138,24 +138,46 @@ export default function PanelRespuestas() {
     return 'border-green-400 bg-green-50'
   }
 
-  // Justo antes del return (dentro del map):
   const getCamposPersonalizados = (r: Respuesta): Record<string, any> => {
     try {
-      if (typeof r.campos_personalizados === 'string') {
-        return JSON.parse(r.campos_personalizados)
+      let obj: any = r.campos_personalizados;
+
+      // Si viene como string JSON → parsear
+      if (typeof obj === 'string') obj = JSON.parse(obj);
+
+      // Si no es objeto plano → nada
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+
+      // ⚠️ Caso problemático: viene un “envoltorio” con otra clave igual adentro
+      // ej: { clinica_id: '...', campos_personalizados: { transcripcion: '...' } }
+      if (obj.campos_personalizados && typeof obj.campos_personalizados === 'object') {
+        obj = obj.campos_personalizados;
       }
-      if (
-        typeof r.campos_personalizados === 'object' &&
-        !Array.isArray(r.campos_personalizados) &&
-        r.campos_personalizados !== null
-      ) {
-        return r.campos_personalizados
+
+      // 🧹 Sanitizar: eliminar claves internas si se colaron
+      const ocultos = new Set([
+        'clinica_id',
+        'campos_personalizados', // evita reimprimir el objeto anidado
+        'respuestas_formulario',
+        'id',
+        'creado_en',
+        'paciente_nombre',
+        'nivel_alerta',
+        'alerta',
+        'score_ia',
+        'sugerencia_ia',
+      ]);
+
+      const limpio: Record<string, any> = {};
+      for (const k of Object.keys(obj)) {
+        if (!ocultos.has(k)) limpio[k] = obj[k];
       }
+      return limpio;
     } catch (err) {
-      console.warn(`❌ Error parseando campos_personalizados para respuesta ${r.id}`, err)
+      console.warn(`❌ Error parseando campos_personalizados para respuesta ${r.id}`, err);
+      return {};
     }
-    return {}
-  }
+  };
 
   return (
     <div className="p-6">
