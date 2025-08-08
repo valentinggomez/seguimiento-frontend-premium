@@ -188,6 +188,17 @@ export default function PanelRespuestas() {
     }
   };
 
+  const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
+    try {
+      let obj: any = r.respuestas_formulario
+      if (typeof obj === 'string') obj = JSON.parse(obj)
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {}
+      return obj
+    } catch {
+      return {}
+    }
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-[#003366]">
@@ -264,9 +275,24 @@ export default function PanelRespuestas() {
                 >
                   {(() => {
                     const campos = getCamposPersonalizados(r)
-                    const claves = Object.keys(campos)
+                    const form = getRespuestasFormulario(r)
 
-                    if (claves.length === 0) {
+                    const HIDDEN = new Set(['clinica_id','transcripcion','sintomas_ia','campos_personalizados'])
+
+                    // Entradas visibles de cada fuente
+                    const formEntries = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
+                    const customEntries = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
+
+                    // Para el cartel "sin_campos", consideramos ambas fuentes + voz/síntomas
+                    const transcripcion =
+                      (typeof campos.transcripcion === 'string' && campos.transcripcion.trim()) ||
+                      (typeof (r as any).transcripcion_voz === 'string' && (r as any).transcripcion_voz.trim()) ||
+                      ''
+                    const sintomasIA = Array.isArray(campos.sintomas_ia) ? campos.sintomas_ia
+                                    : Array.isArray((r as any).sintomas_ia) ? (r as any).sintomas_ia
+                                    : []
+
+                    if (formEntries.length === 0 && customEntries.length === 0 && !transcripcion && sintomasIA.length === 0) {
                       return (
                         <div className="text-gray-500 italic col-span-2">
                           {t('respuestas.sin_campos')}
@@ -274,28 +300,36 @@ export default function PanelRespuestas() {
                       )
                     }
 
-                    // resto de campos (filtramos claves internas)
-                    const CAMPOS_OCULTOS = ['clinica_id', 'transcripcion', 'sintomas_ia'];
+                    return (
+                      <>
+                        {/* 🧾 Campos del formulario */}
+                        {formEntries.map(([clave, valor]) => {
+                          // Usamos la clave de traducción del formulario
+                          const maybe = t(`formulario.${clave}`)
+                          const label = maybe !== `formulario.${clave}` ? maybe : clave
+                          const texto = valor != null && valor !== '' ? String(valor) : t('respuestas.no_registrado')
+                          return (
+                            <div key={`form-${clave}`}>
+                              <strong>{label}:</strong> {texto}
+                            </div>
+                          )
+                        })}
 
-                    return claves
-                      .filter((key) => !CAMPOS_OCULTOS.includes(key))
-                      .map((key) => {
-                        const posibleTraduccion = t(`campos_formulario.${key}`)
-                        const mostrarLabel =
-                          posibleTraduccion !== `campos_formulario.${key}` ? posibleTraduccion : key
-
-                        const valor = campos[key]
-                        const texto =
-                          valor != null && valor !== ''
+                        {/* ⚙️ Campos personalizados (resto) */}
+                        {customEntries.map(([clave, valor]) => {
+                          const maybe = t(`campos_formulario.${clave}`)
+                          const label = maybe !== `campos_formulario.${clave}` ? maybe : clave
+                          const texto = valor != null && valor !== ''
                             ? (typeof valor === 'object' ? JSON.stringify(valor) : String(valor))
                             : t('respuestas.no_registrado')
-
-                        return (
-                          <div key={key}>
-                            <strong>{mostrarLabel}:</strong>{' '}{texto}
-                          </div>
-                        )
-                      })
+                          return (
+                            <div key={`custom-${clave}`}>
+                              <strong>{label}:</strong> {texto}
+                            </div>
+                          )
+                        })}
+                      </>
+                    )
                   })()}
                 </motion.div>
 
