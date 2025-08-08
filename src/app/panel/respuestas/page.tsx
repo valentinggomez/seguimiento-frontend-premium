@@ -226,79 +226,80 @@ export default function PanelRespuestas() {
 
             {expandedId === r.id && (
               <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
-              >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
+                >
+                  {(() => {
+                    const campos = getCamposPersonalizados(r)
+                    const claves = Object.keys(campos)
+
+                    if (claves.length === 0) {
+                      return (
+                        <div className="text-gray-500 italic col-span-2">
+                          {t('respuestas.sin_campos')}
+                        </div>
+                      )
+                    }
+
+                    // resto de campos (filtramos claves internas)
+                    return claves
+                      .filter((key) => key !== 'transcripcion' && key !== 'sintomas_ia')
+                      .map((key) => {
+                        const posibleTraduccion = t(`campos_formulario.${key}`)
+                        const mostrarLabel =
+                          posibleTraduccion !== `campos_formulario.${key}` ? posibleTraduccion : key
+
+                        const valor = campos[key]
+                        const texto =
+                          valor != null && valor !== ''
+                            ? (typeof valor === 'object' ? JSON.stringify(valor) : String(valor))
+                            : t('respuestas.no_registrado')
+
+                        return (
+                          <div key={key}>
+                            <strong>{mostrarLabel}:</strong>{' '}{texto}
+                          </div>
+                        )
+                      })
+                  })()}
+                </motion.div>
+
+                {/* 🧠 BLOQUE DE RESPUESTA POR VOZ Y SÍNTOMAS IA (usando campos parseados) */}
                 {(() => {
                   const campos = getCamposPersonalizados(r)
-                  const claves = Object.keys(campos)
+                  const transcripcion = typeof campos.transcripcion === 'string' ? campos.transcripcion.trim() : ''
+                  const sintomasIA = Array.isArray(campos.sintomas_ia) ? campos.sintomas_ia : []
 
-                  if (claves.length === 0) {
-                    return (
-                      <div className="text-gray-500 italic col-span-2">
-                        {t('respuestas.sin_campos')}
-                      </div>
-                    )
-                  }
-
-                 return claves
-                  .filter((key) => key !== 'transcripcion' && key !== 'sintomas_ia')
-                  .map((labelVisible) => {
-                    const posibleTraduccion = t(`campos_formulario.${labelVisible}`)
-                    const mostrarLabel = posibleTraduccion !== `campos_formulario.${labelVisible}`
-                      ? posibleTraduccion
-                      : labelVisible
-
-                    return (
-                      <div key={labelVisible}>
-                        <strong>{mostrarLabel}:</strong>{' '}
-                        {typeof campos[labelVisible] === 'object'
-                          ? JSON.stringify(campos[labelVisible])
-                          : campos[labelVisible] != null && campos[labelVisible] !== ''
-                            ? String(campos[labelVisible])
-                            : t('respuestas.no_registrado')}
-                      </div>
-                    )
-                  })
-                })()}
-              </motion.div>
-
-              {/* 🧠 BLOQUE DE RESPUESTA POR VOZ Y SÍNTOMAS IA */}
-              {/* 🗣 Transcripción por voz */}
-              {typeof r.campos_personalizados === 'object' && (
-                <>
-                  {/* 🎤 Transcripción por voz */}
-                  {r.campos_personalizados?.transcripcion && (
-                    <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-2xl p-6 mt-4 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2 text-blue-900">
-                        <span className="text-xl">{'🗣️'}</span>
-                        <h3 className="font-semibold text-base tracking-wide">{t('respuestas.transcripcion_voz')}</h3>
-                      </div>
-                      <blockquote className="text-base text-slate-800 italic leading-relaxed border-l-4 border-blue-400 pl-4">
-                        {r.campos_personalizados.transcripcion}
-                      </blockquote>
-                    </div>
-                  )}
-
-                  {/* 🧬 Síntomas detectados por IA */}
-                  {Array.isArray(r.campos_personalizados?.sintomas_ia) &&
-                    r.campos_personalizados.sintomas_ia.length > 0 && (
-                      <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-6 mt-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2 text-slate-800">
-                          <span className="text-xl">{'🧬'}</span>
-                          <h3 className="font-semibold text-base tracking-wide">{t('respuestas.sintomas_detectados_ia')}</h3>
+                  return (
+                    <>
+                      {transcripcion && (
+                        <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-2xl p-6 mt-4 shadow-sm">
+                          <div className="flex items-center gap-2 mb-2 text-blue-900">
+                            <span className="text-xl">{'🗣️'}</span>
+                            <h3 className="font-semibold text-base tracking-wide">{t('respuestas.transcripcion_voz')}</h3>
+                          </div>
+                          <blockquote className="text-base text-slate-800 italic leading-relaxed border-l-4 border-blue-400 pl-4 whitespace-pre-wrap">
+                            {transcripcion}
+                          </blockquote>
                         </div>
-                        <ul className="list-disc list-inside text-base text-slate-700 leading-relaxed ml-2">
-                          {r.campos_personalizados.sintomas_ia.map((tag: string, i: number) => (
-                            <li key={i}>{tag}</li>
-                          ))}
-                        </ul>
-                      </div>
-                  )}
-                </>
-              )}
+                      )}
+
+                      {sintomasIA.length > 0 && (
+                        <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-6 mt-4 shadow-sm">
+                          <div className="flex items-center gap-2 mb-2 text-slate-800">
+                            <span className="text-xl">{'🧬'}</span>
+                            <h3 className="font-semibold text-base tracking-wide">{t('respuestas.sintomas_detectados_ia')}</h3>
+                          </div>
+                          <ul className="list-disc list-inside text-base text-slate-700 leading-relaxed ml-2">
+                            {sintomasIA.map((tag: string, i: number) => <li key={i}>{tag}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </>
             )}
           </motion.div>
