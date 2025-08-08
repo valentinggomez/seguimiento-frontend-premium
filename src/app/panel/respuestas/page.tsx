@@ -190,14 +190,52 @@ export default function PanelRespuestas() {
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
     try {
-      let obj: any = r.respuestas_formulario
-      if (typeof obj === 'string') obj = JSON.parse(obj)
-      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {}
-      return obj
+      // 1) nombres habituales
+      let obj: any =
+        (r as any).respuestas_formulario ??
+        (r as any).respuestas ??
+        (r as any).formulario ??
+        null;
+
+      // 2) alternativos usados por backend (como en tu log)
+      if (!obj) obj = (r as any).camposExtra ?? (r as any).campos_extra ?? null;
+
+      // 3) si viene envuelto dentro de campos_personalizados (string u objeto)
+      if (!obj && (r as any).campos_personalizados) {
+        let cp: any = (r as any).campos_personalizados;
+        if (typeof cp === 'string') { try { cp = JSON.parse(cp) } catch {} }
+        if (cp && typeof cp === 'object') {
+          obj = cp.respuestas_formulario ?? cp.camposExtra ?? cp.campos_extra ?? null;
+        }
+      }
+
+      // des-stringificar si hace falta
+      if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch {} }
+      if (!obj || typeof obj !== 'object') return {};
+
+      // si viene como array raro, normalizar a objeto plano
+      if (Array.isArray(obj)) {
+        const out: Record<string, any> = {};
+        for (const item of obj) {
+          if (Array.isArray(item) && item.length >= 2) {
+            out[String(item[0])] = item[1];
+          } else if (item && typeof item === 'object') {
+            if ('clave' in item && 'valor' in item) out[String((item as any).clave)] = (item as any).valor;
+            else Object.assign(out, item);
+          }
+        }
+        return out;
+      }
+
+      // limpiar claves internas que vi en tus logs
+      const ocultos = new Set(['clinica_id', 'campos_personalizados']);
+      const limpio: Record<string, any> = {};
+      for (const k of Object.keys(obj)) if (!ocultos.has(k)) limpio[k] = obj[k];
+      return limpio;
     } catch {
-      return {}
+      return {};
     }
-  }
+  };
 
   return (
     <div className="p-6">
@@ -275,15 +313,14 @@ export default function PanelRespuestas() {
                 >
                   {(() => {
                     const campos = getCamposPersonalizados(r)
-                    const form = getRespuestasFormulario(r)
+                    const form   = getRespuestasFormulario(r)
 
                     const HIDDEN = new Set(['clinica_id','transcripcion','sintomas_ia','campos_personalizados'])
 
-                    // Entradas visibles de cada fuente
-                    const formEntries = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
+                    const formEntries   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
                     const customEntries = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
 
-                    // Para el cartel "sin_campos", consideramos ambas fuentes + voz/síntomas
+                    // También consideramos voz/síntomas para decidir si mostrar "sin_campos"
                     const transcripcion =
                       (typeof campos.transcripcion === 'string' && campos.transcripcion.trim()) ||
                       (typeof (r as any).transcripcion_voz === 'string' && (r as any).transcripcion_voz.trim()) ||
@@ -300,23 +337,26 @@ export default function PanelRespuestas() {
                       )
                     }
 
+                    const stripEmojis = (s: string) =>
+                      s.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()
+
                     return (
                       <>
-                        {/* 🧾 Campos del formulario */}
-                        {formEntries.map(([clave, valor]) => {
-                          // Usamos la clave de traducción del formulario
-                          const maybe = t(`formulario.${clave}`)
-                          const label = maybe !== `formulario.${clave}` ? maybe : clave
+                        {/* 🧾 Campos del formulario (pueden venir con labels y emojis) */}
+                        {formEntries.map(([label, valor]) => {
+                          const visible = typeof label === 'string' ? label : String(label)
                           const texto = valor != null && valor !== '' ? String(valor) : t('respuestas.no_registrado')
                           return (
-                            <div key={`form-${clave}`}>
-                              <strong>{label}:</strong> {texto}
+                            <div key={`form-${visible}`}>
+                              <strong>{visible}</strong>: {texto}
+                              {/* Si preferís sin emojis: <strong>{stripEmojis(visible)}</strong> */}
                             </div>
                           )
                         })}
 
                         {/* ⚙️ Campos personalizados (resto) */}
                         {customEntries.map(([clave, valor]) => {
+                          // primero intentamos traducir con claves técnicas, si no, dejamos la clave tal cual
                           const maybe = t(`campos_formulario.${clave}`)
                           const label = maybe !== `campos_formulario.${clave}` ? maybe : clave
                           const texto = valor != null && valor !== ''

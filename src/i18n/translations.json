@@ -254,6 +254,7 @@
       "años": "años",
       "sexo": "Sexo",
       "peso": "Peso",
+      "imc": "IMC",
       "altura": "Altura",
       "dolor_6h": "Dolor 6h",
       "dolor_24h": "Dolor 24h",
