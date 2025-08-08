@@ -1,10 +1,24 @@
 "use client"
 
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { useRef } from 'react'
+
+let SpeechRecognition: any
+
+if (typeof window !== 'undefined') {
+  SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+}
 
 function FieldBlock({
   label,
@@ -61,12 +75,16 @@ function FieldBlock({
   )
 }
 
+
 export default function ResponderPage() {
   const { id } = useParams()
   const { clinica } = useClinica()
   const [paciente, setPaciente] = useState<any>(null)
   const [estado, setEstado] = useState<'cargando' | 'ok' | 'error' | 'enviando' | 'enviado'>('cargando')
   const [form, setForm] = useState<any>({})
+  const [grabando, setGrabando] = useState(false)
+  const [transcripcionVoz, setTranscripcionVoz] = useState('')
+  const reconocimientoRef = useRef<any>(null)
 
   const camposBase = [
     { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -110,6 +128,35 @@ export default function ResponderPage() {
   const campoActivo = (nombre: string) =>
     !clinica?.campos_formulario || camposConfigurados.some((c: string) => c.startsWith(nombre))
 
+  const iniciarGrabacion = () => {
+    if (!SpeechRecognition) {
+      alert('⚠️ Tu navegador no soporta reconocimiento de voz.')
+      return
+    }
+    const reconocimiento = new SpeechRecognition()
+    reconocimiento.lang = 'es-ES' // 📌 Cambiar según idioma
+    reconocimiento.interimResults = true
+    reconocimiento.continuous = true
+
+    reconocimiento.onresult = (event: any) => {
+      let texto = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        texto += event.results[i][0].transcript
+      }
+      setTranscripcionVoz(texto)
+    }
+
+    reconocimiento.onend = () => setGrabando(false)
+
+    reconocimientoRef.current = reconocimiento
+    reconocimiento.start()
+    setGrabando(true)
+  }
+
+  const detenerGrabacion = () => {
+    reconocimientoRef.current?.stop()
+    setGrabando(false)
+  }
   useEffect(() => {
     const fetchPaciente = async () => {
       try {
@@ -155,7 +202,10 @@ export default function ResponderPage() {
     const payload = {
       paciente_id: id,
       clinica_id: clinica?.id,
-      ...camposFinalMapped
+      ...camposFinalMapped,
+      campos_personalizados: {
+        transcripcion: transcripcionVoz || ''
+      }
     }
 
     try {
@@ -235,6 +285,38 @@ export default function ResponderPage() {
                 />
               )
             })}
+          </div>
+          
+          {/* 🎤 Grabación por voz */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+            <p className="font-semibold text-blue-800">🎙 Responder por voz</p>
+
+            <div className="flex gap-4">
+              {!grabando ? (
+                <button
+                  type="button"
+                  onClick={iniciarGrabacion}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  🎤 Iniciar grabación
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={detenerGrabacion}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  ⏹ Detener grabación
+                </button>
+              )}
+            </div>
+
+            {transcripcionVoz && (
+              <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                <p className="text-sm text-gray-600">Transcripción detectada:</p>
+                <p className="italic text-gray-800">{transcripcionVoz}</p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">
