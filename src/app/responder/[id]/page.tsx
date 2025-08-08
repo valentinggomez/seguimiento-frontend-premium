@@ -184,27 +184,41 @@ export default function ResponderPage() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
-    const camposObligatorios = camposFinal.filter(c => c.name !== "observacion" && campoActivo(c.name))
-    for (const campo of camposObligatorios) {
-      if (!form[campo.name]) {
-        alert(`Por favor completá el campo: ${campo.label}`)
-        return
-      }
+
+    const camposObligatorios = camposFinal.filter(
+      c => c.name !== "observacion" && campoActivo(c.name)
+    )
+    const formularioCompleto = camposObligatorios.every(campo => !!form[campo.name])
+    const hayGrabacion = !!transcripcionVoz.trim()
+    const hayRespuestasFormulario = Object.values(form).some(v => v && v !== "")
+
+    // 🔍 Reglas de envío
+    if (!((formularioCompleto && !hayGrabacion) || (hayGrabacion && !hayRespuestasFormulario))) {
+      alert("Debes completar únicamente el formulario o únicamente la grabación por voz.")
+      return
     }
 
     setEstado('enviando')
 
-    const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
-      acc[key] = value // ✅ usamos el name real, no el label visible
-      return acc
-    }, {} as Record<string, any>)
-
-    const payload = {
+    // 📦 Armado de payload según tipo de respuesta
+    const payload: any = {
       paciente_id: id,
       clinica_id: clinica?.id,
-      ...camposFinalMapped,
-      campos_personalizados: {
-        transcripcion: transcripcionVoz || ''
+    }
+
+    if (formularioCompleto && !hayGrabacion) {
+      // Solo formulario → mapeamos campos
+      const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
+        acc[key] = value // ✅ usamos el name real, no el label visible
+        return acc
+      }, {} as Record<string, any>)
+
+      Object.assign(payload, camposFinalMapped)
+      payload.campos_personalizados = {}
+    } else if (hayGrabacion && !hayRespuestasFormulario) {
+      // Solo grabación
+      payload.campos_personalizados = {
+        transcripcion: transcripcionVoz
       }
     }
 
@@ -235,7 +249,6 @@ export default function ResponderPage() {
         } catch (err) {
           console.warn("⚠️ No se pudo guardar score IA:", err)
         }
-
         setEstado('enviado')
       } else {
         setEstado('error')
