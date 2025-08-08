@@ -144,12 +144,20 @@ export default function PanelRespuestas() {
       if (typeof obj === 'string') obj = JSON.parse(obj);
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
 
-      // des-anidar si vino envuelto
-      if (obj.campos_personalizados && typeof obj.campos_personalizados === 'object') {
-        obj = obj.campos_personalizados;
+      // ✅ Des-anidar SOLO si es un wrapper puro (sin otras claves útiles)
+      if (
+        obj.campos_personalizados &&
+        typeof obj.campos_personalizados === 'object' &&
+        !Array.isArray(obj.campos_personalizados)
+      ) {
+        const otras = Object.keys(obj).filter(k => k !== 'campos_personalizados');
+        if (otras.length === 0) {
+          obj = obj.campos_personalizados;
+        }
+        // si hay otras claves (tu caso), NO lo pisamos
       }
 
-      // limpiar claves internas
+      // 🧹 Limpiar claves internas
       const ocultos = new Set([
         'clinica_id',
         'campos_personalizados',
@@ -163,11 +171,10 @@ export default function PanelRespuestas() {
         if (!ocultos.has(k)) limpio[k] = obj[k];
       }
 
-      // 🔧 Normalizar sintomas_ia (soportar distintos formatos)
-      let s = limpio.sintomas_ia ?? limpio.sintomasIA ?? null;
+      // 🔧 Normalizar sintomas_ia (soporta string JSON, CSV, objeto, camelCase)
+      let s = limpio.sintomas_ia ?? (limpio as any).sintomasIA ?? null;
 
       if (typeof s === 'string') {
-        // si viene como JSON string o CSV
         try { s = JSON.parse(s); } catch {
           s = s.split(/[,\|;]+/).map((x: string) => x.trim()).filter(Boolean);
         }
