@@ -244,8 +244,10 @@ export default function PanelRespuestas() {
                     }
 
                     // resto de campos (filtramos claves internas)
+                    const CAMPOS_OCULTOS = ['clinica_id', 'transcripcion', 'sintomas_ia'];
+
                     return claves
-                      .filter((key) => key !== 'transcripcion' && key !== 'sintomas_ia')
+                      .filter((key) => !CAMPOS_OCULTOS.includes(key))
                       .map((key) => {
                         const posibleTraduccion = t(`campos_formulario.${key}`)
                         const mostrarLabel =
