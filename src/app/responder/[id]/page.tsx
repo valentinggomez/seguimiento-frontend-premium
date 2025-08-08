@@ -201,19 +201,12 @@ export default function ResponderPage() {
     setEstado('enviando')
 
     // 📦 Armado de payload según tipo de respuesta
-    const payload: any = {
-      paciente_id: id,
-      // ❌ No mandes clinica_id; el backend lo detecta por dominio
-    };
+    const payload: any = { paciente_id: id };
 
     if (formularioCompleto && !hayGrabacion) {
-      // ✅ Solo formulario → todo adentro de campos_personalizados
       payload.campos_personalizados = { ...form };
-      payload.respuesta_por_voz = false;
     } else if (hayGrabacion && !hayRespuestasFormulario) {
-      // ✅ Solo grabación por voz
       payload.campos_personalizados = { transcripcion: transcripcionVoz };
-      payload.respuesta_por_voz = true;
     }
 
     try {
