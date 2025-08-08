@@ -203,23 +203,22 @@ export default function ResponderPage() {
     // 📦 Armado de payload según tipo de respuesta
     const payload: any = {
       paciente_id: id,
-      clinica_id: clinica?.id,
-    }
+      // ❌ no mandes clinica_id desde el front; el backend lo obtiene por dominio
+    };
 
     if (formularioCompleto && !hayGrabacion) {
-      // Solo formulario → mapeamos campos
-      const camposFinalMapped = Object.entries(form).reduce((acc, [key, value]) => {
-        acc[key] = value // ✅ usamos el name real, no el label visible
-        return acc
-      }, {} as Record<string, any>)
+      // Solo formulario → empaquetar en respuestas_formulario
+      const respuestasFormulario = Object.entries(form).reduce((acc, [key, value]) => {
+        acc[key] = value; // usa los "name" técnicos del form
+        return acc;
+      }, {} as Record<string, any>);
 
-      Object.assign(payload, camposFinalMapped)
-      payload.campos_personalizados = {}
+      payload.respuestas_formulario = respuestasFormulario;   // ✅ clave correcta
+      payload.campos_personalizados = {};                    // opcional
     } else if (hayGrabacion && !hayRespuestasFormulario) {
-      // Solo grabación
-      payload.campos_personalizados = {
-        transcripcion: transcripcionVoz
-      }
+      // Solo grabación por voz
+      payload.respuestas_formulario = {};                    // opcional pero prolijo
+      payload.campos_personalizados = { transcripcion: transcripcionVoz };
     }
 
     try {
