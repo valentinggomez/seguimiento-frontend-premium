@@ -130,7 +130,7 @@ export default function PanelRespuestas() {
   const getColorClass = (r: Respuesta) => {
     const base = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
     const campos = getCamposPersonalizados(r)
-    const porTexto = alertaPorTexto(campos?.transcripcion)
+    const porTexto = alertaPorTexto(extraerTranscripcion(r, campos)) // ← usa el helper
     const final = porTexto && prioridad[porTexto] > prioridad[base] ? porTexto : base
 
     if (final === 'rojo') return 'border-red-400 bg-red-50'
@@ -244,6 +244,23 @@ export default function PanelRespuestas() {
     }
   };
 
+  const extraerTranscripcion = (r: Respuesta, campos: Record<string, any>) =>
+    (typeof campos.transcripcion === 'string' && campos.transcripcion.trim()) ||
+    (typeof (r as any).transcripcion_voz === 'string' && (r as any).transcripcion_voz.trim()) ||
+    '';
+
+  const extraerSintomas = (r: Respuesta, campos: Record<string, any>) => {
+    let s: any = campos.sintomas_ia ?? (r as any).sintomas_ia ?? (campos as any).sintomasIA ?? (r as any).sintomasIA;
+    if (!s) return [];
+    if (Array.isArray(s)) return s.map(String).filter(Boolean);
+    if (typeof s === 'string') {
+      try { const p = JSON.parse(s); if (Array.isArray(p)) return p.map(String).filter(Boolean); } catch {}
+      return s.split(/[,\|;]+/).map(x => x.trim()).filter(Boolean);
+    }
+    if (typeof s === 'object') return Object.values(s).map(String).filter(Boolean);
+    return [];
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-[#003366]">
@@ -328,13 +345,8 @@ export default function PanelRespuestas() {
                     const customEntries = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
 
                     // También consideramos voz/síntomas para decidir si mostrar "sin_campos"
-                    const transcripcion =
-                      (typeof campos.transcripcion === 'string' && campos.transcripcion.trim()) ||
-                      (typeof (r as any).transcripcion_voz === 'string' && (r as any).transcripcion_voz.trim()) ||
-                      ''
-                    const sintomasIA = Array.isArray(campos.sintomas_ia) ? campos.sintomas_ia
-                                    : Array.isArray((r as any).sintomas_ia) ? (r as any).sintomas_ia
-                                    : []
+                    const transcripcion = extraerTranscripcion(r, campos)
+                    const sintomasIA    = extraerSintomas(r, campos)
 
                     if (formEntries.length === 0 && customEntries.length === 0 && !transcripcion && sintomasIA.length === 0) {
                       return (
@@ -383,8 +395,8 @@ export default function PanelRespuestas() {
                 {/* 🧠 BLOQUE DE RESPUESTA POR VOZ Y SÍNTOMAS IA (usando campos parseados) */}
                 {(() => {
                   const campos = getCamposPersonalizados(r)
-                  const transcripcion = typeof campos.transcripcion === 'string' ? campos.transcripcion.trim() : ''
-                  const sintomasIA = Array.isArray(campos.sintomas_ia) ? campos.sintomas_ia : []
+                  const transcripcion = extraerTranscripcion(r, campos)
+                  const sintomasIA    = extraerSintomas(r, campos)
 
                   return (
                     <>
