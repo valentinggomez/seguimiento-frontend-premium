@@ -33,7 +33,7 @@ interface Respuesta {
   sugerencia_ia?: string
   respuestas_formulario?: Record<string, string | number | null>
   campos_personalizados?: Record<string, any> | string | null
-  transcripcion_voz?: string;
+  transcripcion?: string;
   sintomas_ia?: string[];
   [key: string]: any;
 }
@@ -339,7 +339,14 @@ export default function PanelRespuestas() {
                     const campos = getCamposPersonalizados(r)
                     const form   = getRespuestasFormulario(r)
 
-                    const HIDDEN = new Set(['clinica_id','transcripcion','sintomas_ia','campos_personalizados'])
+                    // dentro del render expandido
+                    const HIDDEN = new Set([
+                      'clinica_id',
+                      'transcripcion',
+                      'sintomas_ia',
+                      'campos_personalizados',
+                      'respuesta_por_voz',   // 👈 agregar esto
+                    ])
 
                     const formEntries   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
                     const customEntries = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
