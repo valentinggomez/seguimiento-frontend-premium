@@ -203,22 +203,17 @@ export default function ResponderPage() {
     // 📦 Armado de payload según tipo de respuesta
     const payload: any = {
       paciente_id: id,
-      // ❌ no mandes clinica_id desde el front; el backend lo obtiene por dominio
+      // ❌ No mandes clinica_id; el backend lo detecta por dominio
     };
 
     if (formularioCompleto && !hayGrabacion) {
-      // Solo formulario → empaquetar en respuestas_formulario
-      const respuestasFormulario = Object.entries(form).reduce((acc, [key, value]) => {
-        acc[key] = value; // usa los "name" técnicos del form
-        return acc;
-      }, {} as Record<string, any>);
-
-      payload.respuestas_formulario = respuestasFormulario;   // ✅ clave correcta
-      payload.campos_personalizados = {};                    // opcional
+      // ✅ Solo formulario → todo adentro de campos_personalizados
+      payload.campos_personalizados = { ...form };
+      payload.respuesta_por_voz = false;
     } else if (hayGrabacion && !hayRespuestasFormulario) {
-      // Solo grabación por voz
-      payload.respuestas_formulario = {};                    // opcional pero prolijo
+      // ✅ Solo grabación por voz
       payload.campos_personalizados = { transcripcion: transcripcionVoz };
+      payload.respuesta_por_voz = true;
     }
 
     try {
