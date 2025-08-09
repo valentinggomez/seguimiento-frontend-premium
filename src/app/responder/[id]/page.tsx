@@ -1,12 +1,5 @@
   "use client"
 
-  declare global {
-    interface Window {
-      SpeechRecognition: any;
-      webkitSpeechRecognition: any;
-    }
-  }
-
   import { useEffect, useState, useCallback } from 'react'
   import { useParams } from 'next/navigation'
   import { motion } from 'framer-motion'
@@ -14,11 +7,6 @@
   import { getAuthHeaders } from '@/lib/getAuthHeaders'
   import { useRef } from 'react'
 
-  let SpeechRecognition: any
-
-  if (typeof window !== 'undefined') {
-    SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
-  }
 
   function FieldBlock({
     label,
@@ -83,10 +71,15 @@
     const [estado, setEstado] = useState<'cargando' | 'ok' | 'error' | 'enviando' | 'enviado'>('cargando')
     const [form, setForm] = useState<any>({})
     const [grabando, setGrabando] = useState(false)
-    const [transcripcionVoz, setTranscripcionVoz] = useState('')
-    const reconocimientoRef = useRef<any>(null)
-    const bufferRef = useRef<string>('')
-    const autoRestartRef = useRef<boolean>(false)
+
+    // 🎙 estados de audio
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+    const [audioUrl, setAudioUrl] = useState<string | null>(null)
+    const [duracion, setDuracion] = useState<number>(0)
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+    const chunksRef = useRef<BlobPart[]>([])
+    const timerRef = useRef<number | null>(null)
 
     const camposBase = [
       { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -130,69 +123,110 @@
     const campoActivo = (nombre: string) =>
       !clinica?.campos_formulario || camposConfigurados.some((c: string) => c.startsWith(nombre))
 
-    const iniciarGrabacion = (reset = false) => {
-      if (!SpeechRecognition) { alert('⚠️ Tu navegador no soporta reconocimiento de voz.'); return }
-      if (grabando) return  // ← evita doble inicio
+    const iniciarGrabacion = async () => {
+      if (typeof MediaRecorder === 'undefined') {
+        alert('Tu navegador no soporta grabación de audio.')
+        return
+      }
 
-      if (reset) { bufferRef.current = ''; setTranscripcionVoz('') }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-      const reconocimiento = new SpeechRecognition()
-      reconocimiento.lang = 'es-ES'
-      reconocimiento.interimResults = true
-      reconocimiento.continuous = true
+        // Elegir el mejor MIME soportado
+        let mime = 'audio/webm'
+        if (MediaRecorder.isTypeSupported('audio/webm')) mime = 'audio/webm'
+        else if (MediaRecorder.isTypeSupported('audio/mp4')) mime = 'audio/mp4'
+        else if (MediaRecorder.isTypeSupported('audio/ogg')) mime = 'audio/ogg'
 
-      autoRestartRef.current = true
+        const mr = new MediaRecorder(stream, { mimeType: mime })
+        mediaRecorderRef.current = mr
+        chunksRef.current = []
 
-      reconocimiento.onstart = () => setGrabando(true)            // ← asegura estado
-      reconocimiento.onresult = (event: any) => {
-        let interim = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i]
-          const text = (res[0]?.transcript ?? '').replace(/\s+/g, ' ')
-          if (res.isFinal) bufferRef.current = `${bufferRef.current} ${text}`.trim()
-          else interim += text
+        // limpiar prev
+        if (audioUrl) URL.revokeObjectURL(audioUrl)
+        setAudioUrl(null)
+        setAudioBlob(null)
+
+        mr.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            chunksRef.current.push(e.data)
+            const total = chunksRef.current.reduce((a, b: any) => a + (b.size || 0), 0)
+            if (total > 10 * 1024 * 1024) { // 10 MB
+              try { mr.stop() } catch {}
+              alert('La grabación superó el límite de 10 MB.')
+            }
+          }
         }
-        setTranscripcionVoz(`${bufferRef.current} ${interim}`.trim())
-      }
-      reconocimiento.onend = () => {
-        if (autoRestartRef.current) setTimeout(() => { try { reconocimiento.start() } catch {} }, 200)
-        else setGrabando(false)
-      }
-      reconocimiento.onerror = (e: any) => {
-        // si es por “no-speech” o “network”, reintenta; si es “not-allowed”, corta
-        if (e?.error === 'not-allowed' || e?.error === 'service-not-allowed') {
-          autoRestartRef.current = false
+
+        mr.onstart = () => {
+          setGrabando(true)
+          setDuracion(0)
+          if (timerRef.current) window.clearInterval(timerRef.current)
+          timerRef.current = window.setInterval(() => {
+            setDuracion((d) => {
+              if (d >= 120) { // 2 minutos
+                try { mr.stop() } catch {}
+              }
+              return d + 1
+            })
+          }, 1000) as unknown as number
+        }
+
+        mr.onstop = () => {
           setGrabando(false)
-        } else if (autoRestartRef.current) {
-          try { reconocimiento.stop() } catch {}
+          if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null }
+          const blob = new Blob(chunksRef.current, { type: mime })
+          setAudioBlob(blob)
+          if (audioUrl) URL.revokeObjectURL(audioUrl)
+          setAudioUrl(URL.createObjectURL(blob))
+          // cortar el mic
+          try { stream.getTracks().forEach(t => t.stop()) } catch {}
         }
-      }
 
-      reconocimientoRef.current = reconocimiento
-      try { reconocimiento.start() } catch {}
+        mr.start()
+      } catch (error) {
+        console.error('Error al iniciar grabación:', error)
+        alert('No se pudo acceder al micrófono.')
+      }
     }
 
     const detenerGrabacion = () => {
-      autoRestartRef.current = false
-      try { reconocimientoRef.current?.stop() } catch {}
-      setGrabando(false)
-      // consolidar lo visible en el buffer
-      bufferRef.current = (transcripcionVoz.trim() || bufferRef.current).trim()
-      setTranscripcionVoz(bufferRef.current)
+      try { mediaRecorderRef.current?.stop() } catch {}
     }
 
-    const volverAGrabar = () => {
-      detenerGrabacion()
-      bufferRef.current = ''
-      setTranscripcionVoz('')
-      iniciarGrabacion(true)
+    const volverAGrabar = async () => {
+      // si está grabando, frená
+      try { mediaRecorderRef.current?.stop() } catch {}
+
+      // cortá cualquier stream abierto
+      try { mediaRecorderRef.current?.stream?.getTracks()?.forEach((t:any) => t.stop()) } catch {}
+
+      // limpiá el estado anterior
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+      setAudioUrl(null)
+      setAudioBlob(null)
+      setDuracion(0)
+
+      // pequeño delay para que termine el onstop y arrancar limpio
+      setTimeout(() => { iniciarGrabacion() }, 120)
     }
 
     const borrarGrabacion = () => {
-      detenerGrabacion()
-      bufferRef.current = ''
-      setTranscripcionVoz('')
+      try { mediaRecorderRef.current?.stop() } catch {}
+      setAudioBlob(null)
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+      setAudioUrl(null)
+      setDuracion(0)
     }
+
+    useEffect(() => {
+      return () => {
+        // cleanup al desmontar
+        if (timerRef.current) window.clearInterval(timerRef.current)
+        try { mediaRecorderRef.current?.stream?.getTracks()?.forEach((t:any)=>t.stop()) } catch {}
+        if (audioUrl) URL.revokeObjectURL(audioUrl)
+      }
+    }, [audioUrl])
 
     useEffect(() => {
       const fetchPaciente = async () => {
@@ -214,78 +248,77 @@
       fetchPaciente()
     }, [id])
 
-    useEffect(() => {
-      // cleanup al desmontar: cortar reconocimiento y auto-restart
-      return () => {
-        autoRestartRef.current = false
-        try { reconocimientoRef.current?.stop() } catch {}
-      }
-    }, [])
-
     const handleChange = useCallback((e: any) => {
       const { name, value } = e.target
       setForm((prev: any) => ({ ...prev, [name]: value }))
     }, [])
 
-    const handleSubmit = async (e: any) => {
+   const handleSubmit = async (e: any) => {
       e.preventDefault()
 
       const camposObligatorios = camposFinal.filter(
         c => c.name !== "observacion" && campoActivo(c.name)
       )
       const formularioCompleto = camposObligatorios.every(campo => !!form[campo.name])
-      const hayGrabacion = !!transcripcionVoz.trim()
+      const hayAudio = !!audioBlob
       const hayRespuestasFormulario = Object.values(form).some(v => v && v !== "")
 
-      // 🔍 Reglas de envío
-      if (!((formularioCompleto && !hayGrabacion) || (hayGrabacion && !hayRespuestasFormulario))) {
-        alert("Debes completar únicamente el formulario o únicamente la grabación por voz.")
+      if (grabando) {
+        alert('Primero detené la grabación.')
+        return
+      }
+
+      // reglas: o formulario completo SIN audio, o SOLO audio SIN formulario
+      if (!((formularioCompleto && !hayAudio) || (hayAudio && !hayRespuestasFormulario))) {
+        alert("Completá únicamente el formulario o únicamente la grabación por voz.")
         return
       }
 
       setEstado('enviando')
 
-      // 📦 Armado de payload según tipo de respuesta
-      const payload: any = { paciente_id: id };
-
-      if (formularioCompleto && !hayGrabacion) {
-        payload.campos_personalizados = { ...form };
-      } else if (hayGrabacion && !hayRespuestasFormulario) {
-        payload.campos_personalizados = { transcripcion: transcripcionVoz };
-      }
-
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-clinica-host': window.location.hostname
-          },
-          body: JSON.stringify(payload)
-        })
-        if (res.ok) {
-          try {
-            const data = await res.json()
-            const respuestaId = data?.id
-            if (!respuestaId) throw new Error("No se obtuvo ID de respuesta")
+        if (formularioCompleto && !hayAudio) {
+          // --- SOLO FORMULARIO ---
+          const payload = { paciente_id: id, campos_personalizados: { ...form } }
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-clinica-host': window.location.hostname,
+            },
+            body: JSON.stringify(payload),
+          })
+          if (!res.ok) throw new Error('Error al guardar formulario')
+        } else if (hayAudio && !hayRespuestasFormulario) {
+          // --- SOLO AUDIO -> /responder-voz/audio ---
+          const fd = new FormData()
+          fd.append('paciente_id', String(id))
 
-            const authHeaders = getAuthHeaders()
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/prediccion/${respuestaId}`, {
-              method: 'POST',
-              headers: {
-                ...authHeaders,
-                'Content-Type': 'application/json',
-                'x-clinica-host': window.location.hostname,
-              },
-            })
-          } catch (err) {
-            console.warn("⚠️ No se pudo guardar score IA:", err)
-          }
-          setEstado('enviado')
-        } else {
-          setEstado('error')
+          // Elegir extensión acorde al tipo grabado
+          const ext = audioBlob?.type.includes('mp4') ? 'm4a'
+                  : audioBlob?.type.includes('ogg') ? 'ogg'
+                  : 'webm'
+
+          fd.append('audio', audioBlob!, `respuesta.${ext}`)
+
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/responder-voz/audio`, {
+            method: 'POST',
+            headers: { 'x-clinica-host': window.location.hostname },
+            body: fd,
+          })
+          if (!res.ok) throw new Error('Error al guardar respuesta por voz')
         }
-      } catch {
+
+        setEstado('enviado')
+        setForm({})
+        setAudioBlob(null)
+        if (audioUrl) URL.revokeObjectURL(audioUrl)
+        setAudioUrl(null)
+        setDuracion(0)
+        // Si querés volver a estado "ok" después de 3s:
+        setTimeout(() => setEstado('ok'), 3000)
+      } catch (err) {
+        console.warn(err)
         setEstado('error')
       }
     }
@@ -332,19 +365,19 @@
               })}
             </div>
             
-            {/* 🎤 Grabación por voz */}
+            {/* 🎤 Grabación por voz (audio real -> Whisper) */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
               <p className="font-semibold text-blue-800">🎙 Responder por voz</p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-3">
                 {!grabando ? (
                   <button
                     type="button"
-                    onClick={() => iniciarGrabacion()}
+                    onClick={iniciarGrabacion}
                     disabled={grabando}
                     className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
-                    🎤 Iniciar grabación
+                    🎤 Iniciar
                   </button>
                 ) : (
                   <button
@@ -353,7 +386,7 @@
                     disabled={!grabando}
                     className="bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
-                    ⏹ Detener grabación
+                    ⏹ Detener
                   </button>
                 )}
 
@@ -369,19 +402,27 @@
                 <button
                   type="button"
                   onClick={borrarGrabacion}
-                  disabled={grabando || !transcripcionVoz}
+                  disabled={grabando || !audioBlob}
                   className="bg-gray-200 hover:bg-gray-300 disabled:opacity-60 disabled:cursor-not-allowed text-gray-800 font-semibold py-2 px-4 rounded-lg transition"
                 >
-                  🗑️ Borrar grabación
+                  🗑️ Borrar
                 </button>
+
+                {grabando && <span className="text-sm text-blue-800">Grabando… {duracion}s</span>}
               </div>
 
-              {transcripcionVoz && (
-                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                  <p className="text-sm text-gray-600">Transcripción detectada:</p>
-                  <p className="italic text-gray-800">{transcripcionVoz}</p>
+              {audioUrl && (
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm space-y-2">
+                  <p className="text-sm text-gray-600">Previsualización:</p>
+                  <audio src={audioUrl} controls />
+                  <p className="text-xs text-gray-500">Duración: ~{duracion}s</p>
                 </div>
               )}
+
+              <p className="text-xs text-blue-700">
+                Tip: podés elegir completar el formulario <strong>o</strong> enviar una grabación.  
+                La IA transcribe y mejora la puntuación automáticamente.
+              </p>
             </div>
 
             <div className="flex justify-end">
