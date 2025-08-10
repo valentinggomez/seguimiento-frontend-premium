@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
+import { fetchReglas, type ReglasClinicas, type ReglaClinica, type Operador } from '@/lib/reglasApi'
 
 interface Respuesta {
   id: string
@@ -87,6 +88,7 @@ export default function PanelRespuestas() {
   const [seleccionadas, setSeleccionadas] = useState<string[]>([])
   const [mostrarModal, setMostrarModal] = useState(false)
   const { t } = useTranslation()
+  const [reglasClinicas, setReglasClinicas] = useState<ReglasClinicas>({ condiciones: [] })
 
   useEffect(() => {
     const fetchRespuestas = async () => {
@@ -107,6 +109,17 @@ export default function PanelRespuestas() {
       }
     }
     fetchRespuestas()
+  }, [])
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetchReglas()
+        setReglasClinicas({ condiciones: Array.isArray(r.condiciones) ? r.condiciones : [] })
+      } catch (e) {
+        console.warn('No se pudieron cargar reglas clínicas para sugerencias', e)
+      }
+    })()
   }, [])
 
   const toggleExpand = (id: string) => {
@@ -261,6 +274,79 @@ export default function PanelRespuestas() {
     return [];
   };
 
+  const parseBetween = (s: string) => {
+    const [a, b] = (s || '').split(',').map(v => v.trim())
+    const n1 = Number(a), n2 = Number(b)
+    return [Math.min(n1, n2), Math.max(n1, n2)]
+  }
+
+  const cumple = (valorCampo: any, operador: Operador, valorRegla: any) => {
+    // normalizar
+    const v = valorCampo
+    const r = valorRegla
+
+    const nV = typeof v === 'number' ? v : Number(v)
+    const nR = typeof r === 'number' ? r : Number(r)
+
+    switch (operador) {
+      case '>':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >  nR
+      case '>=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >= nR
+      case '<':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <  nR
+      case '<=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <= nR
+      case '==': return String(v).trim().toLowerCase() === String(r).trim().toLowerCase()
+      case '!=': return String(v).trim().toLowerCase() !== String(r).trim().toLowerCase()
+      case 'contains':
+        return String(v ?? '').toLowerCase().includes(String(r ?? '').toLowerCase())
+      case 'in': {
+        const opciones = String(r ?? '')
+          .split(/[,\|;]+/).map(x => x.trim().toLowerCase()).filter(Boolean)
+        return opciones.includes(String(v ?? '').trim().toLowerCase())
+      }
+      case 'between': {
+        const [min, max] = parseBetween(String(r ?? ''))
+        return !Number.isNaN(nV) && nV >= min && nV <= max
+      }
+      default: return false
+    }
+  }
+
+  const ordenarPorPrioridad = (a: string, b: string) => {
+    const p = (x: string) => (x === 'rojo' ? 2 : x === 'amarillo' ? 1 : 0)
+    return p(b) - p(a) // descendente
+  }
+
+  /** Evalúa reglas sobre una respuesta y devuelve {nivel, sugerencias[]} */
+  const calcularSugerencias = (r: Respuesta) => {
+    // dataset combinando formulario + personalizados (igual que ya hacés)
+    const campos = getCamposPersonalizados(r)
+    const form   = getRespuestasFormulario(r)
+    const dataset: Record<string, any> = { ...form, ...campos }
+
+    let nivelMax: 'verde'|'amarillo'|'rojo' = 'verde'
+    const sugerencias: Array<{ texto: string; nivel: 'verde'|'amarillo'|'rojo' }> = []
+
+    for (const regla of (reglasClinicas?.condiciones || []) as ReglaClinica[]) {
+      if (!regla?.campo) continue
+      const valorCampo = dataset[regla.campo]
+      if (valorCampo === undefined || valorCampo === null || valorCampo === '') continue
+      if (cumple(valorCampo, regla.operador as Operador, regla.valor)) {
+        const lv = (regla.nivel as any) || 'verde'
+        if (lv === 'rojo') nivelMax = 'rojo'
+        else if (lv === 'amarillo' && nivelMax !== 'rojo') nivelMax = 'amarillo'
+        if (regla.sugerencia) {
+          sugerencias.push({ texto: String(regla.sugerencia), nivel: lv })
+        }
+      }
+    }
+
+    // dedup por texto y ordenar por nivel
+    const unicos = Array.from(
+      new Map(sugerencias.map(s => [s.texto.trim(), s])).values()
+    ).sort((a, b) => ordenarPorPrioridad(a.nivel, b.nivel))
+
+    return { nivel: nivelMax, sugerencias: unicos }
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-[#003366]">
@@ -296,6 +382,7 @@ export default function PanelRespuestas() {
                 {modoEdicion && (
                   <input
                     type="checkbox"
+                    onClick={(e) => e.stopPropagation()}
                     className="mr-3 accent-[#003366]"
                     checked={seleccionadas.includes(r.id)}
                     onChange={() => {
@@ -431,6 +518,33 @@ export default function PanelRespuestas() {
                         </div>
                       )}
                     </>
+                  )
+                })()}
+                {(() => {
+                  if (!reglasClinicas?.condiciones?.length) return null
+                  const { sugerencias } = calcularSugerencias(r)
+                  if (!sugerencias.length) return null
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 text-slate-800">
+                        <span className="text-xl">💡</span>
+                        <h3 className="font-semibold text-base tracking-wide">Sugerencias</h3>
+                      </div>
+                      <ul className="mt-1 grid gap-2">
+                        {sugerencias.map((sug, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span
+                              className={[
+                                'mt-1 inline-block h-2.5 w-2.5 rounded-full',
+                                sug.nivel === 'rojo' ? 'bg-rose-500' :
+                                sug.nivel === 'amarillo' ? 'bg-amber-500' : 'bg-emerald-500'
+                              ].join(' ')}
+                            />
+                            <span className="text-slate-700">{sug.texto}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )
                 })()}
               </>
