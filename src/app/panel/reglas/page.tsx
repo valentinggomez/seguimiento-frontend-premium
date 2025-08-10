@@ -14,8 +14,8 @@ export default function PageReglas() {
 
   useEffect(() => {
     try {
-      const r = localStorage.getItem('rol');
-      const u = localStorage.getItem('usuario');
+      const r = typeof window !== 'undefined' ? localStorage.getItem('rol') : null;
+      const u = typeof window !== 'undefined' ? localStorage.getItem('usuario') : null;
       if (!r || !u) {
         router.replace('/login');
         return;
@@ -28,12 +28,11 @@ export default function PageReglas() {
     }
   }, [router]);
 
-  // quién puede editar reglas
   const canEdit = useMemo(() => rol === 'superadmin' || rol === 'admin', [rol]);
 
   if (!ready) {
     return (
-      <div className="p-10 max-w-5xl mx-auto">
+      <div className="p-10 max-w-6xl mx-auto">
         <div className="h-7 w-56 bg-slate-100 rounded mb-2" />
         <div className="h-4 w-96 bg-slate-100 rounded mb-6" />
         <div className="h-40 w-full bg-slate-50 border rounded" />
@@ -54,12 +53,9 @@ export default function PageReglas() {
     );
   }
 
+  // 👇 sin encabezado extra: ReglasEditor ya incluye el header estilado
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Reglas clínicas</h1>
-      <p className="text-gray-600 mb-6">
-        Definí condiciones por campo para disparar niveles de alerta y sugerencias.
-      </p>
+    <div className="p-6 max-w-6xl mx-auto">
       <ReglasEditor />
     </div>
   );

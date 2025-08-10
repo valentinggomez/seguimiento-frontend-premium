@@ -171,37 +171,43 @@ export default function ReglasEditor() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Reglas clínicas</h2>
-          <p className="text-slate-500 text-sm">{headingNote}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Reglas clínicas
+            </h1>
+            <p className="text-slate-500 mt-1">
+            Definí condiciones por campo para disparar niveles de alerta y sugerencias.
+            </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onPreview}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-amber-200 text-amber-800 hover:bg-amber-50"
-            title="Previsualizar con el sample"
-          >
-            <Eye className="w-4 h-4" /> Previsualizar
-          </button>
-          <button
-            type="button"
-            onClick={addRule}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-slate-900 text-white hover:bg-black"
-          >
-            <Plus className="w-4 h-4" /> Agregar regla
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={onSave}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            <SaveIcon className="w-4 h-4" /> {saving ? 'Guardando…' : 'Guardar'}
-          </button>
+
+        <div className="flex gap-3">
+            <button
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 hover:shadow-sm transition"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-4.553a1 1 0 00-1.414-1.414L13 8.586l-5.139-5.14a1 1 0 10-1.414 1.415L10 10l-4.553 4.553a1 1 0 101.414 1.414L13 11.414l5.139 5.14a1 1 0 001.414-1.415L15 10z" />
+            </svg>
+            Previsualizar
+            </button>
+
+            <button
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 hover:shadow-sm transition"
+            >
+            <span className="text-lg">＋</span>
+            Agregar regla
+            </button>
+
+            <button
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 hover:shadow-sm transition"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v16h16V4H4zM4 8h16M8 4v16" />
+            </svg>
+            Guardar
+            </button>
         </div>
-      </div>
+        </div>
 
       {/* Alerts */}
       {error && (
