@@ -57,17 +57,21 @@ export default function SeccionAdminClinicas() {
   useEffect(() => {
     const cargarClinicas = async () => {
       try {
-        const res = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
           headers: {
             ...getAuthHeaders(),
-            "rol": localStorage.getItem("rol") || ""
-          }
+            rol: 'superadmin', // redundante pero asegura modo lista
+          },
         });
         const json = await res.json();
-        if (res.ok && Array.isArray(json.data)) {
-          setClinicas(json.data);
+
+        // normalizar: puede venir {data: Clinica[]} o {data: Clinica}
+        const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
+
+        if (res.ok) {
+          setClinicas(lista);
         } else {
-          setClinicas([]); // ← defensa extra
+          setClinicas([]);
           console.error("❌ Error al cargar clínicas:", json);
           toast.error("Error al cargar clínicas");
         }
@@ -208,14 +212,13 @@ export default function SeccionAdminClinicas() {
         toast.success("Clínica guardada correctamente");
         setSelected(null);
 
-        const nuevas = await fetch("https://seguimiento-backend-premium-production.up.railway.app/api/clinicas", {
-          headers: {
-            ...getAuthHeaders(),
-            "rol": localStorage.getItem("rol") || ""
-          }
-        }).then(r => r.json());
-
-        setClinicas(nuevas);
+        const ref = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
+          headers: { ...getAuthHeaders(), rol: 'superadmin' },
+        });
+        const json = await ref.json();
+        const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
+        setClinicas(lista);
+        return;
       } else {
         const data = await res.json();
         toast.error(`Error: ${data.error || "No se pudo guardar"}`);
