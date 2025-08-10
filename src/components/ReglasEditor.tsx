@@ -171,41 +171,48 @@ export default function ReglasEditor() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-end justify-between">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div className="mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Izquierda: título + subtítulo */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                 Reglas clínicas
-                </h1>
-                <p className="text-slate-500 mt-1">
+            </h1>
+            <p className="text-slate-500 mt-1">
                 Definí condiciones por campo para disparar niveles de alerta y sugerencias.
-                </p>
+            </p>
             </div>
-          <button
-            type="button"
-            onClick={onPreview}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-amber-200 text-amber-800 hover:bg-amber-50"
-            title="Previsualizar con el sample"
-          >
-            <Eye className="w-4 h-4" /> Previsualizar
-          </button>
-          <button
-            type="button"
-            onClick={addRule}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-slate-900 text-white hover:bg-black"
-          >
-            <Plus className="w-4 h-4" /> Agregar regla
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={onSave}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            <SaveIcon className="w-4 h-4" /> {saving ? 'Guardando…' : 'Guardar'}
-          </button>
+
+            {/* Derecha: acciones */}
+            <div className="flex items-center gap-2 flex-wrap">
+            <button
+                type="button"
+                onClick={onPreview}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-amber-200 text-amber-800 hover:bg-amber-50"
+                title="Previsualizar con el sample"
+            >
+                <Eye className="w-4 h-4" /> Previsualizar
+            </button>
+
+            <button
+                type="button"
+                onClick={addRule}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-slate-900 text-white hover:bg-black"
+            >
+                <Plus className="w-4 h-4" /> Agregar regla
+            </button>
+
+            <button
+                type="button"
+                disabled={saving}
+                onClick={onSave}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+                <SaveIcon className="w-4 h-4" /> {saving ? 'Guardando…' : 'Guardar'}
+            </button>
+            </div>
         </div>
-      </div>
+        </div>
 
       {/* Alerts */}
       {error && (
