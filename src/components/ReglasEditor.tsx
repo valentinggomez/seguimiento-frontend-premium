@@ -239,7 +239,7 @@ export default function ReglasEditor() {
           return (
             <div
               key={r.id ?? idx}
-              className={`rounded-2xl border bg-white shadow-sm ring-1 ${nivelUI.ring}`}
+              className={`rounded-2xl border bg-white shadow-sm ring-1 ${nivelUI.ring} overflow-hidden`}
             >
               {/* Top bar */}
               <div className="flex items-center justify-between px-4 py-2 border-b bg-slate-50/60 rounded-t-2xl">
@@ -297,17 +297,21 @@ export default function ReglasEditor() {
 
                 {/* Operador */}
                 <div className="col-span-6 md:col-span-2">
-                  <label className="text-xs text-slate-500 mb-1 block">Operador</label>
-                  <select
-                    className="w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300"
-                    value={r.operador}
-                    onChange={e => updateRule(idx, { operador: e.target.value as any })}
-                  >
-                    {OPERADORES.map(op => (
-                      <option key={op} value={op}>{op}</option>
-                    ))}
-                  </select>
-                </div>
+                    <label className="text-xs text-slate-500 mb-1 block">Color</label>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <input
+                        type="color"
+                        className="h-9 w-12 rounded border shrink-0"
+                        value={r.color || nivelUI.hex}
+                        onChange={e => updateRule(idx, { color: e.target.value })}
+                        />
+                        <input
+                        className="flex-1 min-w-0 rounded-xl border px-3 py-2 truncate"
+                        value={r.color || nivelUI.hex}
+                        onChange={e => updateRule(idx, { color: e.target.value })}
+                        />
+                    </div>
+                    </div>
 
                 {/* Valor */}
                 <div className="col-span-6 md:col-span-2">
