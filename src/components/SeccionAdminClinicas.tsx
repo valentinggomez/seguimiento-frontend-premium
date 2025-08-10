@@ -192,9 +192,10 @@ export default function SeccionAdminClinicas() {
     const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
 
     try {
+      const base = process.env.NEXT_PUBLIC_API_URL;
       const endpoint = selected?.id
-        ? "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/editar"
-        : "https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/nueva";
+        ? `${base}/api/clinicas/editar`
+        : `${base}/api/clinicas/nueva`;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -397,9 +398,9 @@ export default function SeccionAdminClinicas() {
                           <Checkbox
                             checked={(selected?.columnas_exportables || []).includes(campo)}
                             onChange={(e) => {
-                              const checked = e.target.checked
+                              const on = e.currentTarget.checked
                               const columnas = new Set(selected?.columnas_exportables || [])
-                              if (checked) columnas.add(campo)
+                              if (on) columnas.add(campo)
                               else columnas.delete(campo)
                               setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                             }}
@@ -420,9 +421,9 @@ export default function SeccionAdminClinicas() {
                             <Checkbox
                               checked={(selected?.columnas_exportables || []).includes(campo)}
                               onChange={(e) => {
-                                const checked = e.target.checked
+                                const on = e.currentTarget.checked
                                 const columnas = new Set(selected?.columnas_exportables || [])
-                                if (checked) columnas.add(campo)
+                                if (on) columnas.add(campo)
                                 else columnas.delete(campo)
                                 setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                               }}
@@ -439,14 +440,14 @@ export default function SeccionAdminClinicas() {
                     <div>
                       <h4 className="text-md font-semibold text-[#003366] mb-2">📋 Respuestas del paciente</h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {camposForm.map(campo => (
+                        {camposForm.map((campo) => (
                           <label key={campo.nombre} className="flex items-center gap-2 text-sm cursor-pointer">
                             <Checkbox
                               checked={(selected?.columnas_exportables || []).includes(campo.nombre)}
                               onChange={(e) => {
-                                const checked = e.target.checked
+                                const on = e.currentTarget.checked
                                 const columnas = new Set(selected?.columnas_exportables || [])
-                                if (checked) columnas.add(campo.nombre)
+                                if (on) columnas.add(campo.nombre)
                                 else columnas.delete(campo.nombre)
                                 setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                               }}
@@ -666,9 +667,9 @@ export default function SeccionAdminClinicas() {
                                 <Checkbox
                                   checked={(selected?.columnas_exportables || []).includes(campo)}
                                   onChange={(e) => {
-                                    const checked = e.target.checked
+                                    const on = e.currentTarget.checked
                                     const columnas = new Set(selected?.columnas_exportables || [])
-                                    if (checked) columnas.add(campo)
+                                    if (on) columnas.add(campo)
                                     else columnas.delete(campo)
                                     setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                                   }}
@@ -689,9 +690,9 @@ export default function SeccionAdminClinicas() {
                                   <Checkbox
                                     checked={(selected?.columnas_exportables || []).includes(campo)}
                                     onChange={(e) => {
-                                      const checked = e.target.checked
+                                      const on = e.currentTarget.checked
                                       const columnas = new Set(selected?.columnas_exportables || [])
-                                      if (checked) columnas.add(campo)
+                                      if (on) columnas.add(campo)
                                       else columnas.delete(campo)
                                       setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                                     }}
@@ -711,12 +712,12 @@ export default function SeccionAdminClinicas() {
                               {camposForm.map(campo => (
                                 <label key={campo.nombre} className="flex items-center gap-2 text-sm cursor-pointer">
                                   <Checkbox
-                                    checked={(selected?.columnas_exportables || []).includes(campo.nombre)}
+                                    checked={(selected?.columnas_exportables || []).includes(campo)}
                                     onChange={(e) => {
-                                      const checked = e.target.checked
+                                      const on = e.currentTarget.checked
                                       const columnas = new Set(selected?.columnas_exportables || [])
-                                      if (checked) columnas.add(campo.nombre)
-                                      else columnas.delete(campo.nombre)
+                                      if (on) columnas.add(campo)
+                                      else columnas.delete(campo)
                                       setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                                     }}
                                   />
