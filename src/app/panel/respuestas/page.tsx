@@ -177,10 +177,12 @@ export default function PanelRespuestas() {
         'respuestas_formulario',
         'id','creado_en','paciente_nombre',
         'nivel_alerta','alerta','score_ia','sugerencia_ia',
+        '_color_alerta', 
       ]);
 
       const limpio: Record<string, any> = {};
       for (const k of Object.keys(obj)) {
+        if (k.startsWith('_')) continue; 
         if (!ocultos.has(k)) limpio[k] = obj[k];
       }
 
@@ -432,7 +434,8 @@ export default function PanelRespuestas() {
                       'transcripcion',
                       'sintomas_ia',
                       'campos_personalizados',
-                      'respuesta_por_voz',   // 👈 agregar esto
+                      'respuesta_por_voz',
+                      '_color_alerta',  
                     ])
 
                     const formEntries   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
