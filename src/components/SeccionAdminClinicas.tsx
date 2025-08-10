@@ -709,15 +709,15 @@ export default function SeccionAdminClinicas() {
                           <div>
                             <h4 className="text-md font-semibold text-[#003366] mb-2">📋 Respuestas del paciente</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              {camposForm.map(campo => (
+                              {camposForm.map((campo) => (
                                 <label key={campo.nombre} className="flex items-center gap-2 text-sm cursor-pointer">
                                   <Checkbox
-                                    checked={(selected?.columnas_exportables || []).includes(campo)}
+                                    checked={(selected?.columnas_exportables || []).includes(campo.nombre)}
                                     onChange={(e) => {
                                       const on = e.currentTarget.checked
                                       const columnas = new Set(selected?.columnas_exportables || [])
-                                      if (on) columnas.add(campo)
-                                      else columnas.delete(campo)
+                                      if (on) columnas.add(campo.nombre)
+                                      else columnas.delete(campo.nombre)
                                       setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                                     }}
                                   />
