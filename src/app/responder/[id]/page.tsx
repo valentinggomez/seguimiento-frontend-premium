@@ -81,6 +81,12 @@
     const chunksRef = useRef<BlobPart[]>([])
     const timerRef = useRef<number | null>(null)
 
+    const [puedeEnviar, setPuedeEnviar] = useState<boolean>(true)
+    const [retryAt, setRetryAt] = useState<string | null>(null)
+    const [cooldownHoras, setCooldownHoras] = useState<number | null>(null)
+    const [checkingCooldown, setCheckingCooldown] = useState<boolean>(true)
+    const [countdown, setCountdown] = useState<number | null>(null) // seg restantes
+
     const camposBase = [
       { name: "telefono", label: "Teléfono de contacto", type: "text" },
       { name: "nombre_medico", label: "Nombre del médico", type: "text" },
@@ -253,8 +259,51 @@
       setForm((prev: any) => ({ ...prev, [name]: value }))
     }, [])
 
-   const handleSubmit = async (e: any) => {
+
+    const fetchPuedeEnviar = useCallback(async () => {
+      try {
+        setCheckingCooldown(true)
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/responder-voz/puede-enviar?paciente_id=${id}`,
+          { headers: { 'x-clinica-host': window.location.hostname } }
+        )
+        const data = await res.json()
+        setPuedeEnviar(Boolean(data?.puedeEnviar))
+        setRetryAt(data?.retryAt || null)
+        setCooldownHoras(data?.horas ?? null)
+      } catch {
+        // si falla, dejamos enviar (el backend igual valida)
+        setPuedeEnviar(true)
+        setRetryAt(null)
+      } finally {
+        setCheckingCooldown(false)
+      }
+    }, [id])
+
+    // ⬇️ agregar aquí: consultar cooldown al montar
+    useEffect(() => {
+      fetchPuedeEnviar()
+    }, [fetchPuedeEnviar])
+
+    // ⬇️ agregar aquí: countdown visual
+    useEffect(() => {
+      if (!retryAt) { setCountdown(null); return }
+      const tick = () => {
+        const diff = Math.max(0, Math.floor((new Date(retryAt).getTime() - Date.now()) / 1000))
+        setCountdown(diff)
+      }
+      tick()
+      const t = setInterval(tick, 1000)
+      return () => clearInterval(t)
+    }, [retryAt])
+
+    const handleSubmit = async (e: any) => {
       e.preventDefault()
+
+      if (!puedeEnviar) {
+        alert('Todavía no podés enviar otra respuesta. Probá más tarde.')
+        return
+      }
 
       const camposObligatorios = camposFinal.filter(
         c => c.name !== "observacion" && campoActivo(c.name)
@@ -279,7 +328,7 @@
       try {
         if (formularioCompleto && !hayAudio) {
           // --- SOLO FORMULARIO ---
-          const payload = { paciente_id: id, campos_personalizados: { ...form } }
+          const payload = { paciente_id: id, ...form }
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
             method: 'POST',
             headers: {
@@ -288,6 +337,14 @@
             },
             body: JSON.stringify(payload),
           })
+          if (res.status === 409) {
+            const data = await res.json().catch(() => ({}))
+            setPuedeEnviar(false)
+            setRetryAt(data?.retryAt || null)
+            setEstado('ok')
+            alert(data?.error || 'Esperá antes de volver a enviar.')
+            return
+          }
           if (!res.ok) throw new Error('Error al guardar formulario')
         } else if (hayAudio && !hayRespuestasFormulario) {
           // --- SOLO AUDIO -> /responder-voz/audio ---
@@ -306,6 +363,15 @@
             headers: { 'x-clinica-host': window.location.hostname },
             body: fd,
           })
+
+          if (res.status === 409) {
+            const data = await res.json().catch(() => ({}))
+            setPuedeEnviar(false)
+            setRetryAt(data?.retryAt || null)
+            setEstado('ok')
+            alert(data?.error || 'Esperá antes de volver a enviar.')
+            return
+          }
           if (!res.ok) throw new Error('Error al guardar respuesta por voz')
         }
 
@@ -343,6 +409,20 @@
 
           <h1 className="text-3xl font-bold text-center text-[#003366]">Seguimiento postoperatorio</h1>
           <p className="text-center text-gray-600 mb-6 text-sm">Completá cuidadosamente este control clínico.</p>
+          
+          {/* Aviso de cooldown */}
+          {!checkingCooldown && !puedeEnviar && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 mb-2">
+              <p className="font-semibold">Ya enviaste una respuesta recientemente.</p>
+              <p className="text-sm">
+                {retryAt
+                  ? (countdown !== null
+                      ? `Podrás volver a enviar en ${Math.floor(countdown/60)}m ${countdown%60}s.`
+                      : `Podrás volver a enviar después de ${new Date(retryAt).toLocaleString()}.`)
+                  : `Probá nuevamente más tarde${cooldownHoras ? ` (~${cooldownHoras}h)` : ''}.`}
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="grid gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -426,7 +506,11 @@
             </div>
 
             <div className="flex justify-end">
-              <button type="submit" className="bg-[#003366] hover:bg-[#002244] text-white font-semibold py-3 px-6 rounded-xl transition-all">
+              <button
+                type="submit"
+                disabled={estado==='enviando' || checkingCooldown || !puedeEnviar}
+                className="bg-[#003366] hover:bg-[#002244] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all"
+              >
                 {estado === 'enviando' ? 'Enviando...' : 'Enviar respuesta'}
               </button>
             </div>
