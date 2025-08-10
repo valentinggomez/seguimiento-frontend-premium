@@ -381,6 +381,8 @@
         if (audioUrl) URL.revokeObjectURL(audioUrl)
         setAudioUrl(null)
         setDuracion(0)
+        // actualizar cooldown después de un envío OK
+        fetchPuedeEnviar()
         // Si querés volver a estado "ok" después de 3s:
         setTimeout(() => setEstado('ok'), 3000)
       } catch (err) {
