@@ -86,6 +86,8 @@
     const [cooldownHoras, setCooldownHoras] = useState<number | null>(null)
     const [checkingCooldown, setCheckingCooldown] = useState<boolean>(true)
     const [countdown, setCountdown] = useState<number | null>(null) // seg restantes
+    const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+    const [retryHuman, setRetryHuman] = useState<string | null>(null)
 
     const camposBase = [
       { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -271,6 +273,8 @@
         setPuedeEnviar(Boolean(data?.puedeEnviar))
         setRetryAt(data?.retryAt || null)
         setCooldownHoras(data?.horas ?? null)
+        setSecondsLeft(data?.secondsLeft ?? null)
+        setRetryHuman(data?.retryHuman ?? null)
       } catch {
         // si falla, dejamos enviar (el backend igual valida)
         setPuedeEnviar(true)
@@ -287,15 +291,24 @@
 
     // ⬇️ agregar aquí: countdown visual
     useEffect(() => {
-      if (!retryAt) { setCountdown(null); return }
-      const tick = () => {
-        const diff = Math.max(0, Math.floor((new Date(retryAt).getTime() - Date.now()) / 1000))
-        setCountdown(diff)
+      if (secondsLeft != null) {
+        setCountdown(secondsLeft)
+        const t = setInterval(() => {
+          setCountdown((s) => (s == null ? null : Math.max(0, s - 1)))
+        }, 1000)
+        return () => clearInterval(t)
       }
-      tick()
-      const t = setInterval(tick, 1000)
-      return () => clearInterval(t)
-    }, [retryAt])
+      if (retryAt) {
+        const tick = () => {
+          const diff = Math.max(0, Math.floor((new Date(retryAt).getTime() - Date.now()) / 1000))
+          setCountdown(diff)
+        }
+        tick()
+        const t = setInterval(tick, 1000)
+        return () => clearInterval(t)
+      }
+      setCountdown(null)
+    }, [secondsLeft, retryAt])
 
     const handleSubmit = async (e: any) => {
       e.preventDefault()
@@ -341,6 +354,8 @@
             const data = await res.json().catch(() => ({}))
             setPuedeEnviar(false)
             setRetryAt(data?.retryAt || null)
+            setSecondsLeft(data?.secondsLeft ?? null)
+            setRetryHuman(data?.retryHuman ?? null)
             setEstado('ok')
             alert(data?.error || 'Esperá antes de volver a enviar.')
             return
@@ -417,12 +432,26 @@
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 mb-2">
               <p className="font-semibold">Ya enviaste una respuesta recientemente.</p>
               <p className="text-sm">
-                {retryAt
-                  ? (countdown !== null
-                      ? `Podrás volver a enviar en ${Math.floor(countdown/60)}m ${countdown%60}s.`
-                      : `Podrás volver a enviar después de ${new Date(retryAt).toLocaleString()}.`)
-                  : `Probá nuevamente más tarde${cooldownHoras ? ` (~${cooldownHoras}h)` : ''}.`}
+                {retryHuman
+                  ? `Podrás volver a enviar alrededor de ${retryHuman}.`
+                  : countdown !== null
+                    ? `Podrás volver a enviar en ${Math.floor(countdown/60)}m ${String(countdown%60).padStart(2,'0')}s.`
+                    : retryAt
+                      ? `Podrás volver a enviar después de ${new Date(retryAt).toLocaleString()}.`
+                      : `Probá nuevamente más tarde${cooldownHoras ? ` (~${cooldownHoras}h)` : ''}.`}
               </p>
+              {cooldownHoras && countdown !== null && (
+                <div className="mt-2 h-2 w-full bg-amber-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-400"
+                    style={{
+                      width: `${
+                        100 - Math.min(100, (countdown / (cooldownHoras*3600)) * 100)
+                      }%`
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
