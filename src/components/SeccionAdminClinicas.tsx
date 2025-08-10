@@ -58,10 +58,7 @@ export default function SeccionAdminClinicas() {
     const cargarClinicas = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
-          headers: {
-            ...getAuthHeaders(),
-            rol: 'superadmin', // redundante pero asegura modo lista
-          },
+          headers: getAuthHeaders(),
         });
         const json = await res.json();
 
