@@ -38,9 +38,8 @@ export default function ReglasEditor() {
 
   const [reglas, setReglas]     = useState<ReglasClinicas>({ condiciones: [] });
 
-  const [sample, setSample] = useState<Record<string, any>>({
-    dolor_24h: 8, dolor_mayor_7: 'Sí', nausea: 'No', satisfaccion: 6
-  });
+  const [sample, setSample] = useState<Record<string, any>>({});
+  const [showSample, setShowSample] = useState(false);
 
   // ====== LOAD ===============================================================
   useEffect(() => {
@@ -111,6 +110,14 @@ export default function ReglasEditor() {
     });
   };
 
+  const buildSampleFromReglas = () => {
+    const keys = Array.from(new Set(reglas.condiciones.map(r => r.campo).filter(Boolean)));
+    if (keys.length === 0) return;
+    const seed: Record<string, any> = {};
+    for (const k of keys) seed[k] = '';
+    setSample(seed);
+    setShowSample(true);
+  };
   // ====== ACTIONS ============================================================
   const onSave = async () => {
     try {
@@ -389,39 +396,61 @@ export default function ReglasEditor() {
             <RefreshCw className="w-4 h-4 text-slate-500" />
             <p className="font-medium text-slate-800">Sample de previsualización</p>
           </div>
+
           <span className="text-xs text-slate-500 flex items-center gap-1">
             <Info className="w-3.5 h-3.5" />
-            Tip: <code className="bg-slate-50 px-1 rounded">between</code> usa "min,max" &nbsp;/&nbsp; <code className="bg-slate-50 px-1 rounded">in</code> usa "Sí,No"
+            Tip: <code className="bg-slate-50 px-1 rounded">between</code> usa "min,max" &nbsp;/&nbsp;
+            <code className="bg-slate-50 px-1 rounded">in</code> usa "Sí,No"
           </span>
-        </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          {Object.entries(sample).map(([k, v]) => (
-            <div key={k} className="flex gap-2">
-              <input
-                className="w-1/2 rounded-xl border px-3 py-2"
-                value={k}
-                onChange={e => {
-                  const nv = e.target.value;
-                  setSample(s => {
-                    const { [k]: oldVal, ...rest } = s;
-                    return { ...rest, [nv]: oldVal };
-                  });
-                }}
-              />
-              <input
-                className="w-1/2 rounded-xl border px-3 py-2"
-                value={String(v)}
-                onChange={e => setSample(s => ({ ...s, [k]: e.target.value }))}
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-3 flex gap-2">
+      {/* Estado vacío / colapsado */}
+      {!showSample && Object.keys(sample).length === 0 ? (
+        <div className="flex flex-col items-start gap-2">
           <button
             type="button"
-            onClick={() => setSample(s => ({ ...s, nuevo_campo: 'Sí' }))}
+            onClick={() => setShowSample(true)}
+            className="rounded-xl px-3 py-2 border hover:bg-slate-50"
+          >
+            Configurar sample
+          </button>
+          <button
+            type="button"
+            onClick={buildSampleFromReglas}
+            className="text-sm text-slate-600 hover:underline"
+          >
+            Autocompletar con campos de las reglas
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            {Object.entries(sample).map(([k, v]) => (
+              <div key={k} className="flex gap-2">
+                <input
+                  className="w-1/2 rounded-xl border px-3 py-2"
+                  value={k}
+                  onChange={e => {
+                    const nv = e.target.value;
+                    setSample(s => {
+                      const { [k]: oldVal, ...rest } = s;
+                      return { ...rest, [nv]: oldVal };
+                    });
+                  }}
+                />
+                <input
+                  className="w-1/2 rounded-xl border px-3 py-2"
+                  value={String(v)}
+                  onChange={e => setSample(s => ({ ...s, [k]: e.target.value }))}
+                />
+              </div>
+            ))}
+        </div>
+
+        <div className="mt-3 flex gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setSample(s => ({ ...s, nuevo_campo: '' }))}
             className="rounded-xl px-3 py-2 border hover:bg-slate-50"
           >
             + Campo de sample
@@ -433,8 +462,17 @@ export default function ReglasEditor() {
           >
             Limpiar
           </button>
+          <button
+            type="button"
+            onClick={() => setShowSample(false)}
+            className="rounded-xl px-3 py-2 border text-slate-600 hover:bg-slate-50"
+          >
+            Ocultar
+          </button>
         </div>
-      </div>
+      </>
+    )}
+    </div>
 
       {/* Sticky actions on mobile */}
       <div className="md:hidden sticky bottom-3 flex gap-2">
