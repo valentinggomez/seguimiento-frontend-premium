@@ -126,31 +126,6 @@ export default function PanelRespuestas() {
     setExpandedId(prev => (prev === id ? null : id))
   }
 
-  const prioridad = { verde: 0, amarillo: 1, rojo: 2 } as const
-
-  function alertaPorTexto(texto?: string): 'verde'|'amarillo'|'rojo'|null {
-    if (!texto) return null
-    const t = texto.toLowerCase()
-    const pideAyuda = /(necesito ayuda|auxilio|urgente|no puedo|desmayo|sangrado|no respiro)/
-    const dolor = /(me duele|dolor)/
-    const fuerte = /(mucho|muy|fuerte|intenso|terrible)/
-    if (pideAyuda.test(t)) return 'rojo'
-    if (dolor.test(t) && fuerte.test(t)) return 'rojo'
-    if (dolor.test(t)) return 'amarillo'
-    return null
-  }
-
-  const getColorClass = (r: Respuesta) => {
-    const base = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
-    const campos = getCamposPersonalizados(r)
-    const porTexto = alertaPorTexto(extraerTranscripcion(r, campos)) // ← usa el helper
-    const final = porTexto && prioridad[porTexto] > prioridad[base] ? porTexto : base
-
-    if (final === 'rojo') return 'border-red-400 bg-red-50'
-    if (final === 'amarillo') return 'border-yellow-300 bg-yellow-50'
-    return 'border-green-400 bg-green-50'
-  }
-
   const getCamposPersonalizados = (r: Respuesta): Record<string, any> => {
     try {
       let obj: any = r.campos_personalizados;
@@ -209,6 +184,35 @@ export default function PanelRespuestas() {
       return {};
     }
   };
+
+  // === Helpers de color (usa _color_alerta del backend si existe) ===
+  const nivelToHex: Record<'verde'|'amarillo'|'rojo', string> = {
+    verde: '#10B981',
+    amarillo: '#F59E0B',
+    rojo: '#EF4444',
+  }
+
+  function hexToRgba(hex: string, alpha = 0.12) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    if (!m) return `rgba(16,185,129,${alpha})` // fallback verde
+    const r = parseInt(m[1], 16)
+    const g = parseInt(m[2], 16)
+    const b = parseInt(m[3], 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  function getColorHex(r: Respuesta) {
+    // 1) intentar leer _color_alerta desde el JSON crudo
+    let raw: any = r.campos_personalizados
+    if (typeof raw === 'string') {
+      try { raw = JSON.parse(raw) } catch { raw = null }
+    }
+    const fromBackend = raw && typeof raw === 'object' ? raw._color_alerta : undefined
+
+    // 2) sino, fallback por nivel_alerta
+    const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
+    return (fromBackend as string) || nivelToHex[baseNivel] || nivelToHex.verde
+  }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
     try {
@@ -372,11 +376,15 @@ export default function PanelRespuestas() {
       <div className="flex flex-col gap-4">
         {Array.isArray(respuestas) && respuestas.map((r) => (
           <motion.div
-            key={r.id}
+            key={String(r.id)}
             layout
-            className={`rounded-xl border ${getColorClass(r)} p-4 shadow-sm ${modoEdicion ? '' : 'cursor-pointer'}`}
+            className={`rounded-xl border p-4 shadow-sm ${modoEdicion ? '' : 'cursor-pointer'}`}
+            style={{
+              borderColor: getColorHex(r),
+              backgroundColor: hexToRgba(getColorHex(r), 0.10),
+            }}
             onClick={() => {
-              if (!modoEdicion) toggleExpand(r.id)
+              if (!modoEdicion) toggleExpand(String(r.id))
             }}
           >
             <div className="flex justify-between items-center">
@@ -386,12 +394,13 @@ export default function PanelRespuestas() {
                     type="checkbox"
                     onClick={(e) => e.stopPropagation()}
                     className="mr-3 accent-[#003366]"
-                    checked={seleccionadas.includes(r.id)}
+                    checked={seleccionadas.includes(String(r.id))}
                     onChange={() => {
+                      const rid = String(r.id)
                       setSeleccionadas(prev =>
-                        prev.includes(r.id)
-                          ? prev.filter(id => id !== r.id)
-                          : [...prev, r.id]
+                        prev.includes(rid)
+                          ? prev.filter(id => id !== rid)
+                          : [...prev, rid]
                       )
                     }}
                   />
@@ -417,7 +426,7 @@ export default function PanelRespuestas() {
               </div>
             </div>
 
-            {expandedId === r.id && (
+            {expandedId === String(r.id) && (
               <>
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -524,9 +533,25 @@ export default function PanelRespuestas() {
                   )
                 })()}
                 {(() => {
-                  if (!reglasClinicas?.condiciones?.length) return null
-                  const { sugerencias } = calcularSugerencias(r)
-                  if (!sugerencias.length) return null
+                  // 1) sugerencias front (por reglas del panel)
+                  const front = reglasClinicas?.condiciones?.length ? calcularSugerencias(r).sugerencias : []
+
+                  // 2) sugerencias backend: leer _sugerencias del JSON crudo (porque getCamposPersonalizados filtra _*)
+                  let raw: any = (r as any).campos_personalizados
+                  if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = null } }
+                  const be: Array<{ texto: string; nivel?: 'verde'|'amarillo'|'rojo'; color?: string }> =
+                    raw && Array.isArray(raw._sugerencias) ? raw._sugerencias : []
+
+                  // si no hay ninguna, no mostrar bloque
+                  if ((!front || front.length === 0) && (!be || be.length === 0)) return null
+
+                  // 3) merge + dedupe por texto (prioriza backend)
+                  const todos = [
+                    ...be.map(s => ({ ...s, fuente: 'backend' as const })),
+                    ...front.map(s => ({ ...s, fuente: 'front' as const })),
+                  ]
+                  const unicos = Array.from(new Map(todos.map(s => [String(s.texto).trim(), s])).values())
+
                   return (
                     <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2 text-slate-800">
@@ -534,18 +559,26 @@ export default function PanelRespuestas() {
                         <h3 className="font-semibold text-base tracking-wide">Sugerencias</h3>
                       </div>
                       <ul className="mt-1 grid gap-2">
-                        {sugerencias.map((sug, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span
-                              className={[
-                                'mt-1 inline-block h-2.5 w-2.5 rounded-full',
-                                sug.nivel === 'rojo' ? 'bg-rose-500' :
-                                sug.nivel === 'amarillo' ? 'bg-amber-500' : 'bg-emerald-500'
-                              ].join(' ')}
-                            />
-                            <span className="text-slate-700">{sug.texto}</span>
-                          </li>
-                        ))}
+                        {unicos.map((sug, i) => {
+                          const dot =
+                            (sug as any).color ? (sug as any).color :
+                            (sug.nivel === 'rojo' ? '#EF4444' :
+                            sug.nivel === 'amarillo' ? '#F59E0B' : '#10B981')
+                          return (
+                            <li key={i} className="flex items-start gap-2">
+                              <span
+                                className="mt-1 inline-block h-2.5 w-2.5 rounded-full"
+                                style={{ backgroundColor: dot }}
+                              />
+                              <span className="text-slate-700">
+                                {sug.texto}
+                                {sug.fuente === 'backend' && (
+                                  <span className="ml-2 text-xs text-slate-500">(reglas clínica)</span>
+                                )}
+                              </span>
+                            </li>
+                          )
+                        })}
                       </ul>
                     </div>
                   )
@@ -579,7 +612,7 @@ export default function PanelRespuestas() {
                   body: JSON.stringify({ ids: seleccionadas }),
                 })
                 if (res.ok) {
-                  setRespuestas(prev => prev.filter(r => !seleccionadas.includes(r.id)))
+                  setRespuestas(prev => prev.filter(r => !seleccionadas.includes(String(r.id))))
                   setSeleccionadas([])
                   setModoEdicion(false)
                   setMostrarModal(false)
