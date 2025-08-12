@@ -7,6 +7,36 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } 
 import { toast } from "sonner"
 import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
+// helpers visuales chiquitos
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="text-sm font-semibold text-slate-700 mb-2">{children}</div>;
+}
+
+function Chip({
+  children,
+  onRemove,
+}: {
+  children: React.ReactNode;
+  onRemove?: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-sm">
+      {children}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-full border border-red-200 px-1 leading-none text-red-500 hover:bg-red-50"
+          aria-label="Eliminar"
+          title="Eliminar"
+        >
+          ✕
+        </button>
+      )}
+    </span>
+  );
+}
+
 type Formulario = {
   id?: string | number
   clinica_id?: string
@@ -182,7 +212,7 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
 
       {/* Modal Crear/Editar */}
       <Dialog open={open} onOpenChange={(o)=>{ setOpen(o); if(!o) setEdit(null) }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl rounded-2xl border border-slate-200 shadow-2xl">
           <DialogTitle>{edit?.id ? "Editar formulario" : "Nuevo formulario"}</DialogTitle>
           <DialogDescription>Definí reglas de envío y campos del form.</DialogDescription>
 
@@ -194,34 +224,22 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
               <Input placeholder="Prioridad" type="number" value={edit.prioridad} onChange={e=>upd("prioridad", Number(e.target.value||0))} />
               
             {/* Offsets (horas después del registro) */}
-            <div className="col-span-2">
-            <div className="text-sm font-medium mb-2">
-                Recordatorios (horas después del registro)
-            </div>
+            <div className="col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
+            <SectionTitle>Recordatorios (horas después del registro)</SectionTitle>
 
             {/* Chips */}
-            <div className="flex flex-wrap gap-2 mb-2">
-                {(edit.offsets_horas || []).map((h, idx) => (
-                <span
-                    key={idx}
-                    className="inline-flex items-center gap-2 px-2 py-1 text-xs rounded border"
-                >
+            <div className="flex flex-wrap gap-2 mb-3">
+                {(edit.offsets_horas || []).length > 0 ? (
+                edit.offsets_horas!.slice().sort((a, b) => a - b).map((h, idx) => (
+                    <Chip key={`${h}-${idx}`} onRemove={() => {
+                    const next = (edit.offsets_horas || []).filter((_, i) => i !== idx)
+                    upd("offsets_horas", next)
+                    }}>
                     +{h}h
-                    <button
-                    type="button"
-                    onClick={() => {
-                        const next = (edit.offsets_horas || []).filter((_, i) => i !== idx)
-                        upd("offsets_horas", next)
-                    }}
-                    className="text-red-600"
-                    aria-label="Eliminar"
-                    >
-                    ✕
-                    </button>
-                </span>
-                ))}
-                {(!edit.offsets_horas || edit.offsets_horas.length === 0) && (
-                <span className="text-xs text-gray-500">Agregá valores como 6, 12, 24…</span>
+                    </Chip>
+                ))
+                ) : (
+                <span className="text-xs text-slate-400">Agregá valores como 6, 12, 24…</span>
                 )}
             </div>
 
@@ -229,6 +247,7 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
             <div className="flex items-center gap-2">
                 <Input
                 placeholder="p. ej., 6"
+                className="max-w-[120px]"
                 type="number"
                 min={0}
                 max={720}
@@ -263,8 +282,8 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
                 </Button>
             </div>
 
-            <p className="text-xs text-gray-500 mt-2">
-                Estos recordatorios se envían automáticamente a las +N horas desde el registro del paciente (independiente del día y la hora).
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                Estos recordatorios se envían automáticamente a las <b>+N horas</b> desde el registro del paciente, sin importar día u hora.
             </p>
             </div>
 
