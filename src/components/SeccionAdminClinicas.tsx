@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner"
 import { Plus, Trash2, X, Info, Save } from "lucide-react"
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
-import FormulariosPanel from "./formulariosPanel"
+import Link from "next/link"
 
 const CAMPOS_DISPONIBLES = [
   "fecha",
@@ -54,8 +54,6 @@ export default function SeccionAdminClinicas() {
   const [hojasDisponibles, setHojasDisponibles] = useState<string[]>([])
   const [cargandoHojas, setCargandoHojas] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
-  const [openFormFor, setOpenFormFor] = useState<string | null>(null)
-  const [formMode, setFormMode] = useState<'resumen' | 'diseñador'>('resumen')  
   const [sheetsMapJson, setSheetsMapJson] = useState<string>("{}")
   const [sheetsMapError, setSheetsMapError] = useState<string>("")
 
@@ -387,6 +385,7 @@ export default function SeccionAdminClinicas() {
                 </div>
                 <Button
                   onClick={() => setMostrarConfirmacion(true)}
+                  disabled={Boolean(sheetsMapError)}
                   className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg shadow transition duration-150"
                 >
                   <Save className="w-5 h-5" />
@@ -542,14 +541,14 @@ export default function SeccionAdminClinicas() {
                         {/* 🗣 Campo adicional: Transcripción por voz */}
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox
-                              checked={(selected?.columnas_exportables || []).includes('🗣 Transcripción por voz')}
-                              onCheckedChange={(on) => {
-                                const columnas = new Set(selected?.columnas_exportables || [])
-                                if (on) columnas.add('🗣 Transcripción por voz')
-                                else columnas.delete('🗣 Transcripción por voz')
-                                setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
-                              }}
-                            />
+                            checked={(selected?.columnas_exportables || []).includes('🗣 Transcripción por voz')}
+                            onCheckedChange={(on) => {
+                              const columnas = new Set(selected?.columnas_exportables || [])
+                              if (on) columnas.add('🗣 Transcripción por voz')
+                              else columnas.delete('🗣 Transcripción por voz')
+                              setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
+                            }}
+                          />
                           🗣 Transcripción por voz
                         </label>
                       </div>
@@ -637,7 +636,8 @@ export default function SeccionAdminClinicas() {
                       </div>
                       <Button
                         onClick={() => setMostrarConfirmacion(true)}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl shadow-md transition-all"
+                        disabled={Boolean(sheetsMapError)}
+                        className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg shadow transition duration-150"
                       >
                         <Save className="w-4 h-4 stroke-white" />
                         <span className="text-base font-medium">Guardar</span>
@@ -768,8 +768,7 @@ export default function SeccionAdminClinicas() {
                               <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                                 <Checkbox
                                   checked={(selected?.columnas_exportables || []).includes(campo)}
-                                  onChange={(e) => {
-                                    const on = e.currentTarget.checked
+                                  onCheckedChange={(on) => {
                                     const columnas = new Set(selected?.columnas_exportables || [])
                                     if (on) columnas.add(campo)
                                     else columnas.delete(campo)
@@ -791,8 +790,7 @@ export default function SeccionAdminClinicas() {
                                 <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                                   <Checkbox
                                     checked={(selected?.columnas_exportables || []).includes(campo)}
-                                    onChange={(e) => {
-                                      const on = e.currentTarget.checked
+                                    onCheckedChange={(on) => {
                                       const columnas = new Set(selected?.columnas_exportables || [])
                                       if (on) columnas.add(campo)
                                       else columnas.delete(campo)
@@ -815,8 +813,7 @@ export default function SeccionAdminClinicas() {
                                 <label key={campo.nombre} className="flex items-center gap-2 text-sm cursor-pointer">
                                   <Checkbox
                                     checked={(selected?.columnas_exportables || []).includes(campo.nombre)}
-                                    onChange={(e) => {
-                                      const on = e.currentTarget.checked
+                                    onCheckedChange={(on) => {
                                       const columnas = new Set(selected?.columnas_exportables || [])
                                       if (on) columnas.add(campo.nombre)
                                       else columnas.delete(campo.nombre)
@@ -831,10 +828,9 @@ export default function SeccionAdminClinicas() {
                               <label className="flex items-center gap-2 text-sm cursor-pointer">
                                 <Checkbox
                                   checked={(selected?.columnas_exportables || []).includes('🗣 Transcripción por voz')}
-                                  onChange={(e) => {
-                                    const checked = e.target.checked
+                                  onCheckedChange={(on) => {
                                     const columnas = new Set(selected?.columnas_exportables || [])
-                                    if (checked) columnas.add('🗣 Transcripción por voz')
+                                    if (on) columnas.add('🗣 Transcripción por voz')
                                     else columnas.delete('🗣 Transcripción por voz')
                                     setSelected({ ...selected!, columnas_exportables: Array.from(columnas) })
                                   }}
@@ -893,82 +889,11 @@ export default function SeccionAdminClinicas() {
                 )}
                 </DialogContent>
               </Dialog>
-              {/* === Formularios (Resumen / Diseñador) === */}
-              <Dialog
-                open={openFormFor === String(clinica.id)}
-                onOpenChange={(o) => {
-                  setOpenFormFor(o ? String(clinica.id) : null)
-                  if (!o) setFormMode('resumen') // al cerrar, volvemos al resumen
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    onClick={() => setOpenFormFor(String(clinica.id))}
-                  >
-                    📄 Formularios
-                  </Button>
-                </DialogTrigger>
-
-                <DialogContent className="max-w-5xl">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <DialogTitle>Formularios — {clinica.nombre_clinica}</DialogTitle>
-                      <DialogDescription>
-                        {formMode === 'resumen'
-                          ? 'Acá ves un resumen de la configuración. Para cambiar los campos, usá “Editar configuración” o abrí el diseñador.'
-                          : 'Creador/Editor de formularios de esta clínica.'}
-                      </DialogDescription>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant={formMode === 'resumen' ? 'default' : 'outline'}
-                        onClick={() => setFormMode('resumen')}
-                      >
-                        Resumen
-                      </Button>
-                      <Button
-                        variant={formMode === 'diseñador' ? 'default' : 'outline'}
-                        onClick={() => setFormMode('diseñador')}
-                      >
-                        ➕ Diseñador
-                      </Button>
-                    </div>
-                  </div>
-
-                  {formMode === 'resumen' ? (
-                    <ResumenForm clinica={clinica} 
-                      onClose={() => setOpenFormFor(null)} 
-                      onEditar={async () => {
-                      // Cerrar este modal y abrir el de Editar clínica
-                      setOpenFormFor(null)
-
-                      // normalizamos columnas_exportables
-                      const columnasExportables: string[] = Array.isArray(clinica.columnas_exportables)
-                        ? clinica.columnas_exportables
-                        : typeof clinica.columnas_exportables === "string"
-                          ? clinica.columnas_exportables.split(",").map((s: string) => s.trim())
-                          : []
-
-                      setSelected({ ...clinica, columnas_exportables: columnasExportables })
-
-                      const cleanId = clinica?.spreadsheet_id?.trim()
-                      if (cleanId && /^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
-                        await fetchHojas(cleanId)
-                      } else {
-                        setHojasDisponibles([])
-                      }
-                    }} />
-                  ) : (
-                    <div className="mt-4">
-                      {/* 👉 CRUD completo: “Nuevo”, editar, etc. */}
-                      <FormulariosPanel clinicaId={String(clinica.id)} />
-                    </div>
-                  )}
-                </DialogContent>
-              </Dialog>
-
+              <Button variant="outline" asChild>
+                <Link href={`/clinicas/${clinica.id}`}>
+                  📄 Ver clínica
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         ))}
