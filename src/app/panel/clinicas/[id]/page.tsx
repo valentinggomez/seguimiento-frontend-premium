@@ -1,12 +1,9 @@
 "use client"
-export const dynamic = "force-dynamic"
-export const revalidate = 0
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import loadDynamic from "next/dynamic"
-import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
 const FormulariosPanel = loadDynamic(
   () => import("@/components/formulariosPanel").then(m => m.default ?? m),
