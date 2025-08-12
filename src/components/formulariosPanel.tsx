@@ -95,20 +95,28 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
   useEffect(() => { if (clinicaId) load() }, [clinicaId])
 
   const startCreate = () => {
-    setEdit({
-      nombre: "",
-      slug: "",
-      activo: true,
-      prioridad: 10,
-      version: 1,
-      offsets_horas: [6, 24, 48],
-      campos: { preguntas: [] },
-      reglas_alertas: { condiciones: [], sugerencias: [] },
-      meta: {},
-      publicado_en: new Date().toISOString()
-    })
+    const nuevo = {
+        nombre: "",
+        slug: "",
+        activo: true,
+        prioridad: 10,
+        version: 1,
+        offsets_horas: [6, 24, 48],
+        campos: { preguntas: [] },
+        reglas_alertas: { condiciones: [], sugerencias: [] },
+        meta: {},
+        publicado_en: new Date().toISOString()
+    }
+    setEdit(nuevo)
     setOpen(true)
-  }
+
+    setCamposText(JSON.stringify(nuevo.campos, null, 2))
+    setReglasText(JSON.stringify(nuevo.reglas_alertas, null, 2))
+    setMetaText(JSON.stringify(nuevo.meta, null, 2))
+    setCamposErr("")
+    setReglasErr("")
+    setMetaErr("")
+    }
 
   const save = async () => {
     if (!edit) return
