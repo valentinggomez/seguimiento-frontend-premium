@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner"
 import { Plus, Trash2, X, Info, Save } from "lucide-react"
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import FormulariosPanel from "./formulariosPanel"
 
 const CAMPOS_DISPONIBLES = [
   "fecha",
@@ -53,6 +54,7 @@ export default function SeccionAdminClinicas() {
   const [hojasDisponibles, setHojasDisponibles] = useState<string[]>([])
   const [cargandoHojas, setCargandoHojas] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
+  const [openFormFor, setOpenFormFor] = useState<string | null>(null)
 
   useEffect(() => {
     const cargarClinicas = async () => {
@@ -137,25 +139,7 @@ export default function SeccionAdminClinicas() {
       setHojasDisponibles([])
       return
     }
-    const fetchHojas = async () => {
-      setCargandoHojas(true)
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${cleanId}`)
-        const data = await res.json()
-        if (Array.isArray(data.hojas)) {
-          console.log("✅ Hojas recibidas:", data.hojas)
-          setHojasDisponibles(data.hojas)
-        } else {
-          setHojasDisponibles([])
-        }
-      } catch (error) {
-        console.error("Error al obtener hojas:", error)
-        setHojasDisponibles([])
-      } finally {
-        setCargandoHojas(false)
-      }
-    }
-    fetchHojas()
+    fetchHojas(cleanId) 
   }, [selected?.spreadsheet_id])
 
   const validarCampos = () => {
@@ -765,6 +749,29 @@ export default function SeccionAdminClinicas() {
                 )}
                 </DialogContent>
               </Dialog>
+               <Dialog
+                  open={openFormFor === String(clinica.id)}
+                  onOpenChange={(o) => setOpenFormFor(o ? String(clinica.id) : null)}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => setOpenFormFor(String(clinica.id))}
+                    >
+                      📄 Formularios
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="max-w-4xl">
+                    <DialogTitle>Formularios — {clinica.nombre_clinica}</DialogTitle>
+                    <DialogDescription>
+                      Creá, editá y activá los formularios de esta clínica.
+                    </DialogDescription>
+                    <div className="mt-4">
+                      <FormulariosPanel clinicaId={String(clinica.id)} />
+                    </div>
+                  </DialogContent>
+                </Dialog>
             </CardContent>
           </Card>
         ))}
