@@ -890,7 +890,7 @@ export default function SeccionAdminClinicas() {
                 </DialogContent>
               </Dialog>
               <Button variant="outline" asChild>
-                <Link href={`/clinicas/${clinica.id}`}>
+                <Link href={`/panel/clinicas/${clinica.id}`}>
                   <Button variant="outline">📄 Ver clínica</Button>
                 </Link>
               </Button>

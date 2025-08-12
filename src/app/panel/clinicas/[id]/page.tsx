@@ -1,12 +1,19 @@
-// app/clinicas/[id]/page.tsx
 "use client"
-export const dynamic = 'force-dynamic'
+
+export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import FormulariosPanel from "@/components/formulariosPanel"
+import loadDynamic from "next/dynamic" // 👈 renombrado
+
+// Carga dinámica del panel de formularios, sin SSR
+const FormulariosPanel = loadDynamic(
+  () => import("@/components/formulariosPanel").then(m => m.default ?? m),
+  { ssr: false }
+)
+
 import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
 export default function ClinicaDashboardPage() {
