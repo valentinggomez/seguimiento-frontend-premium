@@ -1,5 +1,7 @@
 // app/clinicas/[id]/page.tsx
 "use client"
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
