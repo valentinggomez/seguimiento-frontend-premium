@@ -891,7 +891,7 @@ export default function SeccionAdminClinicas() {
               </Dialog>
               <Button variant="outline" asChild>
                 <Link href={`/clinicas/${clinica.id}`}>
-                  📄 Ver clínica
+                  <Button variant="outline">📄 Ver clínica</Button>
                 </Link>
               </Button>
             </CardContent>
