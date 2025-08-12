@@ -70,7 +70,7 @@ type Formulario = {
   publicado_en?: string | null
 }
 
-export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
+export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinicaId: string; clinicaHost: string }) {
   const [items, setItems] = useState<Formulario[]>([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState<Formulario | null>(null)
@@ -85,25 +85,30 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
   const [metaText, setMetaText] = useState<string>("")
 
   const load = async () => {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${clinicaId}`
-    console.log("[FormulariosPanel] Fetch:", url)
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinicaId)}`
     try {
-        const res = await fetch(url, { headers: getAuthHeaders(), cache: "no-store" })
-        console.log("[FormulariosPanel] Status:", res.status)
-        if (!res.ok) {
-        const text = await res.text().catch(() => "(sin body)")
-        console.error("[FormulariosPanel] FAIL:", res.status, text)
+      const res = await fetch(url, {
+        headers: {
+          ...getAuthHeaders(),
+          'x-clinica-host': clinicaHost, // 👈 fuerza la clínica correcta
+        },
+        cache: 'no-store',
+      })
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '(sin body)')
+        console.error('[FormulariosPanel] FAIL:', res.status, text)
         setItems([])
         return
-        }
-        const data = await res.json()
-        console.log("[FormulariosPanel] OK payload:", data)
-        setItems(Array.isArray(data) ? data : data?.data || [])
+      }
+
+      const data = await res.json()
+      setItems(Array.isArray(data) ? data : data?.data || [])
     } catch (e) {
-        console.error("[FormulariosPanel] Fetch error:", e)
-        setItems([])
+      console.error('[FormulariosPanel] Fetch error:', e)
+      setItems([])
     }
-}
+  }
 
   useEffect(() => { if (clinicaId) load() }, [clinicaId])
 
