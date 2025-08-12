@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import loadDynamic from "next/dynamic"
-
+import { getAuthHeaders } from "@/lib/getAuthHeaders"
 const FormulariosPanel = loadDynamic(
   () => import("@/components/formulariosPanel").then(m => m.default ?? m),
   {
@@ -34,32 +34,48 @@ export default function ClinicaDashboardPage() {
   }, [router])
 
   useEffect(() => {
-    if (!id) return;
-    (async () => {
-        try {
-        const { getAuthHeaders } = await import("@/lib/getAuthHeaders");
-        console.log("[ClinicaPage] API_URL =", process.env.NEXT_PUBLIC_API_URL, "id=", id);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas/${id}`, {
-            headers: getAuthHeaders(),
-            cache: "no-store",
-        });
-        console.log("[ClinicaPage] fetch status", res.status);
-        if (!res.ok) {
-            const text = await res.text();
-            console.error("[ClinicaPage] body:", text);
-            // No hagas throw para no romper el render:
-            setClinica(null);
-            return;
+    const loadClinica = async (cid: string) => {
+        setCargando(true)
+        const api = process.env.NEXT_PUBLIC_API_URL!
+        const headers = getAuthHeaders()
+
+        // 1) Intento directo (por si luego agregás la ruta en el backend)
+        const direct = await fetch(`${api}/api/clinicas/${cid}`, { headers, cache: "no-store" }).catch(() => null)
+        if (direct && direct.ok) {
+        const json = await direct.json().catch(() => null)
+        setClinica(json?.data || json || null)
+        setCargando(false)
+        return
         }
-        const json = await res.json();
-        setClinica(json?.data || json || null);
-        } catch (e) {
-        console.error("[ClinicaPage] fetch error", e);
-        } finally {
-        setCargando(false);
+
+        // 2) Fallback por query ?id=...
+        const byQuery = await fetch(`${api}/api/clinicas?id=${cid}`, { headers, cache: "no-store" }).catch(() => null)
+        if (byQuery && byQuery.ok) {
+        const json = await byQuery.json().catch(() => null)
+        // puede venir {data: Clinica} o {data: Clinica[]}
+        const data = json?.data
+        const found = Array.isArray(data) ? data.find((c: any) => String(c.id) === String(cid)) : data
+        setClinica(found || null)
+        setCargando(false)
+        return
         }
-    })();
-    }, [id]);
+
+        // 3) Último fallback: traigo todas y filtro
+        const listRes = await fetch(`${api}/api/clinicas?rol=superadmin`, { headers: { ...headers, rol: "superadmin" }, cache: "no-store" }).catch(() => null)
+        if (listRes && listRes.ok) {
+        const json = await listRes.json().catch(() => null)
+        const list = Array.isArray(json?.data) ? json.data : (json?.data ? [json.data] : [])
+        const found = list.find((c: any) => String(c.id) === String(cid)) || null
+        setClinica(found)
+        } else {
+        setClinica(null)
+        }
+        setCargando(false)
+    }
+
+    if (typeof id === "string" && id) loadClinica(id)
+    else setCargando(false)
+    }, [id])
 
   if (rol !== "superadmin") {
     return (
