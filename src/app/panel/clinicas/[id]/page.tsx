@@ -1,20 +1,20 @@
 "use client"
-
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import loadDynamic from "next/dynamic" // 👈 renombrado
+import loadDynamic from "next/dynamic"
+import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
-// Carga dinámica del panel de formularios, sin SSR
 const FormulariosPanel = loadDynamic(
   () => import("@/components/formulariosPanel").then(m => m.default ?? m),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <div className="p-4 text-sm text-gray-500">Cargando panel…</div>,
+  }
 )
-
-import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
 export default function ClinicaDashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -32,20 +32,17 @@ export default function ClinicaDashboardPage() {
       return
     }
     setRol(rolGuardado)
-    try {
-      setUsuario(JSON.parse(usuarioGuardado))
-    } catch {
-      router.replace("/login")
-      return
-    }
+    try { setUsuario(JSON.parse(usuarioGuardado)) }
+    catch { router.replace("/login"); return }
   }, [router])
 
   useEffect(() => {
     if (!id) return
-    const fetchClinica = async () => {
+    ;(async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas/${id}`, {
           headers: getAuthHeaders(),
+          cache: "no-store",
         })
         const json = await res.json()
         setClinica(json?.data || json || null)
@@ -54,8 +51,7 @@ export default function ClinicaDashboardPage() {
       } finally {
         setCargando(false)
       }
-    }
-    fetchClinica()
+    })()
   }, [id])
 
   if (rol !== "superadmin") {
@@ -67,9 +63,7 @@ export default function ClinicaDashboardPage() {
     )
   }
 
-  if (!usuario || cargando) {
-    return <div className="p-10 text-center text-gray-500">Cargando…</div>
-  }
+  if (!usuario || cargando) return <div className="p-10 text-center text-gray-500">Cargando…</div>
 
   if (!clinica) {
     return (
@@ -82,7 +76,6 @@ export default function ClinicaDashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#003366]">{clinica.nombre_clinica}</h1>
@@ -91,12 +84,11 @@ export default function ClinicaDashboardPage() {
         <Button variant="outline" onClick={() => router.push("/panel/clinicas")}>← Volver</Button>
       </div>
 
-      {/* Tabs simples (podemos ampliar luego) */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="rounded-2xl border p-5 shadow-sm bg-white">
           <h2 className="text-lg font-semibold text-[#003366] mb-2">📄 Formularios</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Definí offsets de envío, reglas de alertas y metadatos. Los envíos se realizan a +N horas desde el registro.
+            Definí offsets de envío, reglas de alertas y metadatos.
           </p>
           <FormulariosPanel clinicaId={String(clinica.id)} />
         </div>
@@ -108,7 +100,6 @@ export default function ClinicaDashboardPage() {
             <li><b>Hoja principal:</b> {clinica.nombre_hoja || "—"}</li>
             <li><b>Color primario:</b> <span className="font-mono">{clinica.color_primario || "—"}</span></li>
           </ul>
-          <p className="text-xs text-gray-500 mt-3">La edición completa sigue en “Administración de Clínicas”.</p>
         </div>
       </div>
     </div>
