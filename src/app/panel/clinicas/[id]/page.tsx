@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 import loadDynamic from "next/dynamic"
 import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
-//const FormulariosPanel = loadDynamic(
-  //() => import("@/components/formulariosPanel").then(m => m.default ?? m),
-  //{
-   // ssr: false,
-    //loading: () => <div className="p-4 text-sm text-gray-500">Cargando panel…</div>,
-  //}
-//)
+const FormulariosPanel = loadDynamic(
+  () => import("@/components/formulariosPanel").then(m => m.default ?? m),
+  {
+    ssr: false,
+    loading: () => <div className="p-4 text-sm text-gray-500">Cargando panel…</div>,
+  }
+)
 
 export default function ClinicaDashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,22 +37,32 @@ export default function ClinicaDashboardPage() {
   }, [router])
 
   useEffect(() => {
-    if (!id) return
-    ;(async () => {
-      try {
+    if (!id) return;
+    (async () => {
+        try {
+        const { getAuthHeaders } = await import("@/lib/getAuthHeaders");
+        console.log("[ClinicaPage] API_URL =", process.env.NEXT_PUBLIC_API_URL, "id=", id);
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas/${id}`, {
-          headers: getAuthHeaders(),
-          cache: "no-store",
-        })
-        const json = await res.json()
-        setClinica(json?.data || json || null)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setCargando(false)
-      }
-    })()
-  }, [id])
+            headers: getAuthHeaders(),
+            cache: "no-store",
+        });
+        console.log("[ClinicaPage] fetch status", res.status);
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("[ClinicaPage] body:", text);
+            // No hagas throw para no romper el render:
+            setClinica(null);
+            return;
+        }
+        const json = await res.json();
+        setClinica(json?.data || json || null);
+        } catch (e) {
+        console.error("[ClinicaPage] fetch error", e);
+        } finally {
+        setCargando(false);
+        }
+    })();
+    }, [id]);
 
   if (rol !== "superadmin") {
     return (
@@ -90,7 +100,7 @@ export default function ClinicaDashboardPage() {
           <p className="text-sm text-gray-600 mb-4">
             Definí offsets de envío, reglas de alertas y metadatos.
           </p>
-
+          <FormulariosPanel clinicaId={String(clinica.id)} />
         </div>
 
         <div className="rounded-2xl border p-5 shadow-sm bg-white">
