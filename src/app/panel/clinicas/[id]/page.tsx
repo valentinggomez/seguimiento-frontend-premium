@@ -68,7 +68,7 @@ export default function ClinicaDashboardPage() {
     return (
       <div className="p-10 text-center">
         <p className="text-gray-600 mb-4">No se encontró la clínica.</p>
-        <Button variant="outline" onClick={() => router.push("/clinicas")}>← Volver</Button>
+        <Button variant="outline" onClick={() => router.push("/panel/clinicas")}>← Volver</Button>
       </div>
     )
   }
@@ -81,7 +81,7 @@ export default function ClinicaDashboardPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-[#003366]">{clinica.nombre_clinica}</h1>
           <p className="text-sm text-gray-600">{clinica.dominio}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/clinicas")}>← Volver</Button>
+        <Button variant="outline" onClick={() => router.push("/panel/clinicas")}>← Volver</Button>
       </div>
 
       {/* Tabs simples (podemos ampliar luego) */}
