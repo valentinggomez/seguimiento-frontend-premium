@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 import loadDynamic from "next/dynamic"
 import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
-const FormulariosPanel = loadDynamic(
-  () => import("@/components/formulariosPanel").then(m => m.default ?? m),
-  {
-    ssr: false,
-    loading: () => <div className="p-4 text-sm text-gray-500">Cargando panel…</div>,
-  }
-)
+//const FormulariosPanel = loadDynamic(
+  //() => import("@/components/formulariosPanel").then(m => m.default ?? m),
+  //{
+   // ssr: false,
+    //loading: () => <div className="p-4 text-sm text-gray-500">Cargando panel…</div>,
+  //}
+//)
 
 export default function ClinicaDashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -90,7 +90,7 @@ export default function ClinicaDashboardPage() {
           <p className="text-sm text-gray-600 mb-4">
             Definí offsets de envío, reglas de alertas y metadatos.
           </p>
-          <FormulariosPanel clinicaId={String(clinica.id)} />
+
         </div>
 
         <div className="rounded-2xl border p-5 shadow-sm bg-white">
