@@ -65,33 +65,37 @@ export default function ClinicaDashboardPage() {
   }, [router])
 
   useEffect(() => {
-    if (!id) return
-    ;(async () => {
+    const doFetch = async (cid: string) => {
+      setCargando(true)
       const api = process.env.NEXT_PUBLIC_API_URL
-      const url = `${api}/api/clinicas/${id}`
-      // eslint-disable-next-line no-console
-      console.log("[ClinicaPage] NEXT_PUBLIC_API_URL:", api)
-      console.log("[ClinicaPage] Fetching clínica:", url)
+      const url = `${api}/api/clinicas/${cid}`
       try {
         const headers = getAuthHeaders()
-        console.log("[ClinicaPage] Headers:", headers)
         const res = await fetch(url, { headers, cache: "no-store" })
-        console.log("[ClinicaPage] Status:", res.status)
         if (!res.ok) {
+          // Forzamos salida del loading aunque falle
           const text = await res.text().catch(() => "(sin body)")
-          console.error("[ClinicaPage] Fetch clínica FAIL:", res.status, text)
+          console.error("[ClinicaPage] FAIL", res.status, text)
           setClinica(null)
         } else {
           const json = await res.json()
-          console.log("[ClinicaPage] OK payload:", json)
           setClinica(json?.data || json || null)
         }
       } catch (e) {
-        console.error("[ClinicaPage] Fetch error:", e)
+        console.error("[ClinicaPage] error", e)
+        setClinica(null)
       } finally {
         setCargando(false)
       }
-    })()
+    }
+
+    if (typeof id === "string" && id) {
+      doFetch(id)
+    } else {
+      // si por algún motivo params aún no llega, no quedes en spinner infinito
+      console.warn("[ClinicaPage] id de params no disponible aún:", id)
+      setCargando(false)
+    }
   }, [id])
 
   if (rol !== "superadmin") {
