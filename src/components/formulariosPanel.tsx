@@ -223,12 +223,27 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => { setEdit(f); setOpen(true) }}>Editar</Button>
-              setCamposText(JSON.stringify((editOrF.campos ?? {}), null, 2))
-              setReglasText(JSON.stringify((editOrF.reglas_alertas ?? {}), null, 2))
-              setMetaText(JSON.stringify((editOrF.meta ?? {}), null, 2))
-              setCamposErr(""); setReglasErr(""); setMetaErr("");
               <Button
+                variant="outline"
+                onClick={() => {
+                    // abrir el editor con el formulario seleccionado
+                    setEdit(f)
+                    // precargar los JSON en los textareas
+                    setCamposText(JSON.stringify((f.campos ?? {}), null, 2))
+                    setReglasText(JSON.stringify((f.reglas_alertas ?? {}), null, 2))
+                    setMetaText(JSON.stringify((f.meta ?? {}), null, 2))
+                    // limpiar errores
+                    setCamposErr("")
+                    setReglasErr("")
+                    setMetaErr("")
+                    // abrir modal
+                    setOpen(true)
+                }}
+                >
+                Editar
+                </Button>
+
+                <Button
                 variant="outline"
                 disabled={!f.id}
                 onClick={() => f.id && toggle(String(f.id))}
@@ -242,7 +257,7 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
                 onClick={() => f.id && del(String(f.id))}
                 >
                 Eliminar
-                </Button>
+              </Button>
             </div>
           </div>
         ))}
