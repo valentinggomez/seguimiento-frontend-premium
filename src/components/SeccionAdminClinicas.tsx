@@ -750,28 +750,121 @@ export default function SeccionAdminClinicas() {
                 </DialogContent>
               </Dialog>
                <Dialog
-                  open={openFormFor === String(clinica.id)}
-                  onOpenChange={(o) => setOpenFormFor(o ? String(clinica.id) : null)}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={() => setOpenFormFor(String(clinica.id))}
-                    >
-                      📄 Formularios
-                    </Button>
-                  </DialogTrigger>
+                open={openFormFor === String(clinica.id)}
+                onOpenChange={(o) => setOpenFormFor(o ? String(clinica.id) : null)}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="outline" onClick={() => setOpenFormFor(String(clinica.id))}>
+                    📄 Formularios
+                  </Button>
+                </DialogTrigger>
 
-                  <DialogContent className="max-w-4xl">
-                    <DialogTitle>Formularios — {clinica.nombre_clinica}</DialogTitle>
-                    <DialogDescription>
-                      Creá, editá y activá los formularios de esta clínica.
-                    </DialogDescription>
-                    <div className="mt-4">
-                      <FormulariosPanel clinicaId={String(clinica.id)} />
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <DialogContent className="max-w-3xl">
+                  <DialogTitle>Formularios — {clinica.nombre_clinica}</DialogTitle>
+                  <DialogDescription>
+                    Acá ves un resumen de la configuración. Para cambiar los campos, usá “Editar”.
+                  </DialogDescription>
+
+                  {(() => {
+                    type CampoForm = { nombre: string; tipo: string };
+
+                    // Normalizar campos_formulario -> [{nombre, tipo}]
+                    const camposRaw =
+                      Array.isArray(clinica.campos_formulario)
+                        ? clinica.campos_formulario
+                        : typeof clinica.campos_formulario === "string"
+                          ? (clinica.campos_formulario as string).split(",").filter(Boolean)
+                          : [];
+
+                    const camposParseados: CampoForm[] = camposRaw.map((c: any): CampoForm => {
+                      if (typeof c === "string") {
+                        const [nombre, tipo = "text"] = c.split(":");
+                        return { nombre: (nombre || "").trim(), tipo: (tipo || "text").trim() };
+                      }
+                      return { nombre: c?.nombre ?? "", tipo: c?.tipo ?? "text" };
+                    });
+
+                    // Normalizar columnas_exportables -> string[]
+                    const cols: string[] =
+                      Array.isArray(clinica.columnas_exportables)
+                        ? (clinica.columnas_exportables as string[])
+                        : typeof clinica.columnas_exportables === "string"
+                          ? (clinica.columnas_exportables as string).split(",").map(s => s.trim()).filter(Boolean)
+                          : [];
+
+                    return (
+                      <div className="space-y-6 mt-4">
+                        <section>
+                          <h4 className="text-lg font-semibold text-[#003366] mb-2">🧾 Campos del formulario</h4>
+                          {camposParseados.length === 0 ? (
+                            <p className="text-sm text-gray-500">
+                              Esta clínica no tiene campos cargados aún. Usá “Editar” para agregarlos.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {camposParseados.map((c: CampoForm, i: number) => (
+                                <span
+                                  key={`${c.nombre}-${i}`}
+                                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm bg-white"
+                                >
+                                  <span className="font-medium">{c.nombre || "sin_nombre"}</span>
+                                  <span className="text-xs text-gray-500">({c.tipo})</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+
+                        <section>
+                          <h4 className="text-lg font-semibold text-[#003366] mb-2">📊 Columnas exportables</h4>
+                          {cols.length === 0 ? (
+                            <p className="text-sm text-gray-500">Aún no hay columnas seleccionadas para exportar.</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {cols.map((c: string, i: number) => (
+                                <span
+                                  key={`${c}-${i}`}
+                                  className="inline-flex items-center rounded-full border px-3 py-1 text-sm bg-white"
+                                >
+                                  {c}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                          <Button variant="outline" onClick={() => setOpenFormFor(null)}>
+                            Cerrar
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              const columnasExportables: string[] = Array.isArray(clinica.columnas_exportables)
+                                ? clinica.columnas_exportables
+                                : typeof clinica.columnas_exportables === "string"
+                                  ? (clinica.columnas_exportables as string).split(",").map(s => s.trim())
+                                  : [];
+
+                              setSelected({ ...clinica, columnas_exportables: columnasExportables });
+                              setOpenFormFor(null);
+
+                              const cleanId = clinica?.spreadsheet_id?.trim();
+                              if (cleanId && /^[a-zA-Z0-9-_]{30,}$/.test(cleanId)) {
+                                await fetchHojas(cleanId);
+                              } else {
+                                setHojasDisponibles([]);
+                              }
+                            }}
+                            className="bg-[#003366] hover:bg-[#004080]"
+                          >
+                            ✏️ Editar configuración
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         ))}
