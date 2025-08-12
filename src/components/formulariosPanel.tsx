@@ -7,6 +7,24 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } 
 import { toast } from "sonner"
 import { getAuthHeaders } from "@/lib/getAuthHeaders"
 
+// ——— Helpers de validación/normalización ———
+const isValidOffset = (n: unknown) =>
+  typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 720
+
+const uniqSorted = (arr: number[]) =>
+  Array.from(new Set(arr)).sort((a, b) => a - b)
+
+// Elimina una sola ocurrencia por valor (no por índice, para evitar desincronización con sort)
+const removeOnceByValue = (arr: number[], value: number) => {
+  const idx = arr.indexOf(value)
+  if (idx === -1) return arr
+  return [...arr.slice(0, idx), ...arr.slice(idx + 1)]
+}
+
+// Normaliza slugs tipo "24h-control" → minúsculas y seguro
+const normalizeSlug = (s: string) =>
+  s.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "")
+
 // helpers visuales chiquitos
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="text-sm font-semibold text-slate-700 mb-2">{children}</div>;
@@ -56,6 +74,15 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
   const [items, setItems] = useState<Formulario[]>([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState<Formulario | null>(null)
+  const [newOffset, setNewOffset] = useState<string>("")
+
+  // Errores live de JSON para bloquear el guardado si hay formato inválido
+  const [camposErr, setCamposErr] = useState<string>("")
+  const [reglasErr, setReglasErr] = useState<string>("")
+  const [metaErr, setMetaErr] = useState<string>("")
+  const [camposText, setCamposText] = useState<string>("")
+  const [reglasText, setReglasText] = useState<string>("")
+  const [metaText, setMetaText] = useState<string>("")
 
   const load = async () => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${clinicaId}`, {
@@ -84,54 +111,62 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
   }
 
   const save = async () => {
-    if (!edit) return;
+    if (!edit) return
 
-    const errs: string[] = [];
+    const errs: string[] = []
 
-    // Validaciones básicas
-    if (!edit.nombre?.trim()) errs.push("El nombre es obligatorio.");
-    if (!edit.slug?.trim()) errs.push("El slug es obligatorio.");
+    // Básicos
+    const nombre = edit.nombre?.trim()
+    const slug = normalizeSlug(edit.slug || "")
+    if (!nombre) errs.push("El nombre es obligatorio.")
+    if (!slug) errs.push("El slug es obligatorio.")
 
-    // Validación offsets
-    if (!Array.isArray(edit.offsets_horas) || edit.offsets_horas.length === 0) {
-        errs.push("Agregá al menos un recordatorio en horas (+N).")
-    } else {
-        const invalid = edit.offsets_horas.some(
-        (n) => typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > 720
-        )
-        if (invalid) errs.push("Offsets inválidos. Usá números entre 0 y 720 horas.")
-    }
+    // Offsets
+    const offsets = uniqSorted((edit.offsets_horas || []).filter(isValidOffset)) as number[]
+    if (offsets.length === 0) errs.push("Agregá al menos un recordatorio en horas (+N).")
 
-    // slug único local
-    const dup = items.find(i => i.slug === edit.slug && i.id !== edit.id);
-    if (dup) errs.push("El slug ya existe en esta clínica.");
+    // JSON errors vivos
+    if (camposErr || reglasErr || metaErr) errs.push("Hay JSON inválido: corregí los errores marcados.")
+
+    // Slug único local
+    const dup = items.find((i) => i.slug === slug && i.id !== edit.id)
+    if (dup) errs.push("El slug ya existe en esta clínica.")
 
     if (errs.length) {
-        errs.forEach(e => toast.error(e));
-        return;
+        errs.forEach((e) => toast.error(e))
+        return
     }
 
-    const method = edit.id ? "PUT" : "POST";
+    const payload: Formulario = {
+        ...edit,
+        nombre,
+        slug,
+        offsets_horas: offsets,
+        clinica_id: clinicaId,
+    }
+
+    const method = edit.id ? "PUT" : "POST"
     const url = edit.id
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/formularios/${edit.id}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/formularios`;
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/formularios`
 
     const res = await fetch(url, {
         method,
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ ...edit, clinica_id: clinicaId }),
-    });
+        body: JSON.stringify(payload),
+    })
 
     if (res.ok) {
-        toast.success("Formulario guardado");
-        setOpen(false);
-        setEdit(null);
-        load();
+        toast.success("Formulario guardado")
+        setOpen(false)
+        setEdit(null)
+        setNewOffset("")
+        await load()
     } else {
-        const e = await res.json().catch(() => ({}));
-        toast.error(e?.error || "No se pudo guardar");
+        const e = await res.json().catch(() => ({}))
+        toast.error(e?.error || "No se pudo guardar")
     }
-    };
+    }
 
     const toggle = async (id: string | number) => {
     try {
@@ -183,12 +218,16 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
               <div className="text-xs text-gray-500">
                 v{f.version} · prioridad {f.prioridad}
                 {f.offsets_horas?.length
-                    ? <> · envíos: {f.offsets_horas.slice().sort((a,b)=>a-b).map(n => `+${n}h`).join(", ")}</>
+                    ? <> · envíos: {uniqSorted(f.offsets_horas).map(n => `+${n}h`).join(", ")}</>
                     : <> · (sin offsets configurados)</>}
               </div>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setEdit(f); setOpen(true) }}>Editar</Button>
+              setCamposText(JSON.stringify((editOrF.campos ?? {}), null, 2))
+              setReglasText(JSON.stringify((editOrF.reglas_alertas ?? {}), null, 2))
+              setMetaText(JSON.stringify((editOrF.meta ?? {}), null, 2))
+              setCamposErr(""); setReglasErr(""); setMetaErr("");
               <Button
                 variant="outline"
                 disabled={!f.id}
@@ -230,104 +269,129 @@ export default function FormulariosPanel({ clinicaId }: { clinicaId: string }) {
             {/* Chips */}
             <div className="flex flex-wrap gap-2 mb-3">
                 {(edit.offsets_horas || []).length > 0 ? (
-                edit.offsets_horas!.slice().sort((a, b) => a - b).map((h, idx) => (
-                    <Chip key={`${h}-${idx}`} onRemove={() => {
-                    const next = (edit.offsets_horas || []).filter((_, i) => i !== idx)
-                    upd("offsets_horas", next)
-                    }}>
-                    +{h}h
+                    uniqSorted(edit.offsets_horas!).map((h) => (
+                    <Chip
+                        key={`off-${h}`}
+                        onRemove={() => upd("offsets_horas", removeOnceByValue(edit.offsets_horas || [], h))}
+                    >
+                        +{h}h
                     </Chip>
-                ))
+                    ))
                 ) : (
-                <span className="text-xs text-slate-400">Agregá valores como 6, 12, 24…</span>
+                    <span className="text-xs text-slate-400">Agregá valores como 6, 12, 24…</span>
                 )}
             </div>
 
             {/* Agregar nuevo offset */}
             <div className="flex items-center gap-2">
-                <Input
+            <Input
                 placeholder="p. ej., 6"
                 className="max-w-[120px]"
                 type="number"
                 min={0}
                 max={720}
+                value={newOffset}
+                onChange={(e) => setNewOffset(e.target.value)}
                 onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                    const val = Number((e.target as HTMLInputElement).value)
-                    if (Number.isFinite(val) && val >= 0 && val <= 720) {
-                        const set = new Set([...(edit.offsets_horas || []), val])
-                        upd("offsets_horas", Array.from(set))
-                        ;(e.target as HTMLInputElement).value = ""
-                    } else {
-                        toast.error("Valor inválido. Usá 0–720.")
-                    }
-                    }
+                if (e.key !== "Enter") return
+                const val = Number(newOffset)
+                if (isValidOffset(val)) {
+                    const next = uniqSorted([...(edit.offsets_horas || []), val])
+                    upd("offsets_horas", next)
+                    setNewOffset("")
+                } else {
+                    toast.error("Valor inválido. Usá 0–720.")
+                }
                 }}
-                />
-                <Button
+            />
+            <Button
                 type="button"
                 onClick={() => {
-                    const el = document.activeElement as HTMLInputElement
-                    const val = Number(el?.value)
-                    if (Number.isFinite(val) && val >= 0 && val <= 720) {
-                    const set = new Set([...(edit.offsets_horas || []), val])
-                    upd("offsets_horas", Array.from(set))
-                    el.value = ""
-                    } else {
+                const val = Number(newOffset)
+                if (isValidOffset(val)) {
+                    const next = uniqSorted([...(edit.offsets_horas || []), val])
+                    upd("offsets_horas", next)
+                    setNewOffset("")
+                } else {
                     toast.error("Valor inválido. Usá 0–720.")
-                    }
+                }
                 }}
-                >
+            >
                 Agregar
-                </Button>
+            </Button>
             </div>
-
             <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Estos recordatorios se envían automáticamente a las <b>+N horas</b> desde el registro del paciente, sin importar día u hora.
+            Estos recordatorios se envían automáticamente a las <b>+N horas</b> desde el registro del paciente, sin importar día u hora.
             </p>
             </div>
 
               <div className="col-span-2">
                 <div className="text-sm font-medium">Campos (JSON)</div>
                 <textarea
-                  className="w-full border rounded p-2 text-sm min-h-[120px]"
-                  value={JSON.stringify(edit.campos, null, 2)}
-                  onChange={e=>{
-                    try { upd("campos", JSON.parse(e.target.value)) }
-                    catch { /* ignorar mientras escribe */ }
-                  }}
+                className={`w-full border rounded p-2 text-sm min-h-[120px] font-mono ${camposErr ? "border-red-500" : ""}`}
+                value={camposText}
+                onChange={(e) => {
+                    const val = e.target.value
+                    setCamposText(val)
+                    try {
+                    const parsed = JSON.parse(val)
+                    upd("campos", parsed)
+                    setCamposErr("")
+                    } catch {
+                    setCamposErr("JSON inválido")
+                    }
+                }}
                 />
-              </div>
+                {camposErr && <div className="text-xs text-red-600 mt-1">{camposErr}</div>}
+                </div>
 
               <div className="col-span-2">
                 <div className="text-sm font-medium">Reglas de alertas (JSON)</div>
                 <textarea
-                  className="w-full border rounded p-2 text-sm min-h-[120px]"
-                  value={JSON.stringify(edit.reglas_alertas, null, 2)}
-                  onChange={e=>{
-                    try { upd("reglas_alertas", JSON.parse(e.target.value)) }
-                    catch {}
-                  }}
+                className={`w-full border rounded p-2 text-sm min-h-[120px] font-mono ${reglasErr ? "border-red-500" : ""}`}
+                value={reglasText}
+                onChange={(e) => {
+                    const val = e.target.value
+                    setReglasText(val)
+                    try {
+                    const parsed = JSON.parse(val)
+                    upd("reglas_alertas", parsed)
+                    setReglasErr("")
+                    } catch {
+                    setReglasErr("JSON inválido")
+                    }
+                }}
                 />
-              </div>
+                {reglasErr && <div className="text-xs text-red-600 mt-1">{reglasErr}</div>}
+                </div>
 
               <div className="col-span-2">
                 <div className="text-sm font-medium">Meta (JSON)</div>
                 <textarea
-                  className="w-full border rounded p-2 text-sm min-h-[90px]"
-                  value={JSON.stringify(edit.meta, null, 2)}
-                  onChange={e=>{
-                    try { upd("meta", JSON.parse(e.target.value)) }
-                    catch {}
-                  }}
+                className={`w-full border rounded p-2 text-sm min-h-[90px] font-mono ${metaErr ? "border-red-500" : ""}`}
+                value={metaText}
+                onChange={(e) => {
+                    const val = e.target.value
+                    setMetaText(val)
+                    try {
+                    const parsed = JSON.parse(val)
+                    upd("meta", parsed)
+                    setMetaErr("")
+                    } catch {
+                    setMetaErr("JSON inválido")
+                    }
+                }}
                 />
-              </div>
+                {metaErr && <div className="text-xs text-red-600 mt-1">{metaErr}</div>}
+                </div>
 
               <div className="col-span-2 flex items-center justify-between mt-2">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox checked={edit.activo} onCheckedChange={(on)=>upd("activo", !!on)} /> Activo
                 </label>
-                <Button onClick={save}>Guardar</Button>
+                <Button onClick={save} disabled={Boolean(camposErr || reglasErr || metaErr)}>
+                  Guardar
+                </Button>
               </div>
             </div>
           )}

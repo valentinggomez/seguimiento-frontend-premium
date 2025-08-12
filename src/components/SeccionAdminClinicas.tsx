@@ -56,6 +56,8 @@ export default function SeccionAdminClinicas() {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
   const [openFormFor, setOpenFormFor] = useState<string | null>(null)
   const [formMode, setFormMode] = useState<'resumen' | 'diseñador'>('resumen')  
+  const [sheetsMapJson, setSheetsMapJson] = useState<string>("{}")
+  const [sheetsMapError, setSheetsMapError] = useState<string>("")
 
   type CampoParsed = { nombre: string; tipo?: string }
 
@@ -191,6 +193,18 @@ export default function SeccionAdminClinicas() {
     setCamposForm(convertidos)
     setCamposAvanzados(selected.campos_avanzados || "")
     setErrores({})
+    try {
+      const map = selected?.sheets_map && typeof selected.sheets_map === 'object'
+        ? selected.sheets_map
+        : (selected?.sheets_map && typeof selected.sheets_map === 'string'
+            ? JSON.parse(selected.sheets_map)
+            : {})
+      setSheetsMapJson(JSON.stringify(map, null, 2))
+      setSheetsMapError("")
+    } catch {
+      setSheetsMapJson("{}")
+      setSheetsMapError("JSON inválido detectado en sheets_map")
+    }
   }, [selected])
   
   useEffect(() => {
@@ -243,12 +257,6 @@ export default function SeccionAdminClinicas() {
     if (!/^#[0-9A-Fa-f]{6}$/.test(selected?.color_primario || "")) {
       nuevosErrores.color_primario = "Color inválido. Usa formato #RRGGBB."
     }
-    if (selected?.horario_inicio && !/^\d{2}:\d{2}$/.test(selected.horario_inicio)) {
-      nuevosErrores.horario_inicio = "Formato inválido. Usa HH:mm."
-    }
-    if (selected?.horario_fin && !/^\d{2}:\d{2}$/.test(selected.horario_fin)) {
-      nuevosErrores.horario_fin = "Formato inválido. Usa HH:mm."
-    }
     setErrores(nuevosErrores)
     return Object.keys(nuevosErrores).length === 0
   }
@@ -265,6 +273,13 @@ export default function SeccionAdminClinicas() {
 
     const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
 
+    let sheets_map_obj: Record<string, string> = {}
+    try {
+      sheets_map_obj = sheetsMapJson?.trim() ? JSON.parse(sheetsMapJson) : {}
+    } catch (e) {
+      toast.error("El JSON de hojas por formulario es inválido")
+      return
+    }
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
       const endpoint = selected?.id
@@ -280,6 +295,7 @@ export default function SeccionAdminClinicas() {
           campos_avanzados: camposAvanzados.split(',').map(c => c.trim()).filter(Boolean).join(','),
           telefono: selected.telefono || "",
           columnas_exportables: selected.columnas_exportables,
+          sheets_map: sheets_map_obj,
         }),
       });
 
@@ -344,8 +360,6 @@ export default function SeccionAdminClinicas() {
                   nombre_hoja: "",
                   telefono: "",
                   color_primario: "#1E90FF",
-                  horario_inicio: "",
-                  horario_fin: "",
                   campos_formulario: [],
                   columnas_exportables: [],
                   campos_avanzados: ""
@@ -421,8 +435,6 @@ export default function SeccionAdminClinicas() {
                   )}
                   <InputValidado name="color_primario" placeholder="Color primario (ej: #1E90FF)" />
                   <Input value={selected?.telefono || ""} placeholder="Teléfono institucional (opcional)" onChange={e => setSelected({ ...selected!, telefono: e.target.value })} />
-                  <InputValidado name="horario_inicio" placeholder="Horario de inicio (HH:mm)" />
-                  <InputValidado name="horario_fin" placeholder="Horario de fin (HH:mm)" />
                 </div>
 
                 <h3 className="text-xl font-semibold text-[#003366] mt-8">🧪 Campos clínicos avanzados</h3>
@@ -544,6 +556,28 @@ export default function SeccionAdminClinicas() {
                     </div>
                   )}
                 </div>
+
+                <h3 className="text-xl font-semibold text-[#003366] mt-8">📄 Hojas por formulario (JSON)</h3>
+                <p className="text-sm text-gray-500 mb-2">
+                  Mapear <code>slug</code> → <code>Nombre de hoja</code>. Ejemplo: {"{ \"24h\": \"Respuestas 24h\", \"6h\": \"Respuestas 6h\" }"}
+                </p>
+                <textarea
+                  value={sheetsMapJson}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSheetsMapJson(val)
+                    try {
+                      JSON.parse(val)
+                      setSheetsMapError("")
+                    } catch {
+                      setSheetsMapError("JSON inválido")
+                    }
+                  }}
+                  className={`w-full font-mono text-sm border rounded-lg p-3 min-h-[140px] ${sheetsMapError ? "border-red-500" : ""}`}
+                />
+                {Boolean(sheetsMapError) && (
+                  <div className="text-red-600 text-xs mt-1">{sheetsMapError}</div>
+                )}
               </div>
             </div>
           </DialogContent>
@@ -649,8 +683,6 @@ export default function SeccionAdminClinicas() {
                         )}
                         <InputValidado name="color_primario" placeholder="Color primario (ej: #1E90FF)" />
                         <Input value={selected?.telefono || ""} placeholder="Teléfono institucional (opcional)" onChange={e => setSelected({ ...selected!, telefono: e.target.value })} />
-                        <InputValidado name="horario_inicio" placeholder="Horario de inicio (HH:mm)" />
-                        <InputValidado name="horario_fin" placeholder="Horario de fin (HH:mm)" />
                       </div>
 
                       <h3 className="text-xl font-semibold text-[#003366] mt-8">🧪 Campos clínicos avanzados</h3>
@@ -813,6 +845,29 @@ export default function SeccionAdminClinicas() {
                           </div>
                         )}
                       </div>
+
+                      <h3 className="text-xl font-semibold text-[#003366] mt-8">📄 Hojas por formulario (JSON)</h3>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Mapear <code>slug</code> → <code>Nombre de hoja</code>. Ejemplo: {"{ \"24h\": \"Respuestas 24h\", \"6h\": \"Respuestas 6h\" }"}
+                      </p>
+                      <textarea
+                        value={sheetsMapJson}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setSheetsMapJson(val)
+                          try {
+                            JSON.parse(val)
+                            setSheetsMapError("")
+                          } catch {
+                            setSheetsMapError("JSON inválido")
+                          }
+                        }}
+                        className={`w-full font-mono text-sm border rounded-lg p-3 min-h-[140px] ${sheetsMapError ? "border-red-500" : ""}`}
+                      />
+                      {Boolean(sheetsMapError) && (
+                        <div className="text-red-600 text-xs mt-1">{sheetsMapError}</div>
+                      )}
+
                     </div>
                   </div>
                 {mostrarConfirmacion && (
