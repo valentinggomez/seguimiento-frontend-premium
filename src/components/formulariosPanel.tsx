@@ -94,24 +94,21 @@ export default function FormulariosPanel({
 
   const load = async () => {
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinicaId)}`
+    console.log("[FormulariosPanel] url:", url)
+    console.log("[FormulariosPanel] x-clinica-host:", hostHeader) // 👈 debería ser tu dominio front
     try {
-      const res = await fetch(url, {
-        headers: commonHeaders,                // 👈 usa siempre commonHeaders
-        cache: "no-store",
-      })
-      if (!res.ok) {
-        const text = await res.text().catch(() => "(sin body)")
-        console.error("[FormulariosPanel] FAIL:", res.status, text)
-        setItems([])
-        return
-      }
-      const data = await res.json()
-      setItems(Array.isArray(data) ? data : data?.data || [])
+        const res = await fetch(url, { headers: commonHeaders, cache: "no-store" })
+        console.log("[FormulariosPanel] status:", res.status)
+        const text = await res.text()
+        console.log("[FormulariosPanel] body:", text)
+        if (!res.ok) { setItems([]); return }
+        const data = JSON.parse(text)
+        setItems(Array.isArray(data) ? data : data?.data || [])
     } catch (e) {
-      console.error("[FormulariosPanel] Fetch error:", e)
-      setItems([])
+        console.error("[FormulariosPanel] Fetch error:", e)
+        setItems([])
     }
-  }
+    }
 
   useEffect(() => { if (clinicaId && hostHeader) load() }, [clinicaId, hostHeader])
 
