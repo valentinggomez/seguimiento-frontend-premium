@@ -13,6 +13,7 @@ const FormulariosPanel = loadDynamic(
   }
 )
 
+
 export default function ClinicaDashboardPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -33,6 +34,7 @@ export default function ClinicaDashboardPage() {
     catch { router.replace("/login"); return }
   }, [router])
 
+  
   useEffect(() => {
     const loadClinica = async (cid: string) => {
         setCargando(true)
@@ -97,6 +99,11 @@ export default function ClinicaDashboardPage() {
     )
   }
 
+  const hostForApi = (clinica?.dominio || '')
+  .split(',')[0]
+  .trim()
+  .toLowerCase() || undefined
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -113,7 +120,7 @@ export default function ClinicaDashboardPage() {
           <p className="text-sm text-gray-600 mb-4">
             Definí offsets de envío, reglas de alertas y metadatos.
           </p>
-          <FormulariosPanel clinicaId={String(clinica.id)} />
+          <FormulariosPanel clinicaId={String(clinica.id)} clinicaHost={hostForApi} />
         </div>
 
         <div className="rounded-2xl border p-5 shadow-sm bg-white">

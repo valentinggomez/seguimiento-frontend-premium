@@ -70,7 +70,15 @@ type Formulario = {
   publicado_en?: string | null
 }
 
-export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinicaId: string; clinicaHost: string }) {
+export default function FormulariosPanel({
+  clinicaId,
+  clinicaHost,
+}: { clinicaId: string; clinicaHost?: string }) {
+  // 👇 centralizá headers
+  const auth = getAuthHeaders()
+  const hostHeader =
+    clinicaHost ?? (typeof window !== "undefined" ? window.location.hostname : "")
+  const commonHeaders = { ...auth, "x-clinica-host": hostHeader }
   const [items, setItems] = useState<Formulario[]>([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState<Formulario | null>(null)
@@ -88,29 +96,24 @@ export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinica
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinicaId)}`
     try {
       const res = await fetch(url, {
-        headers: {
-          ...getAuthHeaders(),
-          'x-clinica-host': clinicaHost, // 👈 fuerza la clínica correcta
-        },
-        cache: 'no-store',
+        headers: commonHeaders,                // 👈 usa siempre commonHeaders
+        cache: "no-store",
       })
-
       if (!res.ok) {
-        const text = await res.text().catch(() => '(sin body)')
-        console.error('[FormulariosPanel] FAIL:', res.status, text)
+        const text = await res.text().catch(() => "(sin body)")
+        console.error("[FormulariosPanel] FAIL:", res.status, text)
         setItems([])
         return
       }
-
       const data = await res.json()
       setItems(Array.isArray(data) ? data : data?.data || [])
     } catch (e) {
-      console.error('[FormulariosPanel] Fetch error:', e)
+      console.error("[FormulariosPanel] Fetch error:", e)
       setItems([])
     }
   }
 
-  useEffect(() => { if (clinicaId) load() }, [clinicaId])
+  useEffect(() => { if (clinicaId && hostHeader) load() }, [clinicaId, hostHeader])
 
   const startCreate = () => {
     const nuevo = {
@@ -177,9 +180,9 @@ export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinica
         : `${process.env.NEXT_PUBLIC_API_URL}/api/formularios`
 
     const res = await fetch(url, {
-        method,
-        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      method,
+      headers: { ...commonHeaders, "Content-Type": "application/json" }, 
+      body: JSON.stringify(payload),
     })
 
     if (res.ok) {
@@ -196,13 +199,13 @@ export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinica
 
     const toggle = async (id: string | number) => {
     try {
-        const res = await fetch(
+      const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/formularios/${id}/toggle`,
         {
-            method: "POST",
-            headers: getAuthHeaders(),
+          method: "POST",
+          headers: commonHeaders,                                        
         }
-        )
+      )
         if (res.ok) {
         await load()
         toast.success("Estado actualizado")
@@ -220,7 +223,7 @@ export default function FormulariosPanel({ clinicaId,  clinicaHost, }: { clinica
     if (!confirm("¿Eliminar formulario?")) return
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/formularios/${id}`, {
       method: "DELETE",
-      headers: getAuthHeaders()
+      headers: commonHeaders,                                            
     })
     if (res.ok) { toast.success("Eliminado"); load() }
     else toast.error("No se pudo eliminar")
