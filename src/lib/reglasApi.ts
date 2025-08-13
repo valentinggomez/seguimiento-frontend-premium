@@ -1,11 +1,41 @@
 // lib/reglasApi.ts
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-function hostHeader(host?: string) {
-  const h = host ?? (typeof window !== 'undefined' ? window.location.hostname : '');
-  return { 'x-clinica-host': h };
+/* -------------------- helpers de headers -------------------- */
+function getHost(host?: string) {
+  return host ?? (typeof window !== 'undefined' ? window.location.hostname : '');
 }
 
+function getToken() {
+  if (typeof window === 'undefined') return '';
+  return (
+    localStorage.getItem('token') ||
+    localStorage.getItem('jwt') ||
+    localStorage.getItem('authToken') ||
+    ''
+  );
+}
+
+function getClinicaId() {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('clinica_id') || localStorage.getItem('clinicaId') || '';
+}
+
+/** Headers comunes que piden los endpoints */
+function commonHeaders(host?: string) {
+  const h: Record<string, string> = {
+    'x-clinica-host': getHost(host),
+  };
+  const cid = getClinicaId();
+  if (cid) h['x-clinica-id'] = cid;
+
+  const tk = getToken();
+  if (tk) h['Authorization'] = `Bearer ${tk}`;
+
+  return h;
+}
+
+/* -------------------- tipos -------------------- */
 export type NivelAlerta = 'verde' | 'amarillo' | 'rojo';
 export type Operador = '>'|'>='|'<'|'<='|'=='|'!='|'in'|'contains'|'between';
 
@@ -13,7 +43,7 @@ export interface ReglaClinica {
   id?: string;
   campo: string;
   operador: Operador;
-  valor: any;           // 'between' => "min,max", 'in' => "a,b,c"
+  valor: any;   // 'between' => "min,max", 'in' => "a,b,c"
   nivel: NivelAlerta;
   color?: string;
   sugerencia?: string;
@@ -25,12 +55,11 @@ function normReglas(x: any): ReglasClinicas {
   return { condiciones: [] };
 }
 
-/** Rutas candidatas — probamos en orden hasta encontrar una que responda 200 */
+/* -------------------- fallback de rutas -------------------- */
 const PATHS = {
   GET: [
-    '/api/clinicas/reglas',            // original
-    '/api/reglas',                     // alternativa común
-    // variantes por host en path:
+    '/api/clinicas/reglas',
+    '/api/reglas',
     (host: string) => `/api/clinicas/${host}/reglas`,
     (host: string) => `/api/reglas/${host}`,
   ],
@@ -48,7 +77,13 @@ const PATHS = {
   ],
 };
 
-/** Helper con timeout */
+type PathEntry = string | ((host: string) => string);
+function buildPaths(list: PathEntry[], host?: string) {
+  const h = getHost(host);
+  return list.map(p => (typeof p === 'function' ? p(h) : p));
+}
+
+/* -------------------- fetch con timeout -------------------- */
 async function withTimeout<T>(factory: (signal: AbortSignal) => Promise<T>, ms = 12000): Promise<T> {
   const ac = new AbortController();
   const id = setTimeout(() => ac.abort(), ms);
@@ -59,22 +94,16 @@ async function withTimeout<T>(factory: (signal: AbortSignal) => Promise<T>, ms =
   }
 }
 
-type PathEntry = string | ((host: string) => string);
-function buildPaths(list: PathEntry[], host?: string) {
-  const h = host ?? (typeof window !== 'undefined' ? window.location.hostname : '');
-  return list.map(p => (typeof p === 'function' ? p(h) : p));
-}
-
 async function tryJson(url: string, init: RequestInit, signal: AbortSignal) {
   const res = await fetch(url, { ...init, signal });
   const body = await res.json().catch(() => ({}));
   return { res, body };
 }
 
-/** GET reglas con fallback de rutas */
+/* -------------------- API -------------------- */
 export async function fetchReglas(host?: string): Promise<ReglasClinicas> {
-  const headers = { ...hostHeader(host) };
   const candidates = buildPaths(PATHS.GET, host);
+  const headers = { ...commonHeaders(host) };
 
   return withTimeout(async (signal) => {
     let lastErr: any = null;
@@ -84,39 +113,29 @@ export async function fetchReglas(host?: string): Promise<ReglasClinicas> {
       try {
         const { res, body } = await tryJson(url, { headers, cache: 'no-store' }, signal);
         if (res.ok) {
-          // backend puede devolver { reglas: {...} } o directamente {...}
           const reglas = body?.reglas ?? body;
           return normReglas(reglas);
         }
-        if (res.status === 404) {
-          // probamos la siguiente ruta
-          continue;
-        }
-        // otro error (401/500/etc)
+        if (res.status === 404) continue; // probá la próxima ruta
+        // 401 / 403 / 500:
         throw new Error(body?.error || `Error ${res.status} en ${path}`);
       } catch (e) {
         lastErr = e;
       }
     }
 
-    // si ninguna ruta respondió ok
     throw new Error(
-      (lastErr?.message
-        ? `No se pudieron obtener las reglas (${lastErr.message}).`
-        : 'No se pudieron obtener las reglas (todas las rutas devolvieron 404).')
-      + ' Verificá qué endpoint existe realmente en el backend.'
+      lastErr?.message
+        ? `No se pudieron obtener las reglas (${lastErr.message}). Verificá qué endpoint existe realmente en el backend.`
+        : 'No se pudieron obtener las reglas (todas las rutas devolvieron 404).'
     );
   });
 }
 
-/** PUT reglas con fallback de rutas */
 export async function saveReglas(reglas: ReglasClinicas, host?: string) {
-  const headers = { 'Content-Type': 'application/json', ...hostHeader(host) };
-  const body = JSON.stringify({
-    host: host ?? (typeof window !== 'undefined' ? window.location.hostname : ''),
-    reglas,
-  });
   const candidates = buildPaths(PATHS.PUT, host);
+  const headers = { 'Content-Type': 'application/json', ...commonHeaders(host) };
+  const body = JSON.stringify({ host: getHost(host), reglas });
 
   return withTimeout(async (signal) => {
     let last404 = true;
@@ -135,19 +154,16 @@ export async function saveReglas(reglas: ReglasClinicas, host?: string) {
       }
     }
 
-    throw new Error(
-      last404
-        ? 'No se pudieron guardar las reglas: todas las rutas devolvieron 404.'
-        : (lastErr?.message || 'No se pudieron guardar las reglas.')
-    );
+    throw new Error(last404
+      ? 'No se pudieron guardar las reglas: todas las rutas devolvieron 404.'
+      : (lastErr?.message || 'No se pudieron guardar las reglas.'));
   });
 }
 
-/** POST preview con fallback de rutas */
 export async function previewReglas(reglas: ReglasClinicas, sample: Record<string, any>, host?: string) {
-  const headers = { 'Content-Type': 'application/json', ...hostHeader(host) };
-  const body = JSON.stringify({ reglas, sample });
   const candidates = buildPaths(PATHS.PREVIEW, host);
+  const headers = { 'Content-Type': 'application/json', ...commonHeaders(host) };
+  const body = JSON.stringify({ reglas, sample });
 
   return withTimeout(async (signal) => {
     let last404 = true;
@@ -166,10 +182,8 @@ export async function previewReglas(reglas: ReglasClinicas, sample: Record<strin
       }
     }
 
-    throw new Error(
-      last404
-        ? 'No se pudo previsualizar: todas las rutas devolvieron 404.'
-        : (lastErr?.message || 'No se pudo previsualizar.')
-    );
+    throw new Error(last404
+      ? 'No se pudo previsualizar: todas las rutas devolvieron 404.'
+      : (lastErr?.message || 'No se pudo previsualizar.'));
   });
 }
