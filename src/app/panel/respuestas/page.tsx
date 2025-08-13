@@ -231,6 +231,13 @@ export default function PanelRespuestas() {
         delete limpio.sintomas_ia;
       }
 
+      // 🧹 remover duplicados de respuestas si vinieran adentro de campos_personalizados
+      delete (limpio as any).respuestas;
+      delete (limpio as any).respuestas_formulario;
+      delete (limpio as any).formulario;
+      delete (limpio as any).camposExtra;
+      delete (limpio as any).campos_extra;
+
       return limpio;
     } catch (err) {
       console.warn(`❌ Error parseando campos_personalizados para respuesta ${r.id}`, err);
@@ -487,9 +494,18 @@ export default function PanelRespuestas() {
                     const form   = getRespuestasFormulario(r)
 
                     const HIDDEN = new Set([
-                      'clinica_id','transcripcion','sintomas_ia','campos_personalizados',
-                      'respuesta_por_voz','_color_alerta',
-                    ])
+                      'clinica_id',
+                      'campos_personalizados',
+                      'respuestas_formulario',
+                      'respuestas',
+                      'formulario',
+                      'camposExtra',
+                      'campos_extra',
+                      'transcripcion',
+                      'sintomas_ia',
+                      'respuesta_por_voz',
+                      '_color_alerta',
+                    ]);
 
                     // primero lo del formulario (mantiene labels con emojis), luego “custom”
                     const paresForm   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
