@@ -446,10 +446,19 @@ export default function PanelRespuestas() {
                       'respuesta_por_voz','_color_alerta',
                     ])
 
-                    // Primero lo del formulario (conservar labels + emojis), luego “custom”
+                    // primero lo del formulario (mantiene labels con emojis), luego “custom”
                     const paresForm   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
                     const paresCustom = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
                     const filas = [...paresForm, ...paresCustom]
+
+                    // 👇 Desempaquetar contenedores tipo "respuestas", "formulario", etc.
+                    const CONTENEDORES = new Set(['respuestas', 'formulario', 'answers', 'data', 'respuestas_formulario'])
+                    const filasPlanas = filas.flatMap(([label, valor]) => {
+                      if (CONTENEDORES.has(String(label)) && valor && typeof valor === 'object' && !Array.isArray(valor)) {
+                        return Object.entries(valor as Record<string, unknown>)
+                      }
+                      return [[label, valor] as [string, unknown]]
+                    })
 
                     const transcripcion = extraerTranscripcion(r, campos)
                     const sintomasIA    = extraerSintomas(r, campos)
@@ -460,9 +469,9 @@ export default function PanelRespuestas() {
 
                     return (
                       <>
-                        {/* 🧾 Dos columnas con labels (mantiene emojis) */}
+                        {/* 🧾 Dos columnas prolijas */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
-                          {filas.map(([label, valor]) => (
+                          {filasPlanas.map(([label, valor]) => (
                             <div key={String(label)} className="text-[15px] leading-6">
                               <span className="font-semibold text-slate-800">
                                 {String(label).trim()}
@@ -477,7 +486,7 @@ export default function PanelRespuestas() {
                           ))}
                         </div>
 
-                        {/* 🗣 Transcripción (si existe) */}
+                        {/* 🗣 Transcripción por voz (si hay) */}
                         {transcripcion && (
                           <div className="bg-white rounded-2xl border border-blue-200 p-5 mt-5 shadow-sm">
                             <div className="flex items-center gap-2 text-blue-900 mb-2">
