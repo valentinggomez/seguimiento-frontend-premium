@@ -15,6 +15,7 @@ function FieldBlock({
   inputMode,
   value,
   onChange,
+  options,
 }: {
   label: string
   name: string
@@ -24,6 +25,7 @@ function FieldBlock({
   inputMode?: 'numeric' | 'text'
   value: any
   onChange: (e: React.ChangeEvent<any>) => void
+  options?: string[]           // 👈 nuevo
 }) {
   return (
     <div className="w-full">
@@ -36,8 +38,9 @@ function FieldBlock({
           className="w-full border border-gray-300 rounded-xl px-4 py-2 bg-white text-gray-800"
         >
           <option value="">Seleccionar...</option>
-          <option>Sí</option>
-          <option>No</option>
+          {(options?.length ? options : ['Sí','No']).map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
         </select>
       ) : isTextarea ? (
         <textarea
@@ -89,6 +92,7 @@ export default function ResponderPage() {
   const [countdown, setCountdown] = useState<number | null>(null) // seg restantes
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [retryHuman, setRetryHuman] = useState<string | null>(null)
+  const [formulario, setFormulario] = useState<any>(null)
 
   const camposBase = [
     { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -106,30 +110,24 @@ export default function ResponderPage() {
     { name: "observacion", label: "📝 Observaciones (opcional)", type: "textarea" }
   ]
 
-  const camposConfigurados = typeof clinica?.campos_formulario === 'string'
-    ? clinica.campos_formulario.split(',').map(c => c.trim())
-    : Array.isArray(clinica?.campos_formulario)
-      ? clinica.campos_formulario
+  // Si el formulario tiene preguntas definidas, usalas; si no, caé a los campos base.
+  type CampoCfg = { name: string; label?: string; type?: string; options?: string[] }
+
+  const camposFromForm: CampoCfg[] =
+    formulario?.campos?.preguntas && Array.isArray(formulario.campos.preguntas)
+      ? formulario.campos.preguntas
       : []
 
-  const camposExtras = camposConfigurados
-    .map((c: string) => {
-      const [nombreYLabel, tipoRaw = 'text'] = c.split(':')
-      const [name, labelRaw] = nombreYLabel.split('|')
-      const tipo = tipoRaw.trim()
-      return {
-        name: name.trim(),
-        label: (labelRaw || name).trim(),
-        type: tipo,
-        numeric: tipo === 'number'
-      }
-    })
-    .filter((campo: any) => campo.name && !camposBase.some(cb => cb.name === campo.name))
+  const camposFinal = (camposFromForm.length ? camposFromForm : camposBase).map((c: any) => ({
+    name: c.name,
+    label: c.label || c.name,
+    type: c.type || 'text',
+    numeric: c.type === 'number',
+    options: Array.isArray(c.options) ? c.options : undefined,
+  }))
 
-  const camposFinal = [...camposBase, ...camposExtras]
-
-  const campoActivo = (nombre: string) =>
-    !clinica?.campos_formulario || camposConfigurados.some((c: string) => c.startsWith(nombre))
+  // por defecto todos activos (si luego querés flags a nivel campo, se agrega aquí)
+  const campoActivo = (_nombre: string) => true
 
   const iniciarGrabacion = async () => {
     if (typeof MediaRecorder === 'undefined') {
@@ -201,6 +199,24 @@ export default function ResponderPage() {
       if (audioUrl) URL.revokeObjectURL(audioUrl)
     }
   }, [audioUrl])
+
+  // --- nuevo: traer el formulario por slug dentro de la clínica ---
+  useEffect(() => {
+    const loadFormulario = async () => {
+      if (!clinica?.id) return
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`
+        const res = await fetch(url, { headers: { 'x-clinica-host': window.location.hostname }, cache: 'no-store' })
+        const raw = await res.json().catch(() => [])
+        const arr = Array.isArray(raw) ? raw : (raw?.data || [])
+        const found = arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
+        setFormulario(found || null)
+      } catch {
+        setFormulario(null)
+      }
+    }
+    loadFormulario()
+  }, [clinica?.id, formSlug])
 
   useEffect(() => {
     const fetchPaciente = async () => {
@@ -414,6 +430,7 @@ export default function ResponderPage() {
                   inputMode={campo.numeric ? 'numeric' : 'text'}
                   value={form[campo.name] || ''}
                   onChange={handleChange}
+                  options={campo.options}
                 />
               )
             })}
