@@ -21,6 +21,7 @@ export default function ClinicaDashboardPage() {
   const [usuario, setUsuario] = useState<any>(null)
   const [clinica, setClinica] = useState<any>(null)
   const [cargando, setCargando] = useState(true)
+  const [sheetOptions, setSheetOptions] = useState<string[]>([])
 
   useEffect(() => {
     const rolGuardado = localStorage.getItem("rol")
@@ -79,6 +80,27 @@ export default function ClinicaDashboardPage() {
     else setCargando(false)
     }, [id])
 
+    useEffect(() => {
+        const loadHojas = async () => {
+        const ssid = clinica?.spreadsheet_id?.trim()
+        if (!ssid || !/^[\w-]{30,}$/.test(ssid)) {
+            setSheetOptions(clinica?.nombre_hoja ? [clinica.nombre_hoja] : [])
+            return
+        }
+        try {
+            const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${ssid}`,
+            { headers: getAuthHeaders(), cache: "no-store" }
+            )
+            const data = await res.json().catch(() => ({}))
+            setSheetOptions(Array.isArray(data.hojas) ? data.hojas : (clinica?.nombre_hoja ? [clinica.nombre_hoja] : []))
+        } catch {
+            setSheetOptions(clinica?.nombre_hoja ? [clinica.nombre_hoja] : [])
+        }
+        }
+        if (clinica) loadHojas()
+    }, [clinica])
+
   if (rol !== "superadmin") {
     return (
       <div className="p-10 text-center">
@@ -120,7 +142,11 @@ export default function ClinicaDashboardPage() {
           <p className="text-sm text-gray-600 mb-4">
             Definí offsets de envío, reglas de alertas y metadatos.
           </p>
-          <FormulariosPanel clinicaId={String(clinica.id)} clinicaHost={hostForApi} />
+          <FormulariosPanel
+            clinicaId={String(clinica.id)}
+            clinicaHost={hostForApi}
+            sheetOptions={sheetOptions}   
+          />
         </div>
 
         <div className="rounded-2xl border p-5 shadow-sm bg-white">

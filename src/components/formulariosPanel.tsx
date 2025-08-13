@@ -68,12 +68,14 @@ type Formulario = {
   reglas_alertas: any           // JSON
   meta: any                     // JSON
   publicado_en?: string | null
+  hoja_destino?: string | null 
 }
 
 export default function FormulariosPanel({
   clinicaId,
   clinicaHost,
-}: { clinicaId: string; clinicaHost?: string }) {
+  sheetOptions,                 
+}: { clinicaId: string; clinicaHost?: string; sheetOptions?: string[] }) {
   // 👇 centralizá headers
   const auth = getAuthHeaders()
   const hostHeader =
@@ -123,7 +125,8 @@ export default function FormulariosPanel({
         campos: { preguntas: [] },
         reglas_alertas: { condiciones: [], sugerencias: [] },
         meta: {},
-        publicado_en: new Date().toISOString()
+        publicado_en: new Date().toISOString(),
+        hoja_destino: ""
     }
     setEdit(nuevo)
     setOpen(true)
@@ -169,6 +172,7 @@ export default function FormulariosPanel({
         slug,
         offsets_horas: offsets,
         clinica_id: clinicaId,
+        hoja_destino: (edit as any).hoja_destino?.toString().trim() || null,
     }
 
     const method = edit.id ? "PUT" : "POST"
@@ -246,6 +250,7 @@ export default function FormulariosPanel({
                 {f.offsets_horas?.length
                     ? <> · envíos: {uniqSorted(f.offsets_horas).map(n => `+${n}h`).join(", ")}</>
                     : <> · (sin offsets configurados)</>}
+                {(f as any).hoja_destino ? <> · hoja: “{(f as any).hoja_destino}”</> : null}
               </div>
             </div>
             <div className="flex gap-2">
@@ -302,7 +307,17 @@ export default function FormulariosPanel({
               <Input placeholder="Slug" value={edit.slug} onChange={e=>upd("slug", e.target.value)} />
               <Input placeholder="Versión" type="number" value={edit.version} onChange={e=>upd("version", Number(e.target.value||0))} />
               <Input placeholder="Prioridad" type="number" value={edit.prioridad} onChange={e=>upd("prioridad", Number(e.target.value||0))} />
-              
+              <Input
+                placeholder="Hoja destino (p. ej., Respuestas 24h)"
+                value={(edit as any).hoja_destino ?? ""}
+                onChange={e => upd("hoja_destino" as any, e.target.value)}
+                list="hojas-clinica"          // 👈 sugiere opciones si existen
+              />
+              {sheetOptions?.length ? (
+                <datalist id="hojas-clinica">
+                    {sheetOptions.map(h => <option key={h} value={h} />)}
+                </datalist>
+              ) : null}
             {/* Offsets (horas después del registro) */}
             <div className="col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
             <SectionTitle>Recordatorios (horas después del registro)</SectionTitle>
