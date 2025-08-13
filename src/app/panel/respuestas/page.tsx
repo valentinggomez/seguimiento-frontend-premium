@@ -16,6 +16,52 @@ const toYesNo = (v: any) => {
   return v ?? '—'
 }
 
+// Heurística simple para saber si un valor es tipo sí/no.
+const looksBooleanish = (v: any) => {
+  const s = String(v ?? '').trim().toLowerCase()
+  return ['si','sí','yes','no','true','false','0','1'].includes(s)
+}
+
+// Mapa opcional para campos conocidos (cubre los más usados)
+// Para cualquier otro campo se hará un prettify automático.
+const KNOWN_LABELS: Record<string, string> = {
+  nauseas: '🤢 ¿Tuviste náuseas?',
+  nausea: '🤢 ¿Tuviste náuseas?',
+  vomitos: '🤮 ¿Tuviste vómitos?',
+  dolor_6h: '😖 Nivel de dolor a las 6h',
+  dolor6h: '😖 Nivel de dolor a las 6h',
+  dolor_24h: '🔥 Nivel de dolor a las 24h',
+  dolor24h: '🔥 Nivel de dolor a las 24h',
+  mas_medicacion: '💊 ¿Requirió más medicación?',
+  requiere_mas_medicacion: '💊 ¿Requirió más medicación?',
+  desperto_dolor: '😵‍💫 ¿Se despertó por dolor?',
+  horas_mover: '🦵 ¿Horas hasta mover extremidades?',
+  somnolencia: '🥱 ¿Tuviste somnolencia?',
+  satisfaccion: '🌟 Nivel de satisfacción (1 a 10)',
+  observacion: '📝 Observaciones (opcional)',
+}
+
+// Prettify genérico (sin mantener listas): "dolor_24h" -> "Dolor 24h", agrega "?" si luce booleana.
+function prettyFromKey(rawKey: string, value: any): string {
+  const k = rawKey.trim()
+  // si está en el mapa conocido, devolvémoslo
+  const known = KNOWN_LABELS[k]
+  if (known) return known
+
+  // si no está, formateamos automáticamente
+  const sinUnders = k.replace(/_/g, ' ')
+  const capitalized = sinUnders.charAt(0).toUpperCase() + sinUnders.slice(1)
+  const needsQ = looksBooleanish(value) && !/[?？]$/.test(capitalized)
+  return needsQ ? `${capitalized}?` : capitalized
+}
+
+// Etiqueta final para una clave+valor (aplica el mapa/heurística)
+function labelForKey(key: string, value: any): string {
+  // también aceptamos variantes (p.e. "Nauseas", "nausea", etc.)
+  const base = key.toLowerCase().replace(/\s+/g, '_')
+  return KNOWN_LABELS[base] ?? prettyFromKey(key, value)
+}
+
 interface Respuesta {
   id: string;
   paciente_nombre: string
@@ -474,8 +520,8 @@ export default function PanelRespuestas() {
                           {filasPlanas.map(([label, valor]) => (
                             <div key={String(label)} className="text-[15px] leading-6">
                               <span className="font-semibold text-slate-800">
-                                {String(label).trim()}
-                                {String(label).trim().endsWith('?') ? '' : ':'}
+                                {labelForKey(String(label), valor)}
+                                {/[?？]$/.test(labelForKey(String(label), valor)) ? '' : ':'}
                               </span>{' '}
                               <span className="text-slate-900">
                                 {typeof valor === 'object' && valor !== null
