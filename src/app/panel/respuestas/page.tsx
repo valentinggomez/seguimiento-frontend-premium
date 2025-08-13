@@ -144,29 +144,42 @@ export default function PanelRespuestas() {
         const res = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`);
         const data = await res.json();
 
-        const reglas = data?.clinica?.reglas_alertas ?? { condiciones: [] };
-        const condiciones = Array.isArray(reglas?.condiciones) ? reglas.condiciones : [];
-        setReglasClinicas({ condiciones });
+        const reglasClinica = data?.clinica?.reglas_alertas ?? { condiciones: [] };
+        const condClinica = Array.isArray(reglasClinica?.condiciones) ? reglasClinica.condiciones : [];
 
-        // 2) etiquetas de formularios -> name -> label
+        // 2) etiquetas y reglas por-formulario
         const clinicaId = data?.clinica?.id;
+        let labelMapLocal: Record<string, string> = {};
+        let condForms: any[] = [];
+
         if (clinicaId) {
           const rf = await fetchConToken(`/api/formularios?clinica_id=${encodeURIComponent(clinicaId)}`);
           const raw = await rf.json().catch(() => []);
           const forms = Array.isArray(raw) ? raw : (raw?.data || []);
-          const map: Record<string,string> = {};
+
           for (const f of forms) {
+            // labels
             const preguntas = f?.campos?.preguntas;
             if (Array.isArray(preguntas)) {
               for (const p of preguntas) {
                 const name = String(p?.name || '').trim();
                 const label = String(p?.label || '').trim();
-                if (name && label) map[name] = label;   // guardá última / más reciente
+                if (name && label) labelMapLocal[name] = label;
               }
             }
+            // reglas del formulario
+            const rgs = f?.reglas_alertas?.condiciones;
+            if (Array.isArray(rgs) && rgs.length) {
+              condForms.push(...rgs);
+              // Si querés aislar por formulario:
+              // condForms.push(...rgs.map((rg:any)=>({ ...rg, _form_slug: f.slug })));
+            }
           }
-          setLabelMap(map);
         }
+
+        // 3) merge final (clínica + formularios)
+        setReglasClinicas({ condiciones: [...condClinica, ...condForms] });
+        setLabelMap(labelMapLocal);
       } catch (e) {
         console.warn('No se pudieron cargar reglas o etiquetas', e);
         setReglasClinicas({ condiciones: [] });
