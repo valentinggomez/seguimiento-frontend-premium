@@ -1,3 +1,4 @@
+// src/app/panel/respuestas/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -12,6 +13,20 @@ const toYesNo = (v: any) => {
   if (['no','false','0'].includes(s)) return 'No'
   return v ?? '—'
 }
+
+type NivelAlerta = 'verde' | 'amarillo' | 'rojo';
+type Operador = '>'|'>='|'<'|'<='|'=='|'!='|'in'|'contains'|'between';
+
+interface ReglaClinica {
+  id?: string;
+  campo: string;
+  operador: Operador;
+  valor: any;
+  nivel: NivelAlerta;
+  color?: string;
+  sugerencia?: string;
+}
+interface ReglasClinicas { condiciones: ReglaClinica[] }
 
 interface Respuesta {
   id: string;
@@ -48,7 +63,7 @@ function ModalConfirmacion({
   cantidad,
   onConfirmar,
   onCancelar,
-  t,
+  t, // ✅ Pasar la función de traducción como prop
 }: {
   mostrar: boolean
   cantidad: number
@@ -93,6 +108,8 @@ export default function PanelRespuestas() {
   const [seleccionadas, setSeleccionadas] = useState<string[]>([])
   const [mostrarModal, setMostrarModal] = useState(false)
   const { t } = useTranslation()
+  const [reglasClinicas, setReglasClinicas] = useState<ReglasClinicas>({ condiciones: [] })
+  const [labelMap, setLabelMap] = useState<Record<string,string>>({});
 
   useEffect(() => {
     const fetchRespuestas = async () => {
@@ -115,6 +132,49 @@ export default function PanelRespuestas() {
     fetchRespuestas()
   }, [])
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const host =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+
+        // 1) clínica + reglas
+        const res = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`);
+        const data = await res.json();
+
+        const reglas = data?.clinica?.reglas_alertas ?? { condiciones: [] };
+        const condiciones = Array.isArray(reglas?.condiciones) ? reglas.condiciones : [];
+        setReglasClinicas({ condiciones });
+
+        // 2) etiquetas de formularios -> name -> label
+        const clinicaId = data?.clinica?.id;
+        if (clinicaId) {
+          const rf = await fetchConToken(`/api/formularios?clinica_id=${encodeURIComponent(clinicaId)}`);
+          const raw = await rf.json().catch(() => []);
+          const forms = Array.isArray(raw) ? raw : (raw?.data || []);
+          const map: Record<string,string> = {};
+          for (const f of forms) {
+            const preguntas = f?.campos?.preguntas;
+            if (Array.isArray(preguntas)) {
+              for (const p of preguntas) {
+                const name = String(p?.name || '').trim();
+                const label = String(p?.label || '').trim();
+                if (name && label) map[name] = label;   // guardá última / más reciente
+              }
+            }
+          }
+          setLabelMap(map);
+        }
+      } catch (e) {
+        console.warn('No se pudieron cargar reglas o etiquetas', e);
+        setReglasClinicas({ condiciones: [] });
+        setLabelMap({});
+      }
+    })();
+  }, []);
+
   const toggleExpand = (id: string) => {
     setExpandedId(prev => (prev === id ? null : id))
   }
@@ -125,6 +185,7 @@ export default function PanelRespuestas() {
       if (typeof obj === 'string') obj = JSON.parse(obj);
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
 
+      // ✅ Des-anidar SOLO si es un wrapper puro (sin otras claves útiles)
       if (
         obj.campos_personalizados &&
         typeof obj.campos_personalizados === 'object' &&
@@ -134,8 +195,10 @@ export default function PanelRespuestas() {
         if (otras.length === 0) {
           obj = obj.campos_personalizados;
         }
+        // si hay otras claves (tu caso), NO lo pisamos
       }
 
+      // 🧹 Limpiar claves internas
       const ocultos = new Set([
         'clinica_id',
         'campos_personalizados',
@@ -151,6 +214,7 @@ export default function PanelRespuestas() {
         if (!ocultos.has(k)) limpio[k] = obj[k];
       }
 
+      // 🔧 Normalizar sintomas_ia (soporta string JSON, CSV, objeto, camelCase)
       let s = limpio.sintomas_ia ?? (limpio as any).sintomasIA ?? null;
 
       if (typeof s === 'string') {
@@ -174,6 +238,7 @@ export default function PanelRespuestas() {
     }
   };
 
+  // === Helpers de color (usa _color_alerta del backend si existe) ===
   const nivelToHex: Record<'verde'|'amarillo'|'rojo', string> = {
     verde: '#10B981',
     amarillo: '#F59E0B',
@@ -182,7 +247,7 @@ export default function PanelRespuestas() {
 
   function hexToRgba(hex: string, alpha = 0.12) {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-    if (!m) return `rgba(16,185,129,${alpha})`
+    if (!m) return `rgba(16,185,129,${alpha})` // fallback verde
     const r = parseInt(m[1], 16)
     const g = parseInt(m[2], 16)
     const b = parseInt(m[3], 16)
@@ -190,26 +255,31 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
+    // 1) intentar leer _color_alerta desde el JSON crudo
     let raw: any = r.campos_personalizados
     if (typeof raw === 'string') {
       try { raw = JSON.parse(raw) } catch { raw = null }
     }
     const fromBackend = raw && typeof raw === 'object' ? raw._color_alerta : undefined
 
+    // 2) sino, fallback por nivel_alerta
     const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
     return (fromBackend as string) || nivelToHex[baseNivel] || nivelToHex.verde
   }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
     try {
+      // 1) nombres habituales
       let obj: any =
         (r as any).respuestas_formulario ??
         (r as any).respuestas ??
         (r as any).formulario ??
         null;
 
+      // 2) alternativos usados por backend (como en tu log)
       if (!obj) obj = (r as any).camposExtra ?? (r as any).campos_extra ?? null;
 
+      // 3) si viene envuelto dentro de campos_personalizados (string u objeto)
       if (!obj && (r as any).campos_personalizados) {
         let cp: any = (r as any).campos_personalizados;
         if (typeof cp === 'string') { try { cp = JSON.parse(cp) } catch {} }
@@ -218,9 +288,11 @@ export default function PanelRespuestas() {
         }
       }
 
+      // des-stringificar si hace falta
       if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch {} }
       if (!obj || typeof obj !== 'object') return {};
 
+      // si viene como array raro, normalizar a objeto plano
       if (Array.isArray(obj)) {
         const out: Record<string, any> = {};
         for (const item of obj) {
@@ -234,6 +306,7 @@ export default function PanelRespuestas() {
         return out;
       }
 
+      // limpiar claves internas que vi en tus logs
       const ocultos = new Set(['clinica_id', 'campos_personalizados']);
       const limpio: Record<string, any> = {};
       for (const k of Object.keys(obj)) if (!ocultos.has(k)) limpio[k] = obj[k];
@@ -259,6 +332,79 @@ export default function PanelRespuestas() {
     if (typeof s === 'object') return Object.values(s).map(String).filter(Boolean);
     return [];
   };
+
+  const parseBetween = (s: string) => {
+    const [a, b] = (s || '').split(',').map(v => v.trim())
+    const n1 = Number(a), n2 = Number(b)
+    return [Math.min(n1, n2), Math.max(n1, n2)]
+  }
+
+  const cumple = (valorCampo: any, operador: Operador, valorRegla: any) => {
+    // normalizar
+    const v = valorCampo
+    const r = valorRegla
+
+    const nV = typeof v === 'number' ? v : Number(v)
+    const nR = typeof r === 'number' ? r : Number(r)
+
+    switch (operador) {
+      case '>':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >  nR
+      case '>=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >= nR
+      case '<':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <  nR
+      case '<=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <= nR
+      case '==': return String(v).trim().toLowerCase() === String(r).trim().toLowerCase()
+      case '!=': return String(v).trim().toLowerCase() !== String(r).trim().toLowerCase()
+      case 'contains':
+        return String(v ?? '').toLowerCase().includes(String(r ?? '').toLowerCase())
+      case 'in': {
+        const opciones = String(r ?? '')
+          .split(/[,\|;]+/).map(x => x.trim().toLowerCase()).filter(Boolean)
+        return opciones.includes(String(v ?? '').trim().toLowerCase())
+      }
+      case 'between': {
+        const [min, max] = parseBetween(String(r ?? ''))
+        return !Number.isNaN(nV) && nV >= min && nV <= max
+      }
+      default: return false
+    }
+  }
+
+  const ordenarPorPrioridad = (a: string, b: string) => {
+    const p = (x: string) => (x === 'rojo' ? 2 : x === 'amarillo' ? 1 : 0)
+    return p(b) - p(a) // descendente
+  }
+
+  /** Evalúa reglas sobre una respuesta y devuelve {nivel, sugerencias[]} */
+  const calcularSugerencias = (r: Respuesta) => {
+    // dataset combinando formulario + personalizados (igual que ya hacés)
+    const campos = getCamposPersonalizados(r)
+    const form   = getRespuestasFormulario(r)
+    const dataset: Record<string, any> = { ...form, ...campos }
+
+    let nivelMax: 'verde'|'amarillo'|'rojo' = 'verde'
+    const sugerencias: Array<{ texto: string; nivel: 'verde'|'amarillo'|'rojo' }> = []
+
+    for (const regla of (reglasClinicas?.condiciones || []) as ReglaClinica[]) {
+      if (!regla?.campo) continue
+      const valorCampo = dataset[regla.campo]
+      if (valorCampo === undefined || valorCampo === null || valorCampo === '') continue
+      if (cumple(valorCampo, regla.operador as Operador, regla.valor)) {
+        const lv = (regla.nivel as any) || 'verde'
+        if (lv === 'rojo') nivelMax = 'rojo'
+        else if (lv === 'amarillo' && nivelMax !== 'rojo') nivelMax = 'amarillo'
+        if (regla.sugerencia) {
+          sugerencias.push({ texto: String(regla.sugerencia), nivel: lv })
+        }
+      }
+    }
+
+    // dedup por texto y ordenar por nivel
+    const unicos = Array.from(
+      new Map(sugerencias.map(s => [s.texto.trim(), s])).values()
+    ).sort((a, b) => ordenarPorPrioridad(a.nivel, b.nivel))
+
+    return { nivel: nivelMax, sugerencias: unicos }
+  }
 
   return (
     <div className="p-6">
@@ -314,22 +460,22 @@ export default function PanelRespuestas() {
                 )}
                 <h2 className="font-semibold text-[#663300] flex items-center gap-2">
                   📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
-                </h2>
+                  </h2>
 
-                <p className="text-sm text-gray-700">
-                  {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
-                  {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
-                </p>
+                  <p className="text-sm text-gray-700">
+                    {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
+                    {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
+                  </p>
 
-                <div className="text-sm text-gray-500">
-                  {new Date(r.creado_en).toLocaleString('es-AR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(r.creado_en).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
               </div>
             </div>
 
@@ -345,6 +491,7 @@ export default function PanelRespuestas() {
                       'respuesta_por_voz','_color_alerta',
                     ])
 
+                    // primero lo del formulario (mantiene labels con emojis), luego “custom”
                     const paresForm   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
                     const paresCustom = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
                     const filas = [...paresForm, ...paresCustom]
@@ -358,22 +505,24 @@ export default function PanelRespuestas() {
 
                     return (
                       <>
+                        {/* 🧾 Dos columnas prolijas */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
                           {filas.map(([label, valor]) => (
                             <div key={String(label)} className="text-[15px] leading-6">
                               <span className="font-semibold text-slate-800">
-                                {String(label).trim()}
-                                {String(label).trim().endsWith('?') ? '' : ':'}
+                                {labelMap[String(label)] ?? String(label).trim()}
+                                {(labelMap[String(label)] ?? String(label).trim()).endsWith('?') ? '' : ':'}
                               </span>{' '}
                               <span className="text-slate-900">
                                 {typeof valor === 'object' && valor !== null
                                   ? <code className="text-xs">{JSON.stringify(valor)}</code>
-                                  : toYesNo(valor)}
+                                  : toYesNo(valor)} 
                               </span>
                             </div>
                           ))}
                         </div>
 
+                        {/* 🗣 Transcripción por voz (si hay) */}
                         {transcripcion && (
                           <div className="bg-white rounded-2xl border border-blue-200 p-5 mt-5 shadow-sm">
                             <div className="flex items-center gap-2 text-blue-900 mb-2">
@@ -386,6 +535,7 @@ export default function PanelRespuestas() {
                           </div>
                         )}
 
+                        {/* 🧬 Síntomas IA (chips) */}
                         {sintomasIA.length > 0 && (
                           <div className="bg-white rounded-2xl border border-slate-200 p-5 mt-5 shadow-sm">
                             <div className="flex items-center gap-2 text-slate-900 mb-2">
@@ -406,6 +556,7 @@ export default function PanelRespuestas() {
                   })()}
                 </motion.div>
 
+                {/* 🧠 BLOQUE DE RESPUESTA POR VOZ Y SÍNTOMAS IA (usando campos parseados) */}
                 {(() => {
                   const campos = getCamposPersonalizados(r)
                   const transcripcion = extraerTranscripcion(r, campos)
@@ -439,18 +590,25 @@ export default function PanelRespuestas() {
                     </>
                   )
                 })()}
-
-                {/* 💡 Sugerencias: SOLO backend */}
                 {(() => {
+                  // 1) sugerencias front (por reglas del panel)
+                  const front = reglasClinicas?.condiciones?.length ? calcularSugerencias(r).sugerencias : []
+
+                  // 2) sugerencias backend: leer _sugerencias del JSON crudo (porque getCamposPersonalizados filtra _*)
                   let raw: any = (r as any).campos_personalizados
                   if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = null } }
-
                   const be: Array<{ texto: string; nivel?: 'verde'|'amarillo'|'rojo'; color?: string }> =
                     raw && Array.isArray(raw._sugerencias) ? raw._sugerencias : []
 
-                  if (!be || be.length === 0) return null
+                  // si no hay ninguna, no mostrar bloque
+                  if ((!front || front.length === 0) && (!be || be.length === 0)) return null
 
-                  const unicos = Array.from(new Map(be.map(s => [String(s.texto).trim(), s])).values())
+                  // 3) merge + dedupe por texto (prioriza backend)
+                  const todos = [
+                    ...be.map(s => ({ ...s, fuente: 'backend' as const })),
+                    ...front.map(s => ({ ...s, fuente: 'front' as const })),
+                  ]
+                  const unicos = Array.from(new Map(todos.map(s => [String(s.texto).trim(), s])).values())
 
                   return (
                     <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-4 shadow-sm">
@@ -472,7 +630,9 @@ export default function PanelRespuestas() {
                               />
                               <span className="text-slate-700">
                                 {sug.texto}
-                                <span className="ml-2 text-xs text-slate-500">(reglas clínica)</span>
+                                {sug.fuente === 'backend' && (
+                                  <span className="ml-2 text-xs text-slate-500">(reglas clínica)</span>
+                                )}
                               </span>
                             </li>
                           )
@@ -486,7 +646,6 @@ export default function PanelRespuestas() {
           </motion.div>
         ))}
       </div>
-
       {modoEdicion && seleccionadas.length > 0 && (
         <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-center space-y-3">
           <p className="text-sm text-red-700">
@@ -505,7 +664,7 @@ export default function PanelRespuestas() {
             t={t}
             onConfirmar={async () => {
               try {
-                const ids = seleccionadas.map(String)
+                const ids = seleccionadas.map(String); // 👈 mantener como string (UUID)
                 const res = await fetchConToken('/api/respuestas', {
                   method: 'DELETE',
                   headers: getAuthHeaders(),
