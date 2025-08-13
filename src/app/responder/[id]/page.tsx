@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { fetchConToken } from '@/lib/fetchConToken' // ⬅️ NUEVO
 
 function FieldBlock({
   label,
@@ -206,7 +207,7 @@ export default function ResponderPage() {
       if (!clinica?.id) return
       try {
         const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`
-        const res = await fetch(url, { headers: { 'x-clinica-host': window.location.hostname }, cache: 'no-store' })
+        const res = await fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
         const raw = await res.json().catch(() => [])
         const arr = Array.isArray(raw) ? raw : (raw?.data || [])
         const found = arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
@@ -245,7 +246,7 @@ export default function ResponderPage() {
       const qs = new URLSearchParams({ paciente_id: String(id), form_slug: formSlug })
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/responder-voz/puede-enviar?${qs.toString()}`,
-        { headers: { 'x-clinica-host': window.location.hostname } }
+        { headers: getAuthHeaders() }
       )
       const data = await res.json()
       setPuedeEnviar(Boolean(data?.puedeEnviar))
@@ -313,9 +314,8 @@ export default function ResponderPage() {
             enviado_en: new Date().toISOString(),
           },
         }
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/respuestas`, {
+        const res = await fetchConToken('/api/respuestas', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-clinica-host': window.location.hostname },
           body: JSON.stringify(payload),
         })
         if (res.status === 409) {
@@ -338,9 +338,14 @@ export default function ResponderPage() {
                   : audioBlob?.type.includes('ogg') ? 'ogg'
                   : 'webm'
         fd.append('audio', audioBlob!, `respuesta.${ext}`)
+
+        // armamos headers desde getAuthHeaders, pero sin Content-Type
+        const headersMultipart = { ...getAuthHeaders() }
+        delete (headersMultipart as any)['Content-Type']
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/responder-voz/audio`, {
           method: 'POST',
-          headers: { 'x-clinica-host': window.location.hostname },
+          headers: headersMultipart,
           body: fd,
         })
         if (res.status === 409) {

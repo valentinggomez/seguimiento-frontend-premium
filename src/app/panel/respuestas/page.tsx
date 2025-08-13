@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { fetchReglas, type ReglasClinicas, type ReglaClinica, type Operador } from '@/lib/reglasApi'
 
 interface Respuesta {
-  id: string | number;
+  id: string;
   paciente_nombre: string
   edad: number
   sexo: string
@@ -606,14 +606,14 @@ export default function PanelRespuestas() {
             t={t}
             onConfirmar={async () => {
               try {
-                const ids = seleccionadas.map(Number).filter(n => !Number.isNaN(n))
+                const ids = seleccionadas.map(String); // 👈 mantener como string (UUID)
                 const res = await fetchConToken('/api/respuestas', {
                   method: 'DELETE',
                   headers: getAuthHeaders(),
                   body: JSON.stringify({ ids }),
                 })
                 if (res.ok) {
-                  setRespuestas(prev => prev.filter(r => !ids.includes(Number(r.id))))
+                  setRespuestas(prev => prev.filter(r => !ids.includes(String(r.id))))
                   setSeleccionadas([])
                   setModoEdicion(false)
                   setMostrarModal(false)

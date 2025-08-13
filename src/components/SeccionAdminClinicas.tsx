@@ -222,7 +222,10 @@ export default function SeccionAdminClinicas() {
   const fetchHojas = async (spreadsheetId: string) => {
     setCargandoHojas(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${spreadsheetId}`)
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/hojas?spreadsheet_id=${spreadsheetId}`,
+        { headers: getAuthHeaders() } // ✅ ahora con token
+      )
       const data = await res.json()
       if (Array.isArray(data.hojas)) {
         console.log("✅ Hojas recibidas:", data.hojas)
@@ -500,7 +503,11 @@ export default function SeccionAdminClinicas() {
                     <div>
                       <h4 className="text-md font-semibold text-[#003366] mb-2">🧪 Datos clínicos</h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {camposAvanzados.split(',').map(campo => campo.trim()).filter(Boolean).map(campo => (
+                        {camposAvanzados
+                          .split(',')
+                          .map((campo: string) => campo.trim())  
+                          .filter(Boolean)
+                          .map(campo => (
                           <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                             <Checkbox
                               checked={(selected?.columnas_exportables || []).includes(campo)}
@@ -786,7 +793,11 @@ export default function SeccionAdminClinicas() {
                           <div>
                             <h4 className="text-md font-semibold text-[#003366] mb-2">🧪 Datos clínicos</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              {camposAvanzados.split(',').map(campo => campo.trim()).filter(Boolean).map(campo => (
+                              {camposAvanzados
+                                .split(',')
+                                .map((campo: string) => campo.trim())  
+                                .filter(Boolean)
+                                .map(campo => (
                                 <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                                   <Checkbox
                                     checked={(selected?.columnas_exportables || []).includes(campo)}
@@ -890,9 +901,7 @@ export default function SeccionAdminClinicas() {
                 </DialogContent>
               </Dialog>
               <Button variant="outline" asChild>
-                <Link href={`/panel/clinicas/${clinica.id}`}>
-                  <Button variant="outline">📄 Ver clínica</Button>
-                </Link>
+                <Link href={`/panel/clinicas/${clinica.id}`}>📄 Ver clínica</Link>
               </Button>
             </CardContent>
           </Card>

@@ -3,8 +3,10 @@
 
 import SeccionAdminClinicas from "@/components/SeccionAdminClinicas"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function PageClinicas() {
+  const router = useRouter()
   const [rol, setRol] = useState<string | null>(null)
   const [usuario, setUsuario] = useState<any>(null)
 
@@ -12,7 +14,7 @@ export default function PageClinicas() {
     const rolGuardado = localStorage.getItem("rol")
     const usuarioGuardado = localStorage.getItem("usuario")
     if (!rolGuardado || !usuarioGuardado) {
-      window.location.href = "/login"
+      router.replace("/login") // 👈 en lugar de window.location.href
       return
     }
     setRol(rolGuardado)
@@ -20,9 +22,9 @@ export default function PageClinicas() {
       setUsuario(JSON.parse(usuarioGuardado))
     } catch (e) {
       console.error("Error al parsear usuario:", e)
-      window.location.href = "/login"
+      router.replace("/login")
     }
-  }, [])
+  }, [router])
 
   // ⏳ Esperar a tener usuario y rol antes de decidir acceso
   if (usuario === null || rol === null) {

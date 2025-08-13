@@ -1,11 +1,14 @@
+import { getAuthHeaders } from './getAuthHeaders';
+
 const backendUrl = process.env.NEXT_PUBLIC_API_URL!;
 
-export const fetchConToken = async (url: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    'x-clinica-host': window.location.hostname,
+export const fetchConToken = async (
+  url: string,
+  options: RequestInit = {},
+  contentType?: string
+) => {
+  const headers = {
+    ...getAuthHeaders(contentType || 'application/json'),
     ...(options.headers || {}),
   };
 

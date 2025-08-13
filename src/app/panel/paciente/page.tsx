@@ -16,15 +16,17 @@ export default function RegistroPaciente() {
   const [errores, setErrores] = useState<{ fecha_cirugia?: string; edad?: string }>({})
   const [mensajeError, setMensajeError] = useState('')
   const { clinica } = useClinica()
-  const camposPersonalizados = clinica?.campos_avanzados?.split(',') || []
+  const camposPersonalizados: string[] = String(clinica?.campos_avanzados ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Validación básica
-    const campos = Object.entries(form)
-    console.log("🧾 Datos form frontend antes de enviar:", form)
-    const vacios = campos.filter(([_, val]) => val === '')
-    if (vacios.length > 0) {
+    const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo']
+    const vacios = requeridos.filter(k => !form[k] && form[k] !== 0)
+    if (vacios.length) {
       setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
       return
     }
@@ -63,10 +65,19 @@ export default function RegistroPaciente() {
       return
     }
 
+    const pad = (n: number) => String(n).padStart(2, '0')
+
     const paciente = {
       ...form,
-      fecha_cirugia: `${y}-${m}-${d}`,
-      clinica_id: clinica.id
+      // números
+      edad: form.edad !== '' ? Number(form.edad) : null,
+      dni: form.dni !== '' ? Number(form.dni) : null,
+      peso: form.peso ? Number(String(form.peso).replace(',', '.')) : null,
+      altura: form.altura ? Number(String(form.altura).replace(',', '.')) : null,
+      imc: form.imc ? Number(String(form.imc).replace(',', '.')) : null,
+      // fecha YYYY-MM-DD con cero a la izquierda
+      fecha_cirugia: `${anio}-${pad(mes)}-${pad(dia)}`,
+      clinica_id: clinica.id,
     }
     console.log("📦 Objeto final paciente:", paciente)
     try {
@@ -171,7 +182,7 @@ export default function RegistroPaciente() {
             {/* DNI */}
             <div className="relative">
               <input
-                type="text"
+                type="number"
                 name="dni"
                 value={form.dni || ''}
                 onChange={(e) => setForm({ ...form, dni: e.target.value })}
@@ -360,7 +371,7 @@ export default function RegistroPaciente() {
 
                   setErrores((prev) => ({
                     ...prev,
-                    fecha_cirugia: esInvalida ? t('pacientes.error_fecha') : ''
+                    fecha_cirugia: esInvalida ? t('pacientes.errores.error_fecha') : ''
                   }))
                 }}
                 autoComplete="off"

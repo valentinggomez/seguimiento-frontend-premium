@@ -114,29 +114,31 @@ export default function InteraccionesPage() {
   useEffect(() => {
     fetchInteracciones()
 
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : ''
+    const host  = typeof window !== 'undefined' ? window.location.hostname : ''
+    const url   = `${process.env.NEXT_PUBLIC_API_URL}/api/sse?token=${encodeURIComponent(token || '')}&host=${encodeURIComponent(host)}`
 
-    eventSource.onmessage = (e) => {
-      const data = JSON.parse(e.data)
+    const es = new EventSource(url)
 
-      if (data.tipo === 'nuevo_mensaje') {
-        console.log('📥 Nuevo mensaje detectado por SSE:', data)
-
-        const idMensajeNuevo = `${data.paciente_id}-${data.mensaje}`
-
-        if (!prevMensajesRef.current.includes(idMensajeNuevo)) {
-          // 🔊 Sonido sutil
-          reproducir()
-
-          // 🔁 Refrescar panel
-          fetchInteracciones()
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (data?.tipo === 'nuevo_mensaje') {
+          const idMensajeNuevo = `${data.paciente_id}-${data.mensaje}`
+          if (!prevMensajesRef.current.includes(idMensajeNuevo)) {
+            reproducir()
+            fetchInteracciones()
+          }
         }
-      }
+      } catch {}
     }
 
-    return () => {
-      eventSource.close()
+    es.onerror = () => {
+      // opcional: reintento simple
+      try { es.close() } catch {}
     }
+
+    return () => { try { es.close() } catch {} }
   }, [])
 
   const buscarInteracciones = async (texto: string) => {

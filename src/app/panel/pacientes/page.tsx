@@ -50,11 +50,16 @@ export default function PanelPacientes() {
 
   const guardarCambios = async () => {
     try {
-      const headers = await getAuthHeaders()
+      const headers = getAuthHeaders()
 
+      const payload = {
+        ...pacienteSeleccionado,
+        edad: pacienteSeleccionado?.edad !== '' ? Number(pacienteSeleccionado.edad) : null,
+        dni:  pacienteSeleccionado?.dni  !== '' ? Number(pacienteSeleccionado.dni)  : null,
+      }
       await axios.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${pacienteSeleccionado.id}`,
-        pacienteSeleccionado,
+        payload,
         { headers }
       )
 
@@ -78,14 +83,16 @@ export default function PanelPacientes() {
 
     setEliminando(true)
     try {
-      const headers = await getAuthHeaders()
+      const headers = getAuthHeaders()
 
       const res = await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/api/pacientes/${pacienteAEliminar.id}`,
         { headers }
       )
 
-      if (!res.data.ok) throw new Error(res.data.error || 'Error al eliminar')
+      if (res.status >= 400 || res.data?.error) {
+        throw new Error(res.data?.error || 'Error al eliminar')
+      }
 
       toast.success(t('pacientes.toast_eliminado'))
 
@@ -136,7 +143,10 @@ export default function PanelPacientes() {
           type="text"
           placeholder={t('pacientes.placeholder_busqueda')}
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          onChange={(e) => {
+            setBusqueda(e.target.value)
+            setPaginaActual(1)
+          }}
           className="w-full pl-10 shadow-md rounded-xl text-slate-800 placeholder:text-slate-400"
         />
       </div>
@@ -245,13 +255,16 @@ export default function PanelPacientes() {
               />
               <Input
                 placeholder={t('pacientes.edad')}
+                type="number"
                 value={pacienteSeleccionado.edad}
                 onChange={(e) =>
                   setPacienteSeleccionado({ ...pacienteSeleccionado, edad: e.target.value })
                 }
               />
+
               <Input
                 placeholder={t('pacientes.dni')}
+                type="number"
                 value={pacienteSeleccionado.dni}
                 onChange={(e) =>
                   setPacienteSeleccionado({ ...pacienteSeleccionado, dni: e.target.value })

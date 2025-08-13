@@ -25,47 +25,61 @@ function normReglas(x: any): ReglasClinicas {
   return { condiciones: [] };
 }
 
-async function withTimeout<T>(p: Promise<T>, ms = 12000): Promise<T> {
+/**
+ * withTimeout correcto: crea un AbortController y pasa el signal al fetch.
+ * Se usa con un "factory" que recibe ese signal.
+ */
+async function withTimeout<T>(factory: (signal: AbortSignal) => Promise<T>, ms = 12000): Promise<T> {
   const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), ms);
+  const id = setTimeout(() => ac.abort(), ms);
   try {
-    // @ts-ignore
-    return await p.then(r => r, { signal: ac.signal });
+    return await factory(ac.signal);
   } finally {
-    clearTimeout(t);
+    clearTimeout(id);
   }
 }
 
 export async function fetchReglas(host?: string): Promise<ReglasClinicas> {
   const res = await withTimeout(
-    fetch(`${API}/api/clinicas/reglas`, { headers: hostHeader(host), cache: 'no-store' })
+    (signal) => fetch(`${API}/api/clinicas/reglas`, { headers: hostHeader(host), cache: 'no-store', signal })
   );
-  if (!res.ok) throw new Error((await res.json().catch(()=>({})))?.error || 'No se pudieron obtener las reglas');
-  const data = await res.json();
-  return normReglas(data?.reglas);
+
+  // ⚠️ Parsear el body UNA sola vez
+  const payload = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(payload?.error || 'No se pudieron obtener las reglas');
+  }
+  return normReglas(payload?.reglas);
 }
 
 export async function saveReglas(reglas: ReglasClinicas, host?: string) {
   const body = JSON.stringify({ host: host ?? (typeof window !== 'undefined' ? window.location.hostname : ''), reglas });
   const res = await withTimeout(
-    fetch(`${API}/api/clinicas/reglas`, {
+    (signal) => fetch(`${API}/api/clinicas/reglas`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...hostHeader(host) },
-      body
+      body,
+      signal,
     })
   );
-  if (!res.ok) throw new Error((await res.json().catch(()=>({})))?.error || 'No se pudieron guardar las reglas');
-  return await res.json();
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload?.error || 'No se pudieron guardar las reglas');
+  return payload;
 }
 
 export async function previewReglas(reglas: ReglasClinicas, sample: Record<string, any>, host?: string) {
   const res = await withTimeout(
-    fetch(`${API}/api/clinicas/reglas/preview`, {
+    (signal) => fetch(`${API}/api/clinicas/reglas/preview`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...hostHeader(host) },
-      body: JSON.stringify({ reglas, sample })
+      body: JSON.stringify({ reglas, sample }),
+      signal,
     })
   );
-  if (!res.ok) throw new Error((await res.json().catch(()=>({})))?.error || 'No se pudo previsualizar');
-  return await res.json();
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload?.error || 'No se pudo previsualizar');
+  return payload;
 }

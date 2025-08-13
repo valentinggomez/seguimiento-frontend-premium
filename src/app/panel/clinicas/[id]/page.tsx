@@ -101,16 +101,22 @@ export default function ClinicaDashboardPage() {
         if (clinica) loadHojas()
     }, [clinica])
 
-  if (rol !== "superadmin") {
-    return (
-      <div className="p-10 text-center">
-        <h1 className="text-3xl font-bold text-red-600 mb-4">Acceso restringido 🚫</h1>
-        <p className="text-gray-600">Solo el usuario <strong>superadmin</strong> puede acceder a esta sección.</p>
-      </div>
-    )
-  }
+  // ⏳ Esperar a tener usuario/rol y terminar la carga
+    if (usuario === null || rol === null || cargando) {
+    return <div className="p-10 text-center text-gray-500">Cargando…</div>
+    }
 
-  if (!usuario || cargando) return <div className="p-10 text-center text-gray-500">Cargando…</div>
+    // 👮 Después de que cargó todo, recién ahí chequeamos el rol
+    if (rol !== "superadmin") {
+    return (
+        <div className="p-10 text-center">
+        <h1 className="text-3xl font-bold text-red-600 mb-4">Acceso restringido 🚫</h1>
+        <p className="text-gray-600">
+            Solo el usuario <strong>superadmin</strong> puede acceder a esta sección.
+        </p>
+        </div>
+    )
+    }
 
   if (!clinica) {
     return (
