@@ -8,6 +8,14 @@ import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 import { fetchReglas, type ReglasClinicas, type ReglaClinica, type Operador } from '@/lib/reglasApi'
 
+
+const toYesNo = (v: any) => {
+  const s = String(v ?? '').trim().toLowerCase()
+  if (['si','sí','yes','true','1'].includes(s)) return 'Sí'
+  if (['no','false','0'].includes(s)) return 'No'
+  return v ?? '—'
+}
+
 interface Respuesta {
   id: string;
   paciente_nombre: string
@@ -428,71 +436,76 @@ export default function PanelRespuestas() {
 
             {expandedId === String(r.id) && (
               <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-1 text-gray-800 text-sm"
-                >
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4">
                   {(() => {
                     const campos = getCamposPersonalizados(r)
                     const form   = getRespuestasFormulario(r)
 
-                    // dentro del render expandido
                     const HIDDEN = new Set([
-                      'clinica_id',
-                      'transcripcion',
-                      'sintomas_ia',
-                      'campos_personalizados',
-                      'respuesta_por_voz',
-                      '_color_alerta',  
+                      'clinica_id','transcripcion','sintomas_ia','campos_personalizados',
+                      'respuesta_por_voz','_color_alerta',
                     ])
 
-                    const formEntries   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
-                    const customEntries = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
+                    // Primero lo del formulario (conservar labels + emojis), luego “custom”
+                    const paresForm   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
+                    const paresCustom = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
+                    const filas = [...paresForm, ...paresCustom]
 
-                    // También consideramos voz/síntomas para decidir si mostrar "sin_campos"
                     const transcripcion = extraerTranscripcion(r, campos)
                     const sintomasIA    = extraerSintomas(r, campos)
 
-                    if (formEntries.length === 0 && customEntries.length === 0 && !transcripcion && sintomasIA.length === 0) {
-                      return (
-                        <div className="text-gray-500 italic col-span-2">
-                          {t('respuestas.sin_campos')}
-                        </div>
-                      )
+                    if (filas.length === 0 && !transcripcion && sintomasIA.length === 0) {
+                      return <div className="text-gray-500 italic">{t('respuestas.sin_campos')}</div>
                     }
-
-                    const stripEmojis = (s: string) =>
-                      s.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()
 
                     return (
                       <>
-                        {/* 🧾 Campos del formulario (pueden venir con labels y emojis) */}
-                        {formEntries.map(([label, valor]) => {
-                          const visible = typeof label === 'string' ? label : String(label)
-                          const texto = valor != null && valor !== '' ? String(valor) : t('respuestas.no_registrado')
-                          return (
-                            <div key={`form-${visible}`}>
-                              <strong>{visible}</strong>: {texto}
-                              {/* Si preferís sin emojis: <strong>{stripEmojis(visible)}</strong> */}
+                        {/* 🧾 Dos columnas con labels (mantiene emojis) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
+                          {filas.map(([label, valor]) => (
+                            <div key={String(label)} className="text-[15px] leading-6">
+                              <span className="font-semibold text-slate-800">
+                                {String(label).trim()}
+                                {String(label).trim().endsWith('?') ? '' : ':'}
+                              </span>{' '}
+                              <span className="text-slate-900">
+                                {typeof valor === 'object' && valor !== null
+                                  ? <code className="text-xs">{JSON.stringify(valor)}</code>
+                                  : toYesNo(valor)}
+                              </span>
                             </div>
-                          )
-                        })}
+                          ))}
+                        </div>
 
-                        {/* ⚙️ Campos personalizados (resto) */}
-                        {customEntries.map(([clave, valor]) => {
-                          // primero intentamos traducir con claves técnicas, si no, dejamos la clave tal cual
-                          const maybe = t(`campos_formulario.${clave}`)
-                          const label = maybe !== `campos_formulario.${clave}` ? maybe : clave
-                          const texto = valor != null && valor !== ''
-                            ? (typeof valor === 'object' ? JSON.stringify(valor) : String(valor))
-                            : t('respuestas.no_registrado')
-                          return (
-                            <div key={`custom-${clave}`}>
-                              <strong>{label}:</strong> {texto}
+                        {/* 🗣 Transcripción (si existe) */}
+                        {transcripcion && (
+                          <div className="bg-white rounded-2xl border border-blue-200 p-5 mt-5 shadow-sm">
+                            <div className="flex items-center gap-2 text-blue-900 mb-2">
+                              <span className="text-xl">🗣️</span>
+                              <h3 className="font-semibold">{t('respuestas.transcripcion_voz')}</h3>
                             </div>
-                          )
-                        })}
+                            <blockquote className="text-slate-800 italic border-l-4 border-blue-400 pl-4 whitespace-pre-wrap">
+                              {transcripcion}
+                            </blockquote>
+                          </div>
+                        )}
+
+                        {/* 🧬 Síntomas IA (chips) */}
+                        {sintomasIA.length > 0 && (
+                          <div className="bg-white rounded-2xl border border-slate-200 p-5 mt-5 shadow-sm">
+                            <div className="flex items-center gap-2 text-slate-900 mb-2">
+                              <span className="text-xl">🧬</span>
+                              <h3 className="font-semibold">{t('respuestas.sintomas_detectados_ia')}</h3>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {sintomasIA.map((tag, i) => (
+                                <span key={i} className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </>
                     )
                   })()}
