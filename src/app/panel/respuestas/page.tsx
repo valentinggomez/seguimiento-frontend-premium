@@ -262,21 +262,22 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
-    // 1) color explícito desde backend (si vino anidado)
+    // 1) si el backend mandó un color explícito, lo respetamos
     let raw: any = r.campos_personalizados
     if (typeof raw === 'string') {
       try { raw = JSON.parse(raw) } catch { raw = null }
     }
-    const fromBackend: string | undefined = raw && typeof raw === 'object' ? raw._color_alerta : undefined
-    if (fromBackend) return fromBackend
+    const colorBackend: string | undefined =
+      raw && typeof raw === 'object' ? (raw as any)._color_alerta : undefined
+    if (colorBackend) return colorBackend
 
-    // 2) color según evaluación de reglas locales (si hay reglas)
-    if (reglasClinicas?.condiciones?.length) {
-      const { color } = evaluarRespuesta(r, reglasClinicas)
-      if (color) return color
+    // 2) si hay reglas cargadas en el panel, usamos el nivel calculado en front
+    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
+      const { nivel } = calcularSugerencias(r) // 'verde' | 'amarillo' | 'rojo'
+      return NIVEL_COLOR_DEF[nivel] || NIVEL_COLOR_DEF.verde
     }
 
-    // 3) fallback al nivel_alerta del backend
+    // 3) fallback al nivel que venga del backend
     const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
     return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde
   }
