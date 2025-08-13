@@ -19,6 +19,7 @@ import {
   MoveVertical,
   Info,
 } from 'lucide-react';
+import { useClinica } from '@/lib/ClinicaProvider'
 
 /** Paleta por nivel — usada para chips y fondos */
 const NIVEL_STYLES: Record<NivelAlerta, { bg: string; ring: string; dot: string; text: string; hex: string }> = {
@@ -30,6 +31,10 @@ const NIVEL_STYLES: Record<NivelAlerta, { bg: string; ring: string; dot: string;
 const OPERADORES = ['>','>=','<','<=','==','!=','in','contains','between'] as const;
 
 export default function ReglasEditor() {
+  const clinicaCtx = useClinica()
+  const clinica = clinicaCtx?.clinica
+  const host = clinica?.dominio || (typeof window !== 'undefined' ? window.location.hostname : '')
+  
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState<string | null>(null);
@@ -40,21 +45,22 @@ export default function ReglasEditor() {
 
   const [sample, setSample] = useState<Record<string, any>>({});
   const [showSample, setShowSample] = useState(false);
-
-  // ====== LOAD ===============================================================
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const r = await fetchReglas();
-        setReglas({ condiciones: Array.isArray(r.condiciones) ? r.condiciones : [] });
-      } catch (e: any) {
-        setError(e?.message || 'Error al cargar reglas');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  
+    // ====== LOAD ===============================================================
+    useEffect(() => {
+      if (!host) return
+      (async () => {
+        try {
+          setLoading(true);
+          const r = await fetchReglas(host); // 👈 pasa host
+          setReglas({ condiciones: Array.isArray(r.condiciones) ? r.condiciones : [] });
+        } catch (e: any) {
+          setError(e?.message || 'Error al cargar reglas');
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, [host]); // 👈 importante
 
   // ====== MUTATORS ===========================================================
   const addRule = () => {
@@ -124,11 +130,10 @@ export default function ReglasEditor() {
       setSaving(true);
       setError(null);
       setOkMsg(null);
-      // saneamos: sin id
       const payload: ReglasClinicas = {
-        condiciones: reglas.condiciones.map(({ id, ...rest }) => rest)
+        condiciones: reglas.condiciones.map(({ id, ...rest }) => rest),
       };
-      await saveReglas(payload);
+      await saveReglas(payload, host); // 👈 pasa host
       setOkMsg('Reglas guardadas correctamente.');
     } catch (e: any) {
       setError(e?.message || 'No se pudo guardar');
@@ -143,9 +148,9 @@ export default function ReglasEditor() {
       setOkMsg(null);
       setPreview(null);
       const payload: ReglasClinicas = {
-        condiciones: reglas.condiciones.map(({ id, ...rest }) => rest)
+        condiciones: reglas.condiciones.map(({ id, ...rest }) => rest),
       };
-      const resp = await previewReglas(payload, sample);
+      const resp = await previewReglas(payload, sample, host); // 👈 pasa host
       const nivel = (resp?.resultado?.nivel ?? 'verde') as NivelAlerta;
       setPreview({ nivel, sugerencia: resp?.resultado?.sugerencia || '' });
     } catch (e: any) {
@@ -159,6 +164,14 @@ export default function ReglasEditor() {
     const fields = new Set(reglas.condiciones.map(r => r.campo).filter(Boolean));
     return `${total} regla${total === 1 ? '' : 's'} • ${fields.size} campo${fields.size === 1 ? '' : 's'}`;
   }, [reglas]);
+
+    if (!host) {
+      return (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          No se pudo resolver el host de la clínica. Cerrá sesión y volvé a entrar.
+        </div>
+      )
+    }
 
   // ====== UI =================================================================
   if (loading) {
