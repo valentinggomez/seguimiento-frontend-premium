@@ -13,7 +13,7 @@ export interface ReglaClinica {
   id?: string;
   campo: string;
   operador: Operador;
-  valor: any;           // para 'between' => "min,max", para 'in' => "a,b,c"
+  valor: any;           // 'between' => "min,max", 'in' => "a,b,c"
   nivel: NivelAlerta;
   color?: string;
   sugerencia?: string;
@@ -25,10 +25,30 @@ function normReglas(x: any): ReglasClinicas {
   return { condiciones: [] };
 }
 
-/**
- * withTimeout correcto: crea un AbortController y pasa el signal al fetch.
- * Se usa con un "factory" que recibe ese signal.
- */
+/** Rutas candidatas — probamos en orden hasta encontrar una que responda 200 */
+const PATHS = {
+  GET: [
+    '/api/clinicas/reglas',            // original
+    '/api/reglas',                     // alternativa común
+    // variantes por host en path:
+    (host: string) => `/api/clinicas/${host}/reglas`,
+    (host: string) => `/api/reglas/${host}`,
+  ],
+  PUT: [
+    '/api/clinicas/reglas',
+    '/api/reglas',
+    (host: string) => `/api/clinicas/${host}/reglas`,
+    (host: string) => `/api/reglas/${host}`,
+  ],
+  PREVIEW: [
+    '/api/clinicas/reglas/preview',
+    '/api/reglas/preview',
+    (host: string) => `/api/clinicas/${host}/reglas/preview`,
+    (host: string) => `/api/reglas/${host}/preview`,
+  ],
+};
+
+/** Helper con timeout */
 async function withTimeout<T>(factory: (signal: AbortSignal) => Promise<T>, ms = 12000): Promise<T> {
   const ac = new AbortController();
   const id = setTimeout(() => ac.abort(), ms);
@@ -39,47 +59,117 @@ async function withTimeout<T>(factory: (signal: AbortSignal) => Promise<T>, ms =
   }
 }
 
+type PathEntry = string | ((host: string) => string);
+function buildPaths(list: PathEntry[], host?: string) {
+  const h = host ?? (typeof window !== 'undefined' ? window.location.hostname : '');
+  return list.map(p => (typeof p === 'function' ? p(h) : p));
+}
+
+async function tryJson(url: string, init: RequestInit, signal: AbortSignal) {
+  const res = await fetch(url, { ...init, signal });
+  const body = await res.json().catch(() => ({}));
+  return { res, body };
+}
+
+/** GET reglas con fallback de rutas */
 export async function fetchReglas(host?: string): Promise<ReglasClinicas> {
-  const res = await withTimeout(
-    (signal) => fetch(`${API}/api/clinicas/reglas`, { headers: hostHeader(host), cache: 'no-store', signal })
-  );
+  const headers = { ...hostHeader(host) };
+  const candidates = buildPaths(PATHS.GET, host);
 
-  // ⚠️ Parsear el body UNA sola vez
-  const payload = await res.json().catch(() => ({}));
+  return withTimeout(async (signal) => {
+    let lastErr: any = null;
 
-  if (!res.ok) {
-    throw new Error(payload?.error || 'No se pudieron obtener las reglas');
-  }
-  return normReglas(payload?.reglas);
+    for (const path of candidates) {
+      const url = `${API}${path}`;
+      try {
+        const { res, body } = await tryJson(url, { headers, cache: 'no-store' }, signal);
+        if (res.ok) {
+          // backend puede devolver { reglas: {...} } o directamente {...}
+          const reglas = body?.reglas ?? body;
+          return normReglas(reglas);
+        }
+        if (res.status === 404) {
+          // probamos la siguiente ruta
+          continue;
+        }
+        // otro error (401/500/etc)
+        throw new Error(body?.error || `Error ${res.status} en ${path}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    // si ninguna ruta respondió ok
+    throw new Error(
+      (lastErr?.message
+        ? `No se pudieron obtener las reglas (${lastErr.message}).`
+        : 'No se pudieron obtener las reglas (todas las rutas devolvieron 404).')
+      + ' Verificá qué endpoint existe realmente en el backend.'
+    );
+  });
 }
 
+/** PUT reglas con fallback de rutas */
 export async function saveReglas(reglas: ReglasClinicas, host?: string) {
-  const body = JSON.stringify({ host: host ?? (typeof window !== 'undefined' ? window.location.hostname : ''), reglas });
-  const res = await withTimeout(
-    (signal) => fetch(`${API}/api/clinicas/reglas`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...hostHeader(host) },
-      body,
-      signal,
-    })
-  );
+  const headers = { 'Content-Type': 'application/json', ...hostHeader(host) };
+  const body = JSON.stringify({
+    host: host ?? (typeof window !== 'undefined' ? window.location.hostname : ''),
+    reglas,
+  });
+  const candidates = buildPaths(PATHS.PUT, host);
 
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(payload?.error || 'No se pudieron guardar las reglas');
-  return payload;
+  return withTimeout(async (signal) => {
+    let last404 = true;
+    let lastErr: any = null;
+
+    for (const path of candidates) {
+      const url = `${API}${path}`;
+      try {
+        const { res, body: payload } = await tryJson(url, { method: 'PUT', headers, body }, signal);
+        if (res.ok) return payload;
+        if (res.status === 404) { last404 = true; continue; }
+        last404 = false;
+        throw new Error(payload?.error || `Error ${res.status} en ${path}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    throw new Error(
+      last404
+        ? 'No se pudieron guardar las reglas: todas las rutas devolvieron 404.'
+        : (lastErr?.message || 'No se pudieron guardar las reglas.')
+    );
+  });
 }
 
+/** POST preview con fallback de rutas */
 export async function previewReglas(reglas: ReglasClinicas, sample: Record<string, any>, host?: string) {
-  const res = await withTimeout(
-    (signal) => fetch(`${API}/api/clinicas/reglas/preview`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...hostHeader(host) },
-      body: JSON.stringify({ reglas, sample }),
-      signal,
-    })
-  );
+  const headers = { 'Content-Type': 'application/json', ...hostHeader(host) };
+  const body = JSON.stringify({ reglas, sample });
+  const candidates = buildPaths(PATHS.PREVIEW, host);
 
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(payload?.error || 'No se pudo previsualizar');
-  return payload;
+  return withTimeout(async (signal) => {
+    let last404 = true;
+    let lastErr: any = null;
+
+    for (const path of candidates) {
+      const url = `${API}${path}`;
+      try {
+        const { res, body: payload } = await tryJson(url, { method: 'POST', headers, body }, signal);
+        if (res.ok) return payload;
+        if (res.status === 404) { last404 = true; continue; }
+        last404 = false;
+        throw new Error(payload?.error || `Error ${res.status} en ${path}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    throw new Error(
+      last404
+        ? 'No se pudo previsualizar: todas las rutas devolvieron 404.'
+        : (lastErr?.message || 'No se pudo previsualizar.')
+    );
+  });
 }
