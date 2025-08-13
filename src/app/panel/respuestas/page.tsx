@@ -262,16 +262,23 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
-    // 1) intentar leer _color_alerta desde el JSON crudo
+    // 1) color explícito desde backend (si vino anidado)
     let raw: any = r.campos_personalizados
     if (typeof raw === 'string') {
       try { raw = JSON.parse(raw) } catch { raw = null }
     }
-    const fromBackend = raw && typeof raw === 'object' ? raw._color_alerta : undefined
+    const fromBackend: string | undefined = raw && typeof raw === 'object' ? raw._color_alerta : undefined
+    if (fromBackend) return fromBackend
 
-    // 2) sino, fallback por nivel_alerta
+    // 2) color según evaluación de reglas locales (si hay reglas)
+    if (reglasClinicas?.condiciones?.length) {
+      const { color } = evaluarRespuesta(r, reglasClinicas)
+      if (color) return color
+    }
+
+    // 3) fallback al nivel_alerta del backend
     const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
-    return (fromBackend as string) || nivelToHex[baseNivel] || nivelToHex.verde
+    return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde
   }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
@@ -426,36 +433,70 @@ export default function PanelRespuestas() {
     return p(b) - p(a) // descendente
   }
 
-  /** Evalúa reglas sobre una respuesta y devuelve {nivel, sugerencias[]} */
-  const calcularSugerencias = (r: Respuesta) => {
-    // dataset combinando formulario + personalizados (igual que ya hacés)
+  // === Severidad y colores por defecto ===
+  const NIVEL_COLOR_DEF: Record<'verde'|'amarillo'|'rojo', string> = {
+    verde: '#10B981',
+    amarillo: '#F59E0B',
+    rojo: '#EF4444',
+  }
+  const rank = (n: 'verde'|'amarillo'|'rojo') => (n === 'rojo' ? 2 : n === 'amarillo' ? 1 : 0)
+
+  /**
+   * Evalúa reglas sobre una respuesta y devuelve:
+   * { nivel, sugerencias, color, hitRules }
+   * - nivel: peor nivel (verde/amarillo/rojo)
+   * - sugerencias: lista deduplicada y ordenada por severidad
+   * - color: color para pintar la tarjeta (prioriza color de la regla más severa)
+   * - hitRules: reglas que se cumplieron (para debug si querés)
+   */
+  const evaluarRespuesta = (r: Respuesta, reglas: ReglasClinicas) => {
+    // dataset: respuestas de formulario + campos personalizados
     const campos = getCamposPersonalizados(r)
     const form   = getRespuestasFormulario(r)
     const dataset: Record<string, any> = { ...form, ...campos }
 
     let nivelMax: 'verde'|'amarillo'|'rojo' = 'verde'
-    const sugerencias: Array<{ texto: string; nivel: 'verde'|'amarillo'|'rojo' }> = []
+    let colorByRule: string | null = null
+    const sugerenciasTmp: Array<{ texto: string; nivel: 'verde'|'amarillo'|'rojo' }> = []
+    const hitRules: ReglaClinica[] = []
 
-    for (const regla of (reglasClinicas?.condiciones || []) as ReglaClinica[]) {
+    for (const regla of (reglas?.condiciones || [])) {
       if (!regla?.campo) continue
       const valorCampo = dataset[regla.campo]
       if (valorCampo === undefined || valorCampo === null || valorCampo === '') continue
       if (cumple(valorCampo, regla.operador as Operador, regla.valor)) {
         const lv = (regla.nivel as any) || 'verde'
-        if (lv === 'rojo') nivelMax = 'rojo'
-        else if (lv === 'amarillo' && nivelMax !== 'rojo') nivelMax = 'amarillo'
+        hitRules.push(regla)
+
+        // actualizar severidad máxima
+        if (rank(lv) > rank(nivelMax)) {
+          nivelMax = lv
+          if (regla.color) colorByRule = regla.color
+        } else if (!colorByRule && regla.color && rank(lv) === rank(nivelMax)) {
+          // empate de severidad: si aún no hay color, usar este
+          colorByRule = regla.color
+        }
+
         if (regla.sugerencia) {
-          sugerencias.push({ texto: String(regla.sugerencia), nivel: lv })
+          sugerenciasTmp.push({ texto: String(regla.sugerencia), nivel: lv })
         }
       }
     }
 
-    // dedup por texto y ordenar por nivel
-    const unicos = Array.from(
-      new Map(sugerencias.map(s => [s.texto.trim(), s])).values()
-    ).sort((a, b) => ordenarPorPrioridad(a.nivel, b.nivel))
+    // dedupe por texto + ordenar por severidad
+    const sugerencias = Array.from(
+      new Map(sugerenciasTmp.map(s => [s.texto.trim(), s])).values()
+    ).sort((a, b) => rank(b.nivel) - rank(a.nivel))
 
-    return { nivel: nivelMax, sugerencias: unicos }
+    const color = colorByRule || NIVEL_COLOR_DEF[nivelMax] || NIVEL_COLOR_DEF.verde
+
+    return { nivel: nivelMax, sugerencias, color, hitRules }
+  }
+
+  /** Evalúa reglas y devuelve {nivel, sugerencias} (re-usa evaluarRespuesta) */
+  const calcularSugerencias = (r: Respuesta) => {
+    const { nivel, sugerencias } = evaluarRespuesta(r, reglasClinicas)
+    return { nivel, sugerencias }
   }
 
   return (

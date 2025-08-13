@@ -152,12 +152,6 @@ export default function Navbar() {
               {t('navbar.clinicas')}
             </Link>
           )}
-          
-          {(rol === 'superadmin' || rol === 'admin') && (
-            <Link href="/panel/reglas" className={linkClasses('/panel/reglas')}>
-              {t?.('navbar.reglas') ?? 'Reglas'}
-            </Link>
-          )}
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
