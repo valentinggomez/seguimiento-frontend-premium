@@ -276,48 +276,67 @@ export default function PanelRespuestas() {
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
     try {
-      // 1) nombres habituales
+      // 0) nombres habituales
       let obj: any =
         (r as any).respuestas_formulario ??
         (r as any).respuestas ??
         (r as any).formulario ??
         null;
 
-      // 2) alternativos usados por backend (como en tu log)
+      // 1) alternativos que vi en back
       if (!obj) obj = (r as any).camposExtra ?? (r as any).campos_extra ?? null;
+      if (!obj) obj = (r as any).respuestas_json ?? (r as any).answers ?? (r as any).form ?? null;
 
-      // 3) si viene envuelto dentro de campos_personalizados (string u objeto)
-      if (!obj && (r as any).campos_personalizados) {
-        let cp: any = (r as any).campos_personalizados;
-        if (typeof cp === 'string') { try { cp = JSON.parse(cp) } catch {} }
-        if (cp && typeof cp === 'object') {
-          obj = cp.respuestas_formulario ?? cp.camposExtra ?? cp.campos_extra ?? null;
-        }
+      // 2) envueltos en campos_personalizados
+      let cpRaw: any = (r as any).campos_personalizados ?? null;
+      if (typeof cpRaw === 'string') { try { cpRaw = JSON.parse(cpRaw) } catch { cpRaw = null } }
+      if (!obj && cpRaw && isPlainObject(cpRaw)) {
+        obj =
+          cpRaw.respuestas_formulario ??
+          cpRaw.respuestas ??
+          cpRaw.formulario ??
+          cpRaw.camposExtra ??
+          cpRaw.campos_extra ??
+          cpRaw.respuestas_json ??
+          null;
       }
 
-      // des-stringificar si hace falta
+      // 3) des-stringificar si hace falta
       if (typeof obj === 'string') { try { obj = JSON.parse(obj) } catch {} }
-      if (!obj || typeof obj !== 'object') return {};
 
-      // si viene como array raro, normalizar a objeto plano
-      if (Array.isArray(obj)) {
-        const out: Record<string, any> = {};
-        for (const item of obj) {
-          if (Array.isArray(item) && item.length >= 2) {
-            out[String(item[0])] = item[1];
-          } else if (item && typeof item === 'object') {
-            if ('clave' in item && 'valor' in item) out[String((item as any).clave)] = (item as any).valor;
-            else Object.assign(out, item);
+      // 4) si ya tenemos objeto plano, normalizar/limpiar y devolver
+      const cleanup = (input: any) => {
+        if (!input || typeof input !== 'object') return {};
+        if (Array.isArray(input)) {
+          const out: Record<string, any> = {};
+          for (const item of input) {
+            if (Array.isArray(item) && item.length >= 2) {
+              out[String(item[0])] = item[1];
+            } else if (item && typeof item === 'object') {
+              if ('clave' in item && 'valor' in item) out[String((item as any).clave)] = (item as any).valor;
+              else Object.assign(out, item);
+            }
           }
+          return out;
         }
-        return out;
+        const ocultos = new Set(['clinica_id', 'campos_personalizados']);
+        const limpio: Record<string, any> = {};
+        for (const k of Object.keys(input)) if (!ocultos.has(k)) limpio[k] = (input as any)[k];
+        return limpio;
+      };
+
+      if (obj && typeof obj === 'object') return cleanup(obj);
+
+      // 5) ——— Fallback: búsqueda profunda por nombres de campos del/los formularios ———
+      // usamos los names que ya cargaste en labelMap
+      const candidateNames = new Set(Object.keys(labelMap)); // <- ya lo tenés en estado
+      if (candidateNames.size >= 2) {
+        const deep = deepFindRespuestas({ ...r, _cp: cpRaw }, candidateNames);
+        if (deep) return cleanup(deep);
       }
 
-      // limpiar claves internas que vi en tus logs
-      const ocultos = new Set(['clinica_id', 'campos_personalizados']);
-      const limpio: Record<string, any> = {};
-      for (const k of Object.keys(obj)) if (!ocultos.has(k)) limpio[k] = obj[k];
-      return limpio;
+      // si no hay nada, devolvemos objeto vacío
+      return {};
     } catch {
       return {};
     }
@@ -340,6 +359,32 @@ export default function PanelRespuestas() {
     return [];
   };
 
+  // ——— Helpers para búsqueda profunda de las respuestas ———
+  const isPlainObject = (v: any) => v && typeof v === 'object' && !Array.isArray(v);
+
+  /**
+   * Busca recursivamente un objeto que contenga al menos 2 claves
+   * presentes en candidateNames (nombres de campos de formularios).
+   */
+  function deepFindRespuestas(source: any, candidateNames: Set<string>) {
+    let winner: Record<string, any> | null = null;
+
+    const walk = (node: any) => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+
+      const keys = Object.keys(node);
+      const matchCount = keys.filter(k => candidateNames.has(String(k))).length;
+      if (matchCount >= 2) {
+        winner = node as Record<string, any>;
+        return; // primer match nos alcanza
+      }
+      for (const k of keys) walk((node as any)[k]);
+    };
+
+    walk(source);
+    return winner;
+  }
   const parseBetween = (s: string) => {
     const [a, b] = (s || '').split(',').map(v => v.trim())
     const n1 = Number(a), n2 = Number(b)
