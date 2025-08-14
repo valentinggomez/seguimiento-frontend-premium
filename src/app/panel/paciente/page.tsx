@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { useClinica } from '@/lib/ClinicaProvider'
@@ -16,10 +16,48 @@ export default function RegistroPaciente() {
   const [errores, setErrores] = useState<{ fecha_cirugia?: string; edad?: string }>({})
   const [mensajeError, setMensajeError] = useState('')
   const { clinica } = useClinica()
+  const [formularios, setFormularios] = useState<any[]>([])
+  const [selectedSlug, setSelectedSlug] = useState<string>('')
+  const [loadingForms, setLoadingForms] = useState<boolean>(false)
   const camposPersonalizados: string[] = String(clinica?.campos_avanzados ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+
+  // Cargar formularios activos de la clínica y elegir uno por defecto
+  useEffect(() => {
+    const cargarFormularios = async () => {
+      if (!clinica?.id) return
+      try {
+        setLoadingForms(true)
+        const resp = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`,
+          { headers: getAuthHeaders(), cache: 'no-store' }
+        )
+        const raw = await resp.json().catch(() => [])
+        const arr = Array.isArray(raw) ? raw : (raw?.data || [])
+        // orden visual consistente
+        arr.sort((a: any, b: any) =>
+          (Number(b.prioridad) || 0) - (Number(a.prioridad) || 0) ||
+          (Number(b.version)   || 0) - (Number(a.version)   || 0) ||
+          new Date(b.publicado_en || 0).getTime() - new Date(a.publicado_en || 0).getTime()
+        )
+        const activos = arr.filter((f:any) => f.activo)
+        setFormularios(activos)
+
+        // default: primero activo si existe
+        if (activos.length && !selectedSlug) {
+          setSelectedSlug(String(activos[0].slug || '').trim())
+        }
+      } catch (_) {
+        setFormularios([])
+      } finally {
+        setLoadingForms(false)
+      }
+    }
+    cargarFormularios()
+  }, [clinica?.id])
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -65,27 +103,7 @@ export default function RegistroPaciente() {
       return
     }
 
-    // 🔎 traer formularios de la clínica para elegir el slug a usar
-    let slug = 'default'
-      try {
-        const respForms = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica!.id)}`,
-          { headers: getAuthHeaders(), cache: 'no-store' }
-        )
-        const json = await respForms.json().catch(() => [])
-        const forms = Array.isArray(json) ? json : (json?.data || [])
-
-        // elegimos el activo con mayor prioridad / versión / publicado_en
-        forms.sort((a: any, b: any) =>
-          (Number(b.prioridad) || 0) - (Number(a.prioridad) || 0) ||
-          (Number(b.version) || 0)   - (Number(a.version) || 0)   ||
-          new Date(b.publicado_en || 0).getTime() - new Date(a.publicado_en || 0).getTime()
-        )
-        const firstActive = forms.find((f: any) => f.activo)
-        if (firstActive?.slug) slug = String(firstActive.slug)
-      } catch (_) {
-        // si falla, usamos 'default'
-      }
+    const slug = (selectedSlug?.trim() || 'default')
     
     const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -455,6 +473,38 @@ export default function RegistroPaciente() {
                   {t('pacientes.avanzado_vacio')}
                 </div>
               )}
+            </div>
+
+            {/* FORMULARIO A ENVIAR */}
+            <div className="relative">
+              <label className="block mb-2 text-sm text-gray-600">
+                Formulario a enviar
+              </label>
+              <select
+                value={selectedSlug}
+                onChange={(e) => setSelectedSlug(e.target.value)}
+                disabled={loadingForms || formularios.length === 0}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+              >
+                {loadingForms && <option>Cargando formularios…</option>}
+                {!loadingForms && formularios.length === 0 && (
+                  <option value="">No hay formularios activos</option>
+                )}
+                {!loadingForms && formularios.length > 0 && (
+                  <>
+                    {/* opción vacía para obligar elección, si no seteaste default */}
+                    {/* <option value="">Seleccionar…</option> */}
+                    {formularios.map((f: any) => (
+                      <option key={f.id} value={f.slug}>
+                        {f.nombre ? `${f.nombre} (${f.slug})` : f.slug}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Este será el link que se enviará por WhatsApp y se mostrará al guardar.
+              </p>
             </div>
             {/* 
             👨‍⚕️ Datos del médico responsable
