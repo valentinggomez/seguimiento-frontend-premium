@@ -243,9 +243,9 @@ export default function ResponderPage() {
   const fetchPuedeEnviar = useCallback(async () => {
     try {
       setCheckingCooldown(true)
-      const qs = new URLSearchParams({ paciente_id: String(id), form_slug: formSlug })
+      const qs = new URLSearchParams({ paciente_id: String(id) }) // sacá form_slug aquí
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/responder-voz/puede-enviar?${qs.toString()}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/respuestas/puede-enviar?${qs.toString()}`,
         { headers: getAuthHeaders() }
       )
       const data = await res.json()
@@ -307,6 +307,7 @@ export default function ResponderPage() {
         const payload = {
           paciente_id: id,
           form_slug: formSlug,
+          formulario_id: formulario?.id ?? null, 
           respuestas: form,
           metadatos: {
             canal: 'web',
@@ -334,6 +335,7 @@ export default function ResponderPage() {
         const fd = new FormData()
         fd.append('paciente_id', String(id))
         fd.append('form_slug', formSlug)
+        if (formulario?.id) fd.append('formulario_id', String(formulario.id))
         const ext = audioBlob?.type.includes('mp4') ? 'm4a'
                   : audioBlob?.type.includes('ogg') ? 'ogg'
                   : 'webm'
