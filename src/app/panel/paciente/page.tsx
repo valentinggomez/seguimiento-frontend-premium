@@ -65,40 +65,8 @@ export default function RegistroPaciente() {
       return
     }
 
-    const pad = (n: number) => String(n).padStart(2, '0')
-
-    const paciente = {
-      ...form,
-      // números
-      edad: form.edad !== '' ? Number(form.edad) : null,
-      dni: form.dni !== '' ? Number(form.dni) : null,
-      peso: form.peso ? Number(String(form.peso).replace(',', '.')) : null,
-      altura: form.altura ? Number(String(form.altura).replace(',', '.')) : null,
-      imc: form.imc ? Number(String(form.imc).replace(',', '.')) : null,
-      // fecha YYYY-MM-DD con cero a la izquierda
-      fecha_cirugia: `${anio}-${pad(mes)}-${pad(dia)}`,
-      clinica_id: clinica.id,
-    }
-    console.log("📦 Objeto final paciente:", paciente)
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(paciente)
-      })
-
-      const resultado = await res.json();
-
-      if (!res.ok) {
-        setMensajeError(t('pacientes.errores.error_guardado'))
-        console.error(resultado.error)
-        return
-      }
-
-      const nuevoId = resultado.data?.id || ''
-
-      // 🔎 traer formularios de la clínica para elegir el slug a usar
-      let slug = 'default'
+    // 🔎 traer formularios de la clínica para elegir el slug a usar
+    let slug = 'default'
       try {
         const respForms = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica!.id)}`,
@@ -118,6 +86,39 @@ export default function RegistroPaciente() {
       } catch (_) {
         // si falla, usamos 'default'
       }
+    
+    const pad = (n: number) => String(n).padStart(2, '0')
+
+    const paciente = {
+      ...form,
+      // números
+      edad: form.edad !== '' ? Number(form.edad) : null,
+      dni: form.dni !== '' ? Number(form.dni) : null,
+      peso: form.peso ? Number(String(form.peso).replace(',', '.')) : null,
+      altura: form.altura ? Number(String(form.altura).replace(',', '.')) : null,
+      imc: form.imc ? Number(String(form.imc).replace(',', '.')) : null,
+      // fecha YYYY-MM-DD con cero a la izquierda
+      fecha_cirugia: `${anio}-${pad(mes)}-${pad(dia)}`,
+      clinica_id: clinica.id,
+      form_slug_inicial: slug
+    }
+    console.log("📦 Objeto final paciente:", paciente)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(paciente)
+      })
+
+      const resultado = await res.json();
+
+      if (!res.ok) {
+        setMensajeError(t('pacientes.errores.error_guardado'))
+        console.error(resultado.error)
+        return
+      }
+
+      const nuevoId = resultado.data?.id || ''
 
       // 🌐 base del link: dominio de la clínica si existe; si no, el origin actual
       const dominio = (clinica?.dominio && clinica.dominio.trim())
