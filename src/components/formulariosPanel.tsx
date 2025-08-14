@@ -74,6 +74,48 @@ type Formulario = {
 const DEFAULT_REGLAS = { condiciones: [] as any[] }
 const DEFAULT_CAMPOS = { preguntas: [] as any[] }
 
+// 👇 Pegar arriba, con los otros helpers
+const OPERADORES = new Set(['>','>=','<','<=','==','!=','in','contains','between']);
+const NIVELES = new Set(['verde','amarillo','rojo']);
+
+function lintReglas(input: any): { condiciones: any[] } {
+  const out: any[] = [];
+  const list = Array.isArray(input?.condiciones) ? input.condiciones : [];
+  for (const raw of list) {
+    if (!raw || typeof raw !== 'object') continue;
+
+    const campo = String(raw.campo ?? '').trim();
+    let operador = String(raw.operador ?? '').trim().toLowerCase();
+    let nivel = String(raw.nivel ?? 'verde').trim().toLowerCase();
+    const valor = raw.valor;
+
+    if (!campo) continue;
+    if (!OPERADORES.has(operador)) operador = '==';
+    if (!NIVELES.has(nivel)) nivel = 'verde';
+
+    const r: any = { campo, operador, nivel };
+
+    // valor: permitimos string, número, array, boolean. Si viene vacío, skip.
+    if (Array.isArray(valor)) r.valor = valor;
+    else if (typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean') r.valor = valor;
+    else if (valor != null) r.valor = valor;
+
+    // color/sugerencia opcionales
+    if (raw.color && typeof raw.color === 'string') r.color = raw.color.trim();
+    if (raw.sugerencia && String(raw.sugerencia).trim()) r.sugerencia = String(raw.sugerencia).trim();
+
+    // Aislamiento por formulario (opcional)
+    if (raw._form_slug) r._form_slug = String(raw._form_slug).trim();
+    if (raw._form_id != null) r._form_id = String(raw._form_id).trim();
+
+    // Debe tener al menos campo + operador + valor definido
+    if (!('valor' in r)) continue;
+
+    out.push(r);
+  }
+  return { condiciones: out };
+}
+
 export default function FormulariosPanel({
   clinicaId,
   clinicaHost,
@@ -152,25 +194,34 @@ export default function FormulariosPanel({
     if (!nombre) errs.push("El nombre es obligatorio.")
     if (!slug) errs.push("El slug es obligatorio.")
 
-    // Offsets
-    const offsets = uniqSorted((edit.offsets_horas || []).filter(isValidOffset)) as number[]
+    // Versión mínima = 1
+    const version = Math.max(1, Number(edit.version || 1));
+
+    // Offsets: si alguien deja "" en el input y toca "Agregar", Number('') = 0.
+    // Si NO querés permitir 0, filtralo acá (o dejalo permitido).
+    const offsets = uniqSorted((edit.offsets_horas || [])
+    .filter(isValidOffset)               // 0–720
+    // .filter(n => n !== 0)            // 👈 descomentar si NO querés 0h
+    ) as number[];
     if (offsets.length === 0) errs.push("Agregá al menos un recordatorio en horas (+N).")
 
     // JSON errors vivos
     if (camposErr || reglasErr || metaErr) errs.push("Hay JSON inválido: corregí los errores marcados.")
 
-    // Validación fuerte de reglas_alertas (texto del textarea)
-    let reglasParsed: any = null
+    // Validación y normalización de reglas_alertas
+    let reglasParsed: any = null;
     try {
-      reglasParsed = JSON.parse(reglasText || "{}")
-      if (!reglasParsed || typeof reglasParsed !== "object" || !Array.isArray(reglasParsed.condiciones)) {
-        errs.push("Las reglas deben tener formato { condiciones: [] }.")
-      } else {
-        // normalizar por las dudas (nos quedamos SOLO con condiciones)
-        reglasParsed = { condiciones: reglasParsed.condiciones }
-      }
+    const parsed = JSON.parse(reglasText || "{}");
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.condiciones)) {
+        errs.push("Las reglas deben tener formato { condiciones: [] }.");
+    } else {
+        reglasParsed = lintReglas(parsed); // 👈 normalización robusta
+        if (reglasParsed.condiciones.length === 0) {
+        toast.message("Aviso", { description: "No hay condiciones válidas en las reglas (se guardará vacío)." });
+        }
+    }
     } catch {
-      errs.push("JSON de reglas inválido.")
+    errs.push("JSON de reglas inválido.");
     }
 
     // Slug único local
@@ -186,6 +237,7 @@ export default function FormulariosPanel({
       ...edit,
       nombre,
       slug,
+      version,
       offsets_horas: offsets,
       clinica_id: clinicaId,
       hoja_destino: (edit as any).hoja_destino?.toString().trim() || null,

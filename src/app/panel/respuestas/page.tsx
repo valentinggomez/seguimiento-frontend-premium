@@ -25,6 +25,8 @@ interface ReglaClinica {
   nivel: NivelAlerta;
   color?: string;
   sugerencia?: string;
+  _form_slug?: string | null;
+  _form_id?: string | null;  
 }
 interface ReglasClinicas { condiciones: ReglaClinica[] }
 
@@ -170,7 +172,7 @@ export default function PanelRespuestas() {
             // reglas del formulario
             const rgs = f?.reglas_alertas?.condiciones;
             if (Array.isArray(rgs) && rgs.length) {
-              condForms.push(...rgs);
+              condForms.push(...rgs.map((rg:any) => ({ ...rg, _form_slug: f?.slug ?? null, _form_id: f?.id ?? null })));
               // Si querés aislar por formulario:
               // condForms.push(...rgs.map((rg:any)=>({ ...rg, _form_slug: f.slug })));
             }
@@ -275,24 +277,24 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
-    // 1) si el backend mandó un color explícito, lo respetamos
-    let raw: any = r.campos_personalizados
+    // 1) si hay reglas cargadas en el panel, SIEMPRE usar la evaluación del front
+    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
+      const { color } = evaluarRespuesta(r, reglasClinicas); // usa color de la regla más severa o default
+      return color;
+    }
+
+    // 2) si no hay reglas en el front, respetar color enviado por backend (si existe)
+    let raw: any = r.campos_personalizados;
     if (typeof raw === 'string') {
       try { raw = JSON.parse(raw) } catch { raw = null }
     }
     const colorBackend: string | undefined =
-      raw && typeof raw === 'object' ? (raw as any)._color_alerta : undefined
-    if (colorBackend) return colorBackend
+      raw && typeof raw === 'object' ? (raw as any)._color_alerta : undefined;
+    if (colorBackend) return colorBackend;
 
-    // 2) si hay reglas cargadas en el panel, usamos el nivel calculado en front
-    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
-      const { nivel } = calcularSugerencias(r) // 'verde' | 'amarillo' | 'rojo'
-      return NIVEL_COLOR_DEF[nivel] || NIVEL_COLOR_DEF.verde
-    }
-
-    // 3) fallback al nivel que venga del backend
-    const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo'
-    return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde
+    // 3) último recurso: nivel_alerta del backend
+    const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo';
+    return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde;
   }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
@@ -406,39 +408,72 @@ export default function PanelRespuestas() {
     walk(source);
     return winner;
   }
+
+  // === Identificación de formulario origen en la respuesta ===
+  function getFormRefFromRespuesta(r: Respuesta) {
+    let cp: any = r.campos_personalizados;
+    if (typeof cp === 'string') { try { cp = JSON.parse(cp) } catch { cp = null } }
+
+    const slug =
+      (r as any).formulario_slug ?? (r as any).form_slug ??
+      cp?.['🧾 Formulario Slug'] ?? cp?.form_slug ?? null;
+
+    const id =
+      (r as any).formulario_id ?? (r as any).form_id ??
+      cp?.['🧾 Formulario ID'] ?? cp?.form_id ?? null;
+
+    return {
+      slug: slug ? String(slug) : null,
+      id: id ? String(id) : null,
+    };
+  }
+
   const parseBetween = (s: string) => {
-    const [a, b] = (s || '').split(',').map(v => v.trim())
+    const [a, b] = (s || '').split(',').map(v => v.trim().replace(',', '.'))
     const n1 = Number(a), n2 = Number(b)
     return [Math.min(n1, n2), Math.max(n1, n2)]
   }
 
-  const cumple = (valorCampo: any, operador: Operador, valorRegla: any) => {
-    // normalizar
-    const v = valorCampo
-    const r = valorRegla
+  const toNum = (x: any) => {
+    const s = String(x ?? '').trim().replace(',', '.')
+    const n = Number(s)
+    return Number.isFinite(n) ? n : NaN
+  }
 
-    const nV = typeof v === 'number' ? v : Number(v)
-    const nR = typeof r === 'number' ? r : Number(r)
+  const cumple = (valorCampo: any, operador: Operador, valorRegla: any) => {
+    const vNum = toNum(valorCampo)
+    const rNum = toNum(valorRegla)
+    const vStr = String(valorCampo ?? '').trim().toLowerCase()
+    const rStr = String(valorRegla ?? '').trim().toLowerCase()
 
     switch (operador) {
-      case '>':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >  nR
-      case '>=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV >= nR
-      case '<':  return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <  nR
-      case '<=': return !Number.isNaN(nV) && !Number.isNaN(nR) && nV <= nR
-      case '==': return String(v).trim().toLowerCase() === String(r).trim().toLowerCase()
-      case '!=': return String(v).trim().toLowerCase() !== String(r).trim().toLowerCase()
+      case '>':  return Number.isFinite(vNum) && Number.isFinite(rNum) && vNum >  rNum
+      case '>=': return Number.isFinite(vNum) && Number.isFinite(rNum) && vNum >= rNum
+      case '<':  return Number.isFinite(vNum) && Number.isFinite(rNum) && vNum <  rNum
+      case '<=': return Number.isFinite(vNum) && Number.isFinite(rNum) && vNum <= rNum
+      case '==': {
+        if (Number.isFinite(vNum) && Number.isFinite(rNum)) return vNum === rNum
+        return vStr === rStr
+      }
+      case '!=': {
+        if (Number.isFinite(vNum) && Number.isFinite(rNum)) return vNum !== rNum
+        return vStr !== rStr
+      }
       case 'contains':
-        return String(v ?? '').toLowerCase().includes(String(r ?? '').toLowerCase())
+        return vStr.includes(rStr)
       case 'in': {
-        const opciones = String(r ?? '')
-          .split(/[,\|;]+/).map(x => x.trim().toLowerCase()).filter(Boolean)
-        return opciones.includes(String(v ?? '').trim().toLowerCase())
+        const opciones = String(valorRegla ?? '')
+          .split(/[,\|;]+/)
+          .map(x => x.trim().toLowerCase())
+          .filter(Boolean)
+        return opciones.includes(vStr)
       }
       case 'between': {
-        const [min, max] = parseBetween(String(r ?? ''))
-        return !Number.isNaN(nV) && nV >= min && nV <= max
+        const [min, max] = parseBetween(String(valorRegla ?? ''))
+        return Number.isFinite(vNum) && Number.isFinite(min) && Number.isFinite(max) && vNum >= min && vNum <= max
       }
-      default: return false
+      default:
+        return false
     }
   }
 
@@ -469,14 +504,49 @@ export default function PanelRespuestas() {
     const form   = getRespuestasFormulario(r)
     const dataset: Record<string, any> = { ...form, ...campos }
 
+    // ⛳ Fallbacks: si el campo no vino en form/campos, tomar del top-level
+    const fallbacks: Record<string, any> = {
+      dolor_6h: r.dolor_6h,
+      dolor_24h: r.dolor_24h,
+      nauseas: r.nausea ?? r.nauseas, // por si hay variantes
+      vomitos: r.vomitos,
+      somnolencia: r.somnolencia,
+      requiere_mas_medicacion: r.requiere_mas_medicacion ?? (r as any).mas_medicacion,
+      desperto_por_dolor: r.desperto_por_dolor ?? (r as any).desperto_dolor,
+      satisfaccion: r.satisfaccion,
+    }
+
+    for (const [k, v] of Object.entries(fallbacks)) {
+      if (dataset[k] === undefined || dataset[k] === null || dataset[k] === '') {
+        dataset[k] = v
+      }
+    }
+
+    // (opcional) clamp para métricas 0–10 si querés evitar basura como -49:
+    const clamp01 = (x: any) => {
+      const n = Number(String(x).replace(',', '.'))
+      return Number.isFinite(n) ? Math.min(10, Math.max(0, n)) : x
+    }
+    if (dataset.dolor_6h != null)   dataset.dolor_6h   = clamp01(dataset.dolor_6h)
+    if (dataset.dolor_24h != null)  dataset.dolor_24h  = clamp01(dataset.dolor_24h)
+    if (dataset.satisfaccion != null) dataset.satisfaccion = clamp01(dataset.satisfaccion)
+
     let nivelMax: 'verde'|'amarillo'|'rojo' = 'verde'
     let colorByRule: string | null = null
     const sugerenciasTmp: Array<{ texto: string; nivel: 'verde'|'amarillo'|'rojo' }> = []
     const hitRules: ReglaClinica[] = []
 
+    // Identificar formulario de la respuesta (si existe)
+    const { slug: respSlug, id: respId } = getFormRefFromRespuesta(r);
+
     for (const regla of (reglas?.condiciones || [])) {
-      if (!regla?.campo) continue
-      const valorCampo = dataset[regla.campo]
+      if (!regla?.campo) continue;
+
+      // ⛳ Aislar reglas al formulario origen si la regla viene marcada
+      if (regla._form_slug && respSlug && String(regla._form_slug) !== String(respSlug)) continue;
+      if (regla._form_id   && respId   && String(regla._form_id)   !== String(respId))   continue;
+
+      const valorCampo = dataset[regla.campo];
       if (valorCampo === undefined || valorCampo === null || valorCampo === '') continue
       if (cumple(valorCampo, regla.operador as Operador, regla.valor)) {
         const lv = (regla.nivel as any) || 'verde'
@@ -535,13 +605,17 @@ export default function PanelRespuestas() {
 
       <div className="flex flex-col gap-4">
         {Array.isArray(respuestas) && respuestas.map((r) => (
+        (() => {
+          const cardColor = getColorHex(r);
+          return (
+          
           <motion.div
             key={String(r.id)}
             layout
             className={`rounded-xl border p-4 shadow-sm ${modoEdicion ? '' : 'cursor-pointer'}`}
             style={{
-              borderColor: getColorHex(r),
-              backgroundColor: hexToRgba(getColorHex(r), 0.10),
+              borderColor: cardColor,
+              backgroundColor: hexToRgba(cardColor, 0.10),
             }}
             onClick={() => {
               if (!modoEdicion) toggleExpand(String(r.id))
@@ -565,9 +639,11 @@ export default function PanelRespuestas() {
                     }}
                   />
                 )}
+                
                 <h2 className="font-semibold text-[#663300] flex items-center gap-2">
                   📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
-                  </h2>
+                 </h2> 
+                  
 
                   <p className="text-sm text-gray-700">
                     {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
@@ -617,6 +693,22 @@ export default function PanelRespuestas() {
 
                     if (filas.length === 0 && !transcripcion && sintomasIA.length === 0) {
                       return <div className="text-gray-500 italic">{t('respuestas.sin_campos')}</div>
+                    }
+
+                    // ⛳ DEBUG (remover al cerrar el issue):
+                    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
+                      const debugEval = evaluarRespuesta(r, reglasClinicas)
+                      console.log('[DEBUG front regla]', String(r.id), {
+                        nivel: debugEval.nivel,
+                        color: debugEval.color,
+                        hit: debugEval.hitRules?.map(h => `${h.campo}:${h.operador}:${h.valor}`),
+                        keys: Object.keys({
+                          ...getRespuestasFormulario(r),
+                          ...getCamposPersonalizados(r),
+                          dolor_6h: r.dolor_6h,
+                          dolor_24h: r.dolor_24h,
+                        })
+                      })
                     }
 
                     return (
@@ -760,7 +852,9 @@ export default function PanelRespuestas() {
               </>
             )}
           </motion.div>
-        ))}
+          );
+        })()
+      ))}
       </div>
       {modoEdicion && seleccionadas.length > 0 && (
         <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-center space-y-3">
