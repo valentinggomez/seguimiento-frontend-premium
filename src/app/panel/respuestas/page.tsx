@@ -681,6 +681,7 @@ export default function PanelRespuestas() {
                       'sintomas_ia',
                       'respuesta_por_voz',
                       '_color_alerta',
+                      'form_slug','form_id','🧾 Formulario ID','🧾 Formulario Slug'
                     ]);
 
                     // primero lo del formulario (mantiene labels con emojis), luego “custom”
