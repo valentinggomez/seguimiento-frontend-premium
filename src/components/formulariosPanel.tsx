@@ -30,6 +30,28 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="text-sm font-semibold text-slate-700 mb-2">{children}</div>;
 }
 
+const DELAY_HINT = "Usá 6h, 90m, 2d o ISO-8601 (PT6H, PT90M)";
+
+function isValidDelayString(s: string) {
+  if (!s || typeof s !== "string") return false
+  const v = s.trim()
+  if (/^P/i.test(v)) {
+    // ISO básica PnDTnHnMnS (aceptamos PT6H, PT90M, P1DT2H...)
+    return /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.test(v.toUpperCase())
+  }
+  // atajos: 6h, 90m, 2d, 45s
+  return /^(\d+)\s*(ms|s|m|h|d)$/i.test(v)
+}
+
+function prettyProgramacion(p: ReglaProgramacion[] | undefined) {
+  if (!Array.isArray(p) || p.length === 0) return "(sin programación)"
+  return p.map(r => {
+    const canal = r.canal ? `/${r.canal}` : ""
+    const fs = r.form_slug ? ` → ${r.form_slug}` : ""
+    return `${r.tipo}:${r.delay}${canal}${fs}`
+  }).join(", ")
+}
+
 function Chip({
   children,
   onRemove,
@@ -55,6 +77,13 @@ function Chip({
   );
 }
 
+type ReglaProgramacion = {
+  tipo: 'offset'
+  delay: string          // '6h' | '90m' | 'PT6H' | '2d' ...
+  canal?: 'whatsapp' | 'sms' | 'email' | string
+  form_slug?: string     // si querés forzar que este offset use otro form
+}
+
 type Formulario = {
   id?: string | number
   clinica_id?: string
@@ -63,12 +92,12 @@ type Formulario = {
   activo: boolean
   prioridad: number
   version: number
-  offsets_horas?: number[]
-  campos: any                   // JSON
-  reglas_alertas: any           // JSON (DEBE ser { condiciones: [] })
-  meta: any                     // JSON
+  programacion?: ReglaProgramacion[]   // 👈 NUEVO (reemplaza offsets_horas)
+  campos: any
+  reglas_alertas: any
+  meta: any
   publicado_en?: string | null
-  hoja_destino?: string | null 
+  hoja_destino?: string | null
 }
 
 const DEFAULT_REGLAS = { condiciones: [] as any[] }
@@ -132,7 +161,6 @@ export default function FormulariosPanel({
   const [items, setItems] = useState<Formulario[]>([])
   const [open, setOpen] = useState(false)
   const [edit, setEdit] = useState<Formulario | null>(null)
-  const [newOffset, setNewOffset] = useState<string>("")
 
   // Errores live de JSON para bloquear guardado
   const [camposErr, setCamposErr] = useState<string>("")
@@ -160,17 +188,17 @@ export default function FormulariosPanel({
 
   const startCreate = () => {
     const nuevo: Formulario = {
-      nombre: "",
-      slug: "",
-      activo: true,
-      prioridad: 10,
-      version: 1,
-      offsets_horas: [6, 24, 48],
-      campos: DEFAULT_CAMPOS,
-      reglas_alertas: DEFAULT_REGLAS, // 👈 sin “sugerencias”
-      meta: {},
-      publicado_en: new Date().toISOString(),
-      hoja_destino: ""
+        nombre: "",
+        slug: "",
+        activo: true,
+        prioridad: 10,
+        version: 1,
+        programacion: [ { tipo: 'offset', delay: '6h', canal: 'whatsapp' } ], // 👈 por defecto
+        campos: DEFAULT_CAMPOS,
+        reglas_alertas: DEFAULT_REGLAS,
+        meta: {},
+        publicado_en: new Date().toISOString(),
+        hoja_destino: ""
     }
     setEdit(nuevo)
     setOpen(true)
@@ -197,13 +225,16 @@ export default function FormulariosPanel({
     // Versión mínima = 1
     const version = Math.max(1, Number(edit.version || 1));
 
-    // Offsets: si alguien deja "" en el input y toca "Agregar", Number('') = 0.
-    // Si NO querés permitir 0, filtralo acá (o dejalo permitido).
-    const offsets = uniqSorted((edit.offsets_horas || [])
-    .filter(isValidOffset)               // 0–720
-    // .filter(n => n !== 0)            // 👈 descomentar si NO querés 0h
-    ) as number[];
-    if (offsets.length === 0) errs.push("Agregá al menos un recordatorio en horas (+N).")
+    // Programación: al menos 1 regla válida
+    const prog = Array.isArray(edit.programacion) ? edit.programacion : []
+    const progValid = prog
+    .map(r => ({
+        tipo: 'offset' as const,
+        delay: String(r?.delay || '').trim(),
+        canal: r?.canal ? String(r.canal).trim() : undefined,
+        form_slug: r?.form_slug ? String(r.form_slug).trim() : undefined,
+    }))
+    .filter(r => isValidDelayString(r.delay))
 
     // JSON errors vivos
     if (camposErr || reglasErr || metaErr) errs.push("Hay JSON inválido: corregí los errores marcados.")
@@ -238,10 +269,10 @@ export default function FormulariosPanel({
       nombre,
       slug,
       version,
-      offsets_horas: offsets,
       clinica_id: clinicaId,
       hoja_destino: (edit as any).hoja_destino?.toString().trim() || null,
-      reglas_alertas: reglasParsed || DEFAULT_REGLAS, // 👈 garantizamos { condiciones: [] }
+      reglas_alertas: reglasParsed || DEFAULT_REGLAS,
+      programacion: progValid,               // 👈 NUEVO
     }
 
     const method = edit.id ? "PUT" : "POST"
@@ -259,7 +290,6 @@ export default function FormulariosPanel({
       toast.success("Formulario guardado")
       setOpen(false)
       setEdit(null)
-      setNewOffset("")
       await load()
     } else {
       const e = await res.json().catch(() => ({}))
@@ -313,9 +343,7 @@ export default function FormulariosPanel({
               <div className="font-medium">{f.nombre} <span className="text-xs text-gray-500">({f.slug})</span></div>
               <div className="text-xs text-gray-500">
                 v{f.version} · prioridad {f.prioridad}
-                {f.offsets_horas?.length
-                  ? <> · envíos: {uniqSorted(f.offsets_horas).map(n => `+${n}h`).join(", ")}</>
-                  : <> · (sin offsets configurados)</>}
+                <> · programación: {prettyProgramacion(f.programacion as ReglaProgramacion[])} </>
                 {(f as any).hoja_destino ? <> · hoja: “{(f as any).hoja_destino}”</> : null}
               </div>
             </div>
@@ -382,68 +410,98 @@ export default function FormulariosPanel({
                 </datalist>
               ) : null}
 
-              {/* Offsets */}
-              <div className="col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
-                <SectionTitle>Recordatorios (horas después del registro)</SectionTitle>
-
-                {/* Chips */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {(edit.offsets_horas || []).length > 0 ? (
-                    uniqSorted(edit.offsets_horas!).map((h) => (
-                      <Chip
-                        key={`off-${h}`}
-                        onRemove={() => upd("offsets_horas", removeOnceByValue(edit.offsets_horas || [], h))}
-                      >
-                        +{h}h
-                      </Chip>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400">Agregá valores como 6, 12, 24…</span>
-                  )}
-                </div>
-
-                {/* Agregar nuevo offset */}
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="p. ej., 6"
-                    className="max-w-[120px]"
-                    type="number"
-                    min={0}
-                    max={720}
-                    value={newOffset}
-                    onChange={(e) => setNewOffset(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return
-                      const val = Number(newOffset)
-                      if (isValidOffset(val)) {
-                        const next = uniqSorted([...(edit.offsets_horas || []), val])
-                        upd("offsets_horas", next)
-                        setNewOffset("")
-                      } else {
-                        toast.error("Valor inválido. Usá 0–720.")
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const val = Number(newOffset)
-                      if (isValidOffset(val)) {
-                        const next = uniqSorted([...(edit.offsets_horas || []), val])
-                        upd("offsets_horas", next)
-                        setNewOffset("")
-                      } else {
-                        toast.error("Valor inválido. Usá 0–720.")
-                      }
-                    }}
-                  >
-                    Agregar
-                  </Button>
-                </div>
-                <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                  Estos recordatorios se envían automáticamente a las <b>+N horas</b> desde el registro del paciente, sin importar día u hora.
+              {/* Programación por offset */}
+                <div className="col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm">
+                <SectionTitle>Programación de envíos</SectionTitle>
+                <p className="text-xs text-slate-500 mb-3">
+                    Definí reglas de envío. Para cada regla <b>offset</b>, usá un delay como <code>6h</code>, <code>90m</code>, <code>2d</code> o ISO <code>PT6H</code>. {DELAY_HINT}
                 </p>
-              </div>
+
+                <div className="space-y-2">
+                    {(edit.programacion || []).length === 0 && (
+                    <div className="text-xs text-slate-400">No hay reglas aún.</div>
+                    )}
+
+                    {(edit.programacion || []).map((r, i) => (
+                    <div key={`rule-${i}`} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center border rounded-lg p-2">
+                        <div className="text-xs">
+                        <div className="font-medium mb-1">Tipo</div>
+                        <Input value="offset" readOnly className="bg-slate-50"/>
+                        </div>
+
+                        <div className="text-xs">
+                        <div className="font-medium mb-1">Delay</div>
+                        <Input
+                            placeholder="p. ej., 6h o PT6H"
+                            value={r.delay || ""}
+                            onChange={(e) => {
+                            const next = [...(edit.programacion || [])]
+                            next[i] = { ...r, delay: e.target.value }
+                            upd("programacion" as any, next)
+                            }}
+                        />
+                        {r.delay && !isValidDelayString(r.delay) && (
+                            <div className="text-[11px] text-red-600 mt-1">Formato inválido. {DELAY_HINT}</div>
+                        )}
+                        </div>
+
+                        <div className="text-xs">
+                        <div className="font-medium mb-1">Canal (opcional)</div>
+                        <Input
+                            placeholder="whatsapp / sms / email"
+                            value={r.canal || ""}
+                            onChange={(e) => {
+                            const next = [...(edit.programacion || [])]
+                            const val = e.target.value.trim()
+                            next[i] = { ...r, canal: val || undefined }
+                            upd("programacion" as any, next)
+                            }}
+                        />
+                        </div>
+
+                        <div className="text-xs">
+                        <div className="font-medium mb-1">Form slug (opcional)</div>
+                        <Input
+                            placeholder="si querés forzar otro formulario"
+                            value={r.form_slug || ""}
+                            onChange={(e) => {
+                            const next = [...(edit.programacion || [])]
+                            const val = e.target.value.trim()
+                            next[i] = { ...r, form_slug: val || undefined }
+                            upd("programacion" as any, next)
+                            }}
+                        />
+                        </div>
+
+                        <div className="md:col-span-4 flex justify-end">
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                            const next = [...(edit.programacion || [])]
+                            next.splice(i, 1)
+                            upd("programacion" as any, next)
+                            }}
+                        >
+                            Eliminar regla
+                        </Button>
+                        </div>
+                    </div>
+                    ))}
+                </div>
+
+                <div className="mt-3">
+                    <Button
+                    variant="outline"
+                    onClick={() => {
+                        const next = [...(edit.programacion || []), { tipo: 'offset', delay: '6h', canal: 'whatsapp' } as ReglaProgramacion]
+                        upd("programacion" as any, next)
+                    }}
+                    >
+                    ➕ Agregar regla offset
+                    </Button>
+                </div>
+                </div>
 
               {/* Campos */}
               <div className="col-span-2">
