@@ -87,7 +87,7 @@ export default function RegistroPaciente() {
         body: JSON.stringify(paciente)
       })
 
-      const resultado = await res.json()
+      const resultado = await res.json();
 
       if (!res.ok) {
         setMensajeError(t('pacientes.errores.error_guardado'))
@@ -96,7 +96,37 @@ export default function RegistroPaciente() {
       }
 
       const nuevoId = resultado.data?.id || ''
-      setLink(`${window.location.origin}/responder/${nuevoId}`)
+
+      // 🔎 traer formularios de la clínica para elegir el slug a usar
+      let slug = 'default'
+      try {
+        const respForms = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica!.id)}`,
+          { headers: getAuthHeaders(), cache: 'no-store' }
+        )
+        const json = await respForms.json().catch(() => [])
+        const forms = Array.isArray(json) ? json : (json?.data || [])
+
+        // elegimos el activo con mayor prioridad / versión / publicado_en
+        forms.sort((a: any, b: any) =>
+          (Number(b.prioridad) || 0) - (Number(a.prioridad) || 0) ||
+          (Number(b.version) || 0)   - (Number(a.version) || 0)   ||
+          new Date(b.publicado_en || 0).getTime() - new Date(a.publicado_en || 0).getTime()
+        )
+        const firstActive = forms.find((f: any) => f.activo)
+        if (firstActive?.slug) slug = String(firstActive.slug)
+      } catch (_) {
+        // si falla, usamos 'default'
+      }
+
+      // 🌐 base del link: dominio de la clínica si existe; si no, el origin actual
+      const dominio = (clinica?.dominio && clinica.dominio.trim())
+        ? (clinica.dominio.startsWith('http') ? clinica.dominio : `https://${clinica.dominio}`)
+        : window.location.origin
+
+      // ✅ link nuevo con slug
+      const url = `${dominio}/responder/${nuevoId}?f=${encodeURIComponent(slug)}`
+      setLink(url)
       setEnviado(true)
     } catch (err) {
       console.error(err)
