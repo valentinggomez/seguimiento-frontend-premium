@@ -275,6 +275,9 @@ export default function PanelRespuestas() {
     rojo: '#EF4444',
   }
 
+  const colorToNivel = (c?: string): 'verde'|'amarillo'|'rojo' =>
+    c === '#EF4444' ? 'rojo' : c === '#F59E0B' ? 'amarillo' : 'verde';
+
   function hexToRgba(hex: string, alpha = 0.12) {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
     if (!m) return `rgba(16,185,129,${alpha})` // fallback verde
@@ -285,23 +288,46 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
-    // 1) si hay reglas cargadas en el panel, SIEMPRE usar la evaluación del front
-    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
-      const { color } = evaluarRespuesta(r, reglasClinicas); // usa color de la regla más severa o default
-      return color;
-    }
-
-    // 2) si no hay reglas en el front, respetar color enviado por backend (si existe)
+    // --- Backend: nivel/color ---
     let raw: any = r.campos_personalizados;
-    if (typeof raw === 'string') {
-      try { raw = JSON.parse(raw) } catch { raw = null }
-    }
-    const colorBackend: string | undefined =
-      raw && typeof raw === 'object' ? (raw as any)._color_alerta : undefined;
-    if (colorBackend) return colorBackend;
+    if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = null } }
 
-    // 3) último recurso: nivel_alerta del backend
-    const baseNivel = (r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo';
+    const beColor: string | undefined =
+      raw && typeof raw === 'object' ? raw._color_alerta : (r as any).color_alerta;
+
+    const beNivel = (r.nivel_alerta
+      ? String(r.nivel_alerta).toLowerCase().trim()
+      : (beColor ? colorToNivel(beColor) : '')
+    ) as 'verde'|'amarillo'|'rojo'|''
+
+    const beColorFinal: string | undefined =
+      beColor || (beNivel ? NIVEL_COLOR_DEF[beNivel] : undefined);
+
+    // --- Front (reglas del panel) ---
+    let frNivel: 'verde'|'amarillo'|'rojo'|undefined;
+    let frColor: string | undefined;
+
+    if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
+      const evalFront = evaluarRespuesta(r, reglasClinicas);
+      frNivel = evalFront.nivel;
+      frColor = evalFront.color;
+    }
+
+    // --- Resolución: nunca bajar severidad respecto al backend ---
+    if (beNivel && frNivel) {
+      return (frColor && (frNivel === 'rojo' && beNivel !== 'rojo')) ? frColor
+          : (frNivel === 'amarillo' && beNivel === 'verde') ? (frColor || NIVEL_COLOR_DEF.amarillo)
+          : (beColorFinal || frColor || NIVEL_COLOR_DEF.verde);
+    }
+
+    // Si solo hay backend
+    if (beColorFinal) return beColorFinal;
+
+    // Si solo hay front
+    if (frColor) return frColor;
+
+    // Fallback final: usar nivel_alerta si vino, o verde
+    const baseNivel = (String(r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo');
     return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde;
   }
 
