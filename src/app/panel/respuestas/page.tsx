@@ -14,6 +14,14 @@ const toYesNo = (v: any) => {
   return v ?? '—'
 }
 
+// Convierte "nombre_medico" -> "Nombre Medico" SOLO para mostrar
+const pretty = (s: string) =>
+  String(s || '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, m => m.toUpperCase());
+
 type NivelAlerta = 'verde' | 'amarillo' | 'rojo';
 type Operador = '>'|'>='|'<'|'<='|'=='|'!='|'in'|'contains'|'between';
 
@@ -342,9 +350,20 @@ export default function PanelRespuestas() {
           }
           return out;
         }
-        const ocultos = new Set(['clinica_id', 'campos_personalizados']);
+
+        // ⛔ también ocultamos internos acá (antes solo se ocultaban en campos_personalizados)
+        const OCULTOS_FORM = new Set([
+          'clinica_id','campos_personalizados','respuestas','respuestas_formulario',
+          'formulario','camposExtra','campos_extra','respuesta_por_voz'
+        ]);
+
         const limpio: Record<string, any> = {};
-        for (const k of Object.keys(input)) if (!ocultos.has(k)) limpio[k] = (input as any)[k];
+        for (const k of Object.keys(input)) {
+          if (k.startsWith('_')) continue;              // _meta, _formulario_*, _sugerencias, etc.
+          if (k.startsWith('meta.')) continue;          // meta.canal, meta.ua, meta.enviado_en
+          if (OCULTOS_FORM.has(k)) continue;
+          limpio[k] = (input as any)[k];
+        }
         return limpio;
       };
 
@@ -687,7 +706,26 @@ export default function PanelRespuestas() {
                     // primero lo del formulario (mantiene labels con emojis), luego “custom”
                     const paresForm   = Object.entries(form).filter(([k]) => !HIDDEN.has(k))
                     const paresCustom = Object.entries(campos).filter(([k]) => !HIDDEN.has(k))
-                    const filas = [...paresForm, ...paresCustom]
+
+                    // 🔗 Unimos y preparamos filas con label visible:
+                    // - Si el campo coincide con un name de formulario, usamos ese labelMap (con emoji si corresponde)
+                    // - Si no, mostramos pretty(key) para sacar guiones bajos y capitalizar
+                    const merged = [...paresForm, ...paresCustom];
+                    const filasVisibles: Array<{key:string; label:string; valor:any}> = [];
+
+                    for (const [k, v] of merged) {
+                      const raw = String(k).trim();
+                      const labelVisible = labelMap[raw] ?? raw;     // respeta labels con emoji si existen
+                      const finalLabel   = labelMap[raw] ? labelVisible : pretty(labelVisible);
+                      filasVisibles.push({ key: raw, label: finalLabel, valor: v });
+                    }
+
+                    // 🧽 Deduplicar por label visible (si vino key crudo y label con emoji, mostramos una sola vez)
+                    const porLabel = new Map<string, {key:string; label:string; valor:any}>();
+                    for (const item of filasVisibles) {
+                      if (!porLabel.has(item.label)) porLabel.set(item.label, item);
+                    }
+                    const filas = Array.from(porLabel.values());
 
                     const transcripcion = extraerTranscripcion(r, campos)
                     const sintomasIA    = extraerSintomas(r, campos)
@@ -716,16 +754,15 @@ export default function PanelRespuestas() {
                       <>
                         {/* 🧾 Dos columnas prolijas */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
-                          {filas.map(([label, valor]) => (
-                            <div key={String(label)} className="text-[15px] leading-6">
+                          {filas.map(({ key, label, valor }) => (
+                            <div key={String(key)} className="text-[15px] leading-6">
                               <span className="font-semibold text-slate-800">
-                                {labelMap[String(label)] ?? String(label).trim()}
-                                {(labelMap[String(label)] ?? String(label).trim()).endsWith('?') ? '' : ':'}
+                                {label}{label.endsWith('?') ? '' : ':'}
                               </span>{' '}
                               <span className="text-slate-900">
                                 {typeof valor === 'object' && valor !== null
                                   ? <code className="text-xs">{JSON.stringify(valor)}</code>
-                                  : toYesNo(valor)} 
+                                  : toYesNo(valor)}
                               </span>
                             </div>
                           ))}
