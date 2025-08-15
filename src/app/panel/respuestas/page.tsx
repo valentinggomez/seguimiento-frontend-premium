@@ -767,36 +767,6 @@ export default function PanelRespuestas() {
                             </div>
                           ))}
                         </div>
-
-                        {/* 🗣 Transcripción por voz (si hay) */}
-                        {transcripcion && (
-                          <div className="bg-white rounded-2xl border border-blue-200 p-5 mt-5 shadow-sm">
-                            <div className="flex items-center gap-2 text-blue-900 mb-2">
-                              <span className="text-xl">🗣️</span>
-                              <h3 className="font-semibold">{t('respuestas.transcripcion_voz')}</h3>
-                            </div>
-                            <blockquote className="text-slate-800 italic border-l-4 border-blue-400 pl-4 whitespace-pre-wrap">
-                              {transcripcion}
-                            </blockquote>
-                          </div>
-                        )}
-
-                        {/* 🧬 Síntomas IA (chips) */}
-                        {sintomasIA.length > 0 && (
-                          <div className="bg-white rounded-2xl border border-slate-200 p-5 mt-5 shadow-sm">
-                            <div className="flex items-center gap-2 text-slate-900 mb-2">
-                              <span className="text-xl">🧬</span>
-                              <h3 className="font-semibold">{t('respuestas.sintomas_detectados_ia')}</h3>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {sintomasIA.map((tag, i) => (
-                                <span key={i} className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </>
                     )
                   })()}
