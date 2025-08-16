@@ -7,6 +7,7 @@ import { useSonidoNotificacion } from '@/hooks/useSonidoNotificacion'
 import { toast } from 'sonner'
 import { MessageCircle } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
+import { useRouter } from 'next/navigation'
 
 const now = () => Date.now()
 
@@ -18,10 +19,18 @@ const makeMsgId = (m: any) =>
 export default function GlobalSSEListener() {
   const { t } = useTranslation()
   const { reproducir, desbloquear } = useSonidoNotificacion({ cooldownMs: 2500 })
+  const router = useRouter()
 
   const lastUserClickAtRef = useRef<number>(0)
   const lastSoundAtRef = useRef<number>(0)
   const seenToastIdsRef = useRef<Set<string>>(new Set())
+
+  // 🔹 (1) Anti-doble montaje en dev/StrictMode
+  const mountedRef = useRef(false) // <-- ADDED
+  useEffect(() => {                // <-- ADDED
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
 
   // Desbloqueo de audio en el primer gesto del usuario
   useEffect(() => {
@@ -34,9 +43,18 @@ export default function GlobalSSEListener() {
   }, [desbloquear])
 
   useSSE((data: any) => {
+    // ⛔️ Si el componente aún no está montado (doble render dev), salgo
+    if (!mountedRef.current) return // <-- ADDED
+
     if (data?.tipo !== 'nuevo_mensaje') return
 
     const eid = makeMsgId(data)
+
+    // 🔹 (3) Evitar que el Set crezca infinito
+    if (seenToastIdsRef.current.size > 1000) {     // <-- ADDED
+      seenToastIdsRef.current = new Set()          // <-- ADDED
+    }                                              // <-- ADDED
+
     if (seenToastIdsRef.current.has(eid)) return
     seenToastIdsRef.current.add(eid)
 
@@ -53,6 +71,11 @@ export default function GlobalSSEListener() {
       lastSoundAtRef.current = now()
     }
 
+    // 🔹 (2) Elipsis solo si hace falta
+    const previewRaw = String(data?.mensaje || '') // <-- ADDED
+    const preview =                                // <-- ADDED
+      previewRaw.length > 80 ? `${previewRaw.slice(0, 80)}…` : previewRaw
+
     // Toast "bonito" y accionable
     toast.custom((id) => (
       <div className="flex items-start gap-3 p-4 bg-white dark:bg-slate-900 shadow-lg rounded-2xl border border-slate-200 dark:border-slate-700 w-[340px]">
@@ -66,13 +89,13 @@ export default function GlobalSSEListener() {
           </p>
           <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
             <strong>{data?.nombre || t?.('paciente.desconocido') || 'Paciente'}</strong>:{' '}
-            {(data?.mensaje || '').slice(0, 80)}…
+            {preview /* <-- reemplaza al slice fijo */}
           </p>
 
           <div className="mt-3 flex gap-2">
             <button
               onClick={() => {
-                window.location.href = '/panel/interacciones'
+                router.push('/panel/interacciones')
                 toast.dismiss(id)
               }}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-full transition"

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 import {
   Tabs,
@@ -29,30 +29,23 @@ type Interaccion = {
 const makeMsgId = (m: { paciente_id?: string; telefono?: string; mensaje?: string; fecha?: string }) =>
   `${m?.paciente_id || ''}|${m?.telefono || ''}|${(m?.mensaje || '').slice(0,120)}|${m?.fecha || ''}`;
 
-
 function agruparPorTelefono(data: Interaccion[]) {
   const agrupadas: Record<string, Interaccion[]> = {}
-
   data.forEach((item) => {
-    if (!agrupadas[item.telefono]) {
-      agrupadas[item.telefono] = []
-    }
+    if (!agrupadas[item.telefono]) agrupadas[item.telefono] = []
     agrupadas[item.telefono].push(item)
   })
-
   return agrupadas
 }
 
 function getAlertaGlobal(mensajes: Interaccion[]): 'rojo' | 'amarillo' | 'verde' {
   const manual = mensajes.find((m) => m.alerta_manual)
   if (manual) return manual.alerta_manual as 'rojo' | 'amarillo' | 'verde'
-
   const niveles = mensajes.map((m) => m.nivel_alerta)
   if (niveles.includes('rojo')) return 'rojo'
   if (niveles.includes('amarillo')) return 'amarillo'
   return 'verde'
 }
-
 
 export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
@@ -63,26 +56,24 @@ export default function InteraccionesPage() {
   const [buscando, setBuscando] = useState(false)
   const [, setForceUpdate] = useState(0)
   const { t } = useTranslation()
-  // evita beeps duplicados y beeps por clicks del usuario
+
+  // evita duplicados por SSE
   const seenEventsRef = useRef<Set<string>>(new Set());
 
-  const fetchInteracciones = async () => {
+  const fetchInteracciones = useCallback(async () => {
     try {
       const headers = getAuthHeaders()
-
       const [resActivas, resArchivadas, resPacientes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones`, { headers }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/archivados`, { headers }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers }),
       ])
 
-      let dataActivas = []
-
+      let dataActivas: Interaccion[] = []
       if (resActivas.ok) {
         const json = await resActivas.json()
-
         if (Array.isArray(json)) {
-          dataActivas = json
+          dataActivas = json as Interaccion[]
         } else {
           console.error('❌ Error: respuesta inesperada en interacciones:', json)
           toast.error('Error al obtener interacciones activas')
@@ -91,7 +82,6 @@ export default function InteraccionesPage() {
         console.warn('❗️ Falló resActivas:', resActivas.status)
       }
 
-
       const dataArchivadas = await resArchivadas.json()
       const dataPacientes = await resPacientes.json()
 
@@ -99,35 +89,37 @@ export default function InteraccionesPage() {
       setArchivadas(dataArchivadas)
       setPacientes(dataPacientes.pacientes)
 
-      // 🧠 Firmas de mensajes conocidos (activas + archivadas) para evitar beeps/duplicados
+      // Firmas conocidas (activas + archivadas)
       const firmas = new Set<string>()
-      for (const m of dataActivas as Interaccion[]) firmas.add(makeMsgId(m))
+      for (const m of dataActivas) firmas.add(makeMsgId(m))
       for (const m of dataArchivadas as Interaccion[]) firmas.add(makeMsgId(m))
+      seenEventsRef.current = firmas
 
-      seenEventsRef.current = firmas               // usamos Set para lookups O(1)
-
-      setForceUpdate((prev) => prev + 1) // 🧠 Forzar re-render visual
+      setForceUpdate((prev) => prev + 1)
     } catch (err) {
       console.error('❌ Error al cargar interacciones:', err)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchInteracciones();
-  }, []);
+    fetchInteracciones()
+  }, [fetchInteracciones])
 
   useEffect(() => {
     const handler = (ev: any) => {
       const data = ev.detail
       if (data?.tipo !== 'nuevo_mensaje') return
 
-      const eid = data.id || `${data.paciente_id || ''}|${data.telefono || ''}|${(data.mensaje || '').slice(0,120)}|${data.fecha || ''}`
+      const eid = makeMsgId({
+        paciente_id: data.paciente_id,
+        telefono: data.telefono,
+        mensaje: data.mensaje,
+        fecha: data.fecha,
+      })
 
-      // evitar duplicados
       if (seenEventsRef.current.has(eid)) return
       seenEventsRef.current.add(eid)
 
-      // payload mínimo
       const ok =
         data?.paciente_id && data?.telefono && data?.mensaje &&
         data?.fecha && data?.nivel_alerta && data?.nombre
@@ -150,7 +142,7 @@ export default function InteraccionesPage() {
           return next.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
         })
       } else {
-        // si el evento vino incompleto, refrescá desde el backend
+        // evento incompleto → refrescá desde el backend
         fetchInteracciones()
       }
     }
@@ -170,10 +162,10 @@ export default function InteraccionesPage() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`, {
-        headers: getAuthHeaders(),
-      })
-
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`,
+        { headers: getAuthHeaders() }
+      )
       const data = await res.json()
       setResultados(data)
     } catch (err) {
@@ -184,7 +176,8 @@ export default function InteraccionesPage() {
   }
 
   const telefonosConMensajes = new Set(activas.map(i => i.telefono))
-  const pacientesSinMensajes = pacientes.filter(p => !telefonosConMensajes.has(p.telefono))
+  const pacientesSinMensajes = pacientes.filter((p: any) => !telefonosConMensajes.has(p.telefono))
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">
@@ -195,16 +188,13 @@ export default function InteraccionesPage() {
         <button
           onClick={async () => {
             const toastId = toast.loading(t('interacciones.exportando'))
-
             try {
               const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/exportar`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
               })
-
               const data = await res.json()
               toast.dismiss(toastId)
-
               if (data?.status === 'ok') {
                 toast.success(t('interacciones.exportado_ok'))
               } else if (data?.status === 'empty') {
@@ -234,6 +224,7 @@ export default function InteraccionesPage() {
           className="w-full border border-gray-300 rounded-xl px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
         />
       </div>
+
       {resultados.length > 0 && (
         <div className="mb-6 space-y-4">
           <h2 className="text-lg font-semibold">
@@ -257,6 +248,7 @@ export default function InteraccionesPage() {
           })}
         </div>
       )}
+
       <Tabs defaultValue="activas" className="w-full">
         <TabsList className="flex bg-white p-1 rounded-xl shadow-sm border w-fit mx-auto mb-6">
           <TabsTrigger
@@ -275,46 +267,41 @@ export default function InteraccionesPage() {
           </TabsTrigger>
         </TabsList>
 
-       <TabsContent value="activas" className="space-y-4">
-        {activas.length === 0 ? (
-          <p className="text-muted-foreground">{t('interacciones.sin_mensajes_activos')}</p>
-        ) : (
-          Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
-            mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-            const alertaGlobal = getAlertaGlobal(mensajes)
-            const { nombre, fecha } = mensajes[mensajes.length - 1]
-            
-            return (
-              <TarjetaInteraccionSupreme
-                key={index}
-                nombre={nombre}
-                telefono={telefono}
-                alerta={alertaGlobal}
-                fecha={new Date(fecha).toLocaleString()}
-                mensajes={mensajes}
-                paciente_id={mensajes[0].paciente_id}
-                onArchivar={async () => {
-                  await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
-                    {
-                      method: 'PATCH',
-                      headers: getAuthHeaders(),
-                      body: JSON.stringify({ archivado: true }),
-                    }
-                  )
-                  await fetchInteracciones() // ← refresca ambas pestañas
-                }}
+        <TabsContent value="activas" className="space-y-4">
+          {activas.length === 0 ? (
+            <p className="text-muted-foreground">{t('interacciones.sin_mensajes_activos')}</p>
+          ) : (
+            Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
+              mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+              const alertaGlobal = getAlertaGlobal(mensajes)
+              const { nombre, fecha } = mensajes[mensajes.length - 1]
+              return (
+                <TarjetaInteraccionSupreme
+                  key={index}
+                  nombre={nombre}
+                  telefono={telefono}
+                  alerta={alertaGlobal}
+                  fecha={new Date(fecha).toLocaleString()}
+                  mensajes={mensajes}
+                  paciente_id={mensajes[0].paciente_id}
+                  onArchivar={async () => {
+                    await fetch(
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
+                      {
+                        method: 'PATCH',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ archivado: true }),
+                      }
+                    )
+                    await fetchInteracciones()
+                  }}
                   onEscalarAlerta={async (color: 'rojo' | 'amarillo' | 'verde') => {
-                    console.log(`🟠 Intentando escalar alerta a: ${color}`)
-
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
                       method: 'PATCH',
                       headers: getAuthHeaders(),
                       body: JSON.stringify({ alerta_manual: color }),
                     })
-
                     const data = await res.json().catch(() => null)
-                    console.log('📬 Respuesta del backend:', res.status, data)
 
                     if (res.ok) {
                       toast.success(t('interacciones.alerta_escalada_ok').replace('{{color}}', color.toUpperCase()))
@@ -326,13 +313,12 @@ export default function InteraccionesPage() {
                         )
                       )
                     } else {
-                      alert(t('interacciones.alerta_escalada_error'))
+                      console.log('📬 Respuesta del backend:', res.status, data)
+                      toast.error(t('interacciones.alerta_escalada_error'))
                     }
                   }}
-
                   onReenviarFormulario={async () => {
                     const toastId = toast.loading(t('interacciones.reenviando_formulario'))
-
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                       method: 'POST',
                       headers: getAuthHeaders(),
@@ -341,9 +327,7 @@ export default function InteraccionesPage() {
                         telefono: telefono,
                       }),
                     })
-
                     toast.dismiss(toastId)
-
                     if (res.ok) {
                       toast.success(t('interacciones.formulario_reenviado'))
                       await fetchInteracciones()
@@ -355,7 +339,7 @@ export default function InteraccionesPage() {
               )
             })
           )}
-          {pacientesSinMensajes.map((paciente, index) => (
+          {pacientesSinMensajes.map((paciente: any, index: number) => (
             <TarjetaInteraccionSupreme
               key={`sinmsg-${index}`}
               nombre={paciente.nombre}
@@ -363,7 +347,7 @@ export default function InteraccionesPage() {
               alerta="verde"
               fecha={new Date(paciente.fecha).toLocaleString()}
               mensajes={[]}
-              paciente_id={paciente.id} 
+              paciente_id={paciente.id}
               onReenviarFormulario={async () => {
                 const toastId = toast.loading('⏳ Reenviando formulario...')
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
@@ -374,9 +358,7 @@ export default function InteraccionesPage() {
                     telefono: paciente.telefono,
                   }),
                 })
-
                 toast.dismiss(toastId)
-
                 if (res.ok) {
                   toast.success(t('interacciones.formulario_reenviado'))
                   await fetchInteracciones()
@@ -396,7 +378,6 @@ export default function InteraccionesPage() {
               mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
               const alertaGlobal = getAlertaGlobal(mensajes)
               const { nombre, fecha } = mensajes[mensajes.length - 1]
-
               return (
                 <TarjetaInteraccionSupreme
                   key={index}

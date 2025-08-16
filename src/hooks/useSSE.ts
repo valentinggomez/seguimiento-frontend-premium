@@ -31,6 +31,10 @@ export function useSSE(onEvento: (data: EventoSSE) => void, opts: Options = {}) 
   const backoffRef = useRef(backoffMs);
   const esRef = useRef<EventSource | null>(null);
 
+  // ✅ Mantener siempre la versión más reciente del callback
+  const onEventoRef = useRef(onEvento);
+  onEventoRef.current = onEvento;
+
   useEffect(() => {
     let stopped = false;
 
@@ -41,25 +45,31 @@ export function useSSE(onEvento: (data: EventoSSE) => void, opts: Options = {}) 
       return q ? `${base}?${q}` : base;
     };
 
-    const open = () => {
-      if (stopped) return;
+    const cleanOpen = () => {
+      // 🔒 Cerrar conexión previa antes de abrir otra
+      try { esRef.current?.close(); } catch {}
       const src = new EventSource(mkUrl());
       esRef.current = src;
 
       src.onopen = () => {
-        backoffRef.current = backoffMs; // 🔁 reset del backoff al reconectar OK
+        backoffRef.current = backoffMs; // reset del backoff al reconectar OK
         onOpen?.();
       };
 
       const handleMessage = (e: MessageEvent) => {
-        try { onEvento(JSON.parse(e.data)); } catch {}
+        // Ignorar keepalive/heartbeats vacíos
+        if (!e.data || e.data === 'null' || e.data === 'undefined') return;
+        try {
+          const parsed = JSON.parse(e.data);
+          onEventoRef.current(parsed);
+        } catch {
+          // No rompas si llega texto no JSON (algunos servidores envían pings)
+        }
       };
 
       if (Array.isArray(namedEvents) && namedEvents.length) {
         namedEvents.forEach((name) => {
-          src.addEventListener(name, (ev: MessageEvent) => {
-            handleMessage(ev);
-          });
+          src.addEventListener(name, (ev: MessageEvent) => handleMessage(ev));
         });
       } else {
         src.onmessage = handleMessage;
@@ -67,9 +77,9 @@ export function useSSE(onEvento: (data: EventoSSE) => void, opts: Options = {}) 
 
       src.onerror = (e) => {
         onError?.(e);
-        src.close();
+        try { src.close(); } catch {}
         if (!reconnect || stopped) return;
-        setTimeout(open, backoffRef.current);
+        setTimeout(cleanOpen, backoffRef.current);
         backoffRef.current = Math.min(backoffRef.current * 2, backoffMaxMs);
       };
     };
@@ -77,11 +87,12 @@ export function useSSE(onEvento: (data: EventoSSE) => void, opts: Options = {}) 
     const visibilityHandler = () => {
       if (!pauseWhenHidden) return;
       if (document.hidden) {
-        esRef.current?.close();
+        try { esRef.current?.close(); } catch {}
       } else {
-        if (!esRef.current || (esRef.current && (esRef.current as any).readyState === 2)) {
+        const readyState = (esRef.current as any)?.readyState;
+        if (!esRef.current || readyState === 2 /* CLOSED */) {
           backoffRef.current = backoffMs;
-          open();
+          cleanOpen();
         }
       }
     };
@@ -91,21 +102,27 @@ export function useSSE(onEvento: (data: EventoSSE) => void, opts: Options = {}) 
     }
 
     backoffRef.current = backoffMs;
-    open();
+    cleanOpen();
 
     return () => {
       stopped = true;
-      document.removeEventListener('visibilitychange', visibilityHandler);
-      esRef.current?.close();
+      if (pauseWhenHidden && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', visibilityHandler);
+      }
+      try { esRef.current?.close(); } catch {}
+      esRef.current = null;
     };
+  // Dependencias: evita reconectar por cambios irrelevantes
   }, [
-    onEvento,
-    JSON.stringify(params),
-    typeof url === 'function' ? undefined : url,
     reconnect,
     backoffMs,
     backoffMaxMs,
     pauseWhenHidden,
+    // cambios “reales” que deben reabrir conexión:
+    typeof url === 'function' ? 'fn' : url,
+    JSON.stringify(params || {}),
     JSON.stringify(namedEvents || []),
+    onOpen,
+    onError,
   ]);
 }
