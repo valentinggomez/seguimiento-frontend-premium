@@ -13,17 +13,22 @@ export function useSonidoNotificacion(opts: Options = {}) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const lastPlayAtRef = useRef<number>(0)
+  const unlockedRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return
     const audio = new Audio(src)
     audio.preload = 'auto'
     audio.volume = Math.max(0, Math.min(1, volume))
-    // asegura que se pueda reiniciar rápido
     audio.addEventListener('ended', () => {
       try { audio.currentTime = 0 } catch {}
     })
     audioRef.current = audio
+
+    // si cambia el src/volume, volvemos a requerir desbloqueo
+    unlockedRef.current = false
+    lastPlayAtRef.current = 0
+
     return () => {
       try {
         audio.pause()
@@ -37,34 +42,27 @@ export function useSonidoNotificacion(opts: Options = {}) {
   const reproducir = useCallback(() => {
     const audio = audioRef.current
     if (!audio) return
-
-    // no sonar si la pestaña no está visible
     if (typeof document !== 'undefined' && document.hidden) return
 
-    // cooldown anti-ráfaga
     const now = Date.now()
     if (now - lastPlayAtRef.current < cooldownMs) return
 
     try {
-      if (!Number.isNaN(audio.duration)) {
-        audio.currentTime = 0
-      }
+      if (!Number.isNaN(audio.duration)) audio.currentTime = 0
       const p = audio.play()
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {}) // silenciar errores de autoplay
-      }
+      if (p && typeof p.catch === 'function') p.catch(() => {})
       lastPlayAtRef.current = now
-    } catch (err) {
-      // no-op
-    }
+    } catch {}
   }, [cooldownMs])
 
-  // Desbloquea el audio en el primer gesto del usuario sin hacer ruido
+  // Desbloquea el audio en el primer gesto del usuario sin sonido
   const desbloquear = useCallback(() => {
+    if (unlockedRef.current) return
     const audio = audioRef.current
     if (!audio) return
     try {
-      // Intenta reproducir y corta inmediatamente
+      const prevMuted = audio.muted
+      audio.muted = true
       const p = audio.play()
       if (p && typeof p.then === 'function') {
         p.then(() => {
@@ -74,7 +72,17 @@ export function useSonidoNotificacion(opts: Options = {}) {
               audio.currentTime = 0
             }
           } catch {}
-        }).catch(() => {})
+          audio.muted = prevMuted
+          unlockedRef.current = true
+        }).catch(() => {
+          audio.muted = prevMuted
+        })
+      } else {
+        // navegadores antiguos
+        audio.pause()
+        audio.currentTime = 0
+        audio.muted = prevMuted
+        unlockedRef.current = true
       }
     } catch {}
   }, [])

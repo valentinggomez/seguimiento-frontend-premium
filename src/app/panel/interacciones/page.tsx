@@ -76,8 +76,11 @@ export default function InteraccionesPage() {
   // 🔊 Desbloquear audio en primer click y marcar interacciones de usuario
   useEffect(() => {
     const onClick = () => {
+      if (!lastUserClickAtRef.current) {
+        // Primera interacción del usuario → desbloqueo audio
+        desbloquear();
+      }
       lastUserClickAtRef.current = now();
-      desbloquear();
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
