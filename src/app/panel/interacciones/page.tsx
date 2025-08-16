@@ -9,9 +9,7 @@ import {
 } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
-import { useSonidoNotificacion } from '@/hooks/useSonidoNotificacion'
 import { useTranslation } from '@/i18n/useTranslation'
-import { useSSE } from '@/hooks/useSSE'
 
 type Interaccion = {
   paciente_id: string
@@ -30,8 +28,6 @@ type Interaccion = {
 // --- Anti-duplicados / control de sonido ---
 const makeMsgId = (m: { paciente_id?: string; telefono?: string; mensaje?: string; fecha?: string }) =>
   `${m?.paciente_id || ''}|${m?.telefono || ''}|${(m?.mensaje || '').slice(0,120)}|${m?.fecha || ''}`;
-
-const now = () => Date.now();
 
 
 function agruparPorTelefono(data: Interaccion[]) {
@@ -66,25 +62,9 @@ export default function InteraccionesPage() {
   const [resultados, setResultados] = useState<Interaccion[]>([])
   const [buscando, setBuscando] = useState(false)
   const [, setForceUpdate] = useState(0)
-  const { reproducir, desbloquear } = useSonidoNotificacion()
   const { t } = useTranslation()
   // evita beeps duplicados y beeps por clicks del usuario
   const seenEventsRef = useRef<Set<string>>(new Set());
-  const lastSoundAtRef = useRef<number>(0);
-  const lastUserClickAtRef = useRef<number>(0);
-
-  // 🔊 Desbloquear audio en primer click y marcar interacciones de usuario
-  useEffect(() => {
-    const onClick = () => {
-      if (!lastUserClickAtRef.current) {
-        // Primera interacción del usuario → desbloqueo audio
-        desbloquear();
-      }
-      lastUserClickAtRef.current = now();
-    };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
-  }, [desbloquear]);
 
   const fetchInteracciones = async () => {
     try {
@@ -136,87 +116,48 @@ export default function InteraccionesPage() {
     fetchInteracciones();
   }, []);
 
-  useSSE((data) => {
-    // esperamos { tipo: 'nuevo_mensaje', ...payload }
-    if (data?.tipo !== 'nuevo_mensaje') return;
+  useEffect(() => {
+    const handler = (ev: any) => {
+      const data = ev.detail
+      if (data?.tipo !== 'nuevo_mensaje') return
 
-    // id robusto (si el back manda data.id mejor)
-    const eid = (data as any).id || makeMsgId({
-      paciente_id: data.paciente_id,
-      telefono: (data as any).telefono, 
-      mensaje: (data as any).mensaje,
-      fecha: data.fecha,
-    });
+      const eid = data.id || `${data.paciente_id || ''}|${data.telefono || ''}|${(data.mensaje || '').slice(0,120)}|${data.fecha || ''}`
 
-    // ¿ya lo vimos?
-    if (seenEventsRef.current.has(eid)) return;
+      // evitar duplicados
+      if (seenEventsRef.current.has(eid)) return
+      seenEventsRef.current.add(eid)
 
-    // marcar como visto ANTES de actualizar estado (evita doble beep por race)
-    seenEventsRef.current.add(eid);
+      // payload mínimo
+      const ok =
+        data?.paciente_id && data?.telefono && data?.mensaje &&
+        data?.fecha && data?.nivel_alerta && data?.nombre
 
-    // payload mínimo para insertar sin refetch:
-    const tienePayloadMinimo =
-      data?.paciente_id &&
-      (data as any)?.telefono &&
-      (data as any)?.mensaje &&
-      data?.fecha &&
-      (data as any)?.nivel_alerta &&
-      (data as any)?.nombre;
-
-    if (tienePayloadMinimo) {
-      setActivas(prev => {
-        const next = [
-          {
-            paciente_id: data.paciente_id!,
-            nombre: (data as any).nombre,
-            telefono: (data as any).telefono,
-            mensaje: (data as any).mensaje,
-            nivel_alerta: (data as any).nivel_alerta,
-            alerta_manual: (data as any).alerta_manual ?? null,
-            respuesta_enviada: (data as any).respuesta_enviada ?? '',
-            fecha: data.fecha!,
-            score_ia: (data as any).score_ia,
-            nivel_alerta_ia: (data as any).nivel_alerta_ia,
-            tags_detectados: (data as any).tags_detectados || [],
-          },
-          ...prev,
-        ];
-        // ordenar descendente por fecha
-        return next.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      });
-    } else {
-      // si no alcanza la data, refrescamos todo
-      fetchInteracciones();
+      if (ok) {
+        setActivas(prev => {
+          const next = [{
+            paciente_id: data.paciente_id,
+            nombre: data.nombre,
+            telefono: data.telefono,
+            mensaje: data.mensaje,
+            nivel_alerta: data.nivel_alerta,
+            alerta_manual: data.alerta_manual ?? null,
+            respuesta_enviada: data.respuesta_enviada ?? '',
+            fecha: data.fecha,
+            score_ia: data.score_ia,
+            nivel_alerta_ia: data.nivel_alerta_ia,
+            tags_detectados: data.tags_detectados || [],
+          }, ...prev]
+          return next.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+        })
+      } else {
+        // si el evento vino incompleto, refrescá desde el backend
+        fetchInteracciones()
+      }
     }
 
-    // ——— sonido con las mismas reglas que ya tenías ———
-    const justClicked = now() - lastUserClickAtRef.current < 400; // 400ms
-    const cooldownOk = now() - lastSoundAtRef.current > 2000;     // 2s
-    const visible = typeof document !== 'undefined' ? !document.hidden : true;
-
-    if (!justClicked && cooldownOk && visible) {
-      reproducir();
-      lastSoundAtRef.current = now();
-    }
-  }, {
-    // si tu backend sirve SSE en el dominio API:
-    url: () => `${process.env.NEXT_PUBLIC_API_URL}/api/sse`,
-    // si lo proxéas desde Next, podrías usar simplemente '/api/sse'
-
-    // pasan token/host por query (EventSource no usa headers)
-    params: {
-      token: (typeof window !== 'undefined' ? localStorage.getItem('token') : '') || '',
-      host:  (typeof window !== 'undefined' ? window.location.hostname : '') || '',
-    },
-
-    reconnect: true,
-    backoffMs: 1000,
-    backoffMaxMs: 10000,
-    pauseWhenHidden: true,          // opcional, ahorra recursos si la pestaña está oculta
-    namedEvents: ['nuevo_mensaje'], // si tu server emite eventos con nombre
-    onOpen: () => console.log('SSE abierta'),
-    onError: (e) => console.warn('SSE error', e),
-  });
+    window.addEventListener('nuevo_mensaje', handler as EventListener)
+    return () => window.removeEventListener('nuevo_mensaje', handler as EventListener)
+  }, [fetchInteracciones])
 
   const buscarInteracciones = async (texto: string) => {
     setBuscando(true)

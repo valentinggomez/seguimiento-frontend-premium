@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { ClinicaProvider } from '@/lib/ClinicaProvider'
 import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { Toaster } from 'sonner'
+import GlobalSSEListener from '@/components/GlobalSSEListener'
 
 export default async function RootLayout({
   children,
@@ -12,9 +13,10 @@ export default async function RootLayout({
   const headersList = await headers()
   const host = headersList.get('host')?.split(':')[0] || 'localhost'
 
-  const res = await fetch(`https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/clinica?host=${host}`, {
-    cache: 'no-store',
-  })
+  const res = await fetch(
+    `https://seguimiento-backend-premium-production.up.railway.app/api/clinicas/clinica?host=${host}`,
+    { cache: 'no-store' }
+  )
 
   const datos = await res.json()
   console.log('🎯 Clínica obtenida en layout:', datos.clinica)
@@ -24,7 +26,9 @@ export default async function RootLayout({
     <html lang="es">
       <body>
         <ClinicaProvider clinicaInicial={clinica}>
-          <LanguageProvider> {/* 🌍 Soporte multilenguaje */}
+          <LanguageProvider>
+            {/* 🔔 Listener global: conecta SSE, muestra toast y suena en cualquier panel */}
+            <GlobalSSEListener />
             {children}
           </LanguageProvider>
         </ClinicaProvider>
