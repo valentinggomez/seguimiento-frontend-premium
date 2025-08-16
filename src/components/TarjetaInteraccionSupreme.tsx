@@ -173,7 +173,7 @@ export const TarjetaInteraccionSupreme = ({
   }, [abierto, paciente_id])
 
   const [analisisVisible, setAnalisisVisible] = useState<number | null>(null)
-  const ultimoMensaje = mensajes[0]
+  const ultimoMensaje = [...mensajes].sort((a,b)=>+new Date(b.fecha)-+new Date(a.fecha))[0]
   const sinMensajes = mensajes.length === 0
 
   const enviarFeedback = async (
@@ -213,6 +213,27 @@ export const TarjetaInteraccionSupreme = ({
     }
   }
 
+  // Normalizadores IA (aceptan variantes de nombres y formatean tags)
+  const getScoreIA = (m: any) =>
+    m?.score_ia ?? m?.score ?? m?.ia_score ?? null
+
+  const getNivelIA = (m: any) =>
+    m?.nivel_alerta_ia ?? m?.nivel_ia ?? m?.ia?.nivel ?? null
+
+  const getTagsIA = (m: any) => {
+    const raw =
+      m?.tags_detectados ??
+      m?.tags ??
+      m?.sintomas_ia ??
+      m?.ia?.tags ??
+      null
+    if (Array.isArray(raw)) return raw.filter(Boolean).map(String)
+    if (typeof raw === 'string')
+      return raw.split(/[,\|;]+/).map(s => s.trim()).filter(Boolean)
+    if (raw && typeof raw === 'object') return Object.values(raw).map(String)
+    return []
+  }
+  
   return (
     <div className={`w-full border rounded-2xl shadow-md transition-all ${sinMensajes ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
       {/* CABECERA */}
@@ -297,7 +318,7 @@ export const TarjetaInteraccionSupreme = ({
                               onClick={() => enviarFeedback(
                                 paciente_id,
                                 m.mensaje,
-                                m.nivel_alerta,
+                                (getNivelIA(m) ?? m.nivel_alerta), // usa IA si está, si no el general
                                 'bueno'
                               )}
                               className="text-xs px-2 py-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700"
@@ -308,7 +329,7 @@ export const TarjetaInteraccionSupreme = ({
                               onClick={() => enviarFeedback(
                                 paciente_id,
                                 m.mensaje,
-                                m.nivel_alerta,
+                                (getNivelIA(m) ?? m.nivel_alerta), // usa IA si está, si no el general
                                 'malo'
                               )}
                               className="text-xs px-2 py-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
@@ -340,25 +361,25 @@ export const TarjetaInteraccionSupreme = ({
                       {/* Bloque de análisis IA */}
                       {analisisVisible === i && (
                         <div className="mt-2 ml-6 bg-neutral-100 rounded-xl p-3 text-xs text-gray-700 border">
-                          {m.score_ia || m.nivel_alerta_ia || (m.tags_detectados && m.tags_detectados.length > 0) ? (
+                          {getScoreIA(m) || getNivelIA(m) || getTagsIA(m).length > 0 ? (
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-900 font-semibold bg-blue-100 px-2 py-0.5 rounded-md">
                                   🔢 {t('interacciones.score_ia')}
                                 </span>
-                                <span className="text-blue-800">{m.score_ia}</span>
+                                <span className="text-blue-800">{getScoreIA(m) ?? '—'}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-red-900 font-semibold bg-red-100 px-2 py-0.5 rounded-md">
                                   🚦 {t('interacciones.nivel_evaluado')}
                                 </span>
-                                <span className="capitalize">{m.nivel_alerta_ia}</span>
+                                <span className="capitalize">{getNivelIA(m) ?? '—'}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-700 font-semibold bg-yellow-100 px-2 py-0.5 rounded-md">
                                   🏷️ {t('interacciones.tags_detectados')}
                                 </span>
-                                <span>{m.tags_detectados?.join(', ')}</span>
+                                <span>{getTagsIA(m).join(', ') || '—'}</span>
                               </div>
                             </div>
                           ) : (
@@ -398,7 +419,7 @@ export const TarjetaInteraccionSupreme = ({
                         onClick={() => onEscalarAlerta('amarillo')}
                         className="flex-shrink-0 px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 whitespace-nowrap"
                       >
-                        {t('interaccioes.escalar_amarillo')}
+                        {t('interacciones.escalar_amarillo')}
                       </button>
                       <button
                         onClick={() => onEscalarAlerta('rojo')}

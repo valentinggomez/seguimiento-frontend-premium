@@ -278,6 +278,65 @@ export default function PanelRespuestas() {
   const colorToNivel = (c?: string): 'verde'|'amarillo'|'rojo' =>
     c === '#EF4444' ? 'rojo' : c === '#F59E0B' ? 'amarillo' : 'verde';
 
+  // --- Heurística de seguridad por texto libre (fallback si no hay regla) ---
+  const KEYWORDS_ROJO = [
+    'hemorragia','sangrado abundante','sangra mucho','desmayo',
+    'no respira','dificultad para respirar','dolor pecho','dolor en el pecho',
+    'convulsion','convulsiones','se desvanecio','puntos abiertos',
+    'fiebre alta 39','fiebre 39','supuracion abundante'
+  ];
+
+  const KEYWORDS_AMARILLO = [
+    'fiebre','mareo','mareos','nausea','náusea',
+    'vomito','vómito','vómitos','vomitos',
+    'hinchazon','enrojecimiento extendido','dolor fuerte','dolor intenso'
+  ];
+
+  const norm = (s: string) =>
+    s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const contieneAlguna = (texto: string, lista: string[]) => {
+    const t = norm(texto);
+    return lista.some(k => {
+      const kw = norm(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escapar regex
+      return new RegExp(`\\b${kw}\\b`).test(t);
+    });
+  };
+
+  function detectarNivelPorTexto(r: Respuesta): { nivel?: 'verde'|'amarillo'|'rojo', color?: string } {
+    // usamos los "campos personalizados" ya parseados
+    const campos = getCamposPersonalizados(r);
+
+    // transcripción (mismos fallbacks que usás abajo)
+    const transcripcion =
+      (typeof campos.transcripcion === 'string' && campos.transcripcion.trim())
+        ? campos.transcripcion
+        : (typeof (r as any).transcripcion_voz === 'string'
+            ? (r as any).transcripcion_voz
+            : '');
+
+    // síntomas (acepta array/objeto/string/JSON)
+    let s: any = campos.sintomas_ia ?? (r as any).sintomas_ia ?? null;
+    if (typeof s === 'string') {
+      try { const p = JSON.parse(s); if (Array.isArray(p)) s = p; else throw 0; }
+      catch { s = s.split(/[,\|;]+/); }
+    }
+    if (s && typeof s === 'object' && !Array.isArray(s)) s = Object.values(s);
+    const sintomas = Array.isArray(s) ? s.map(String) : [];
+
+    // bolsa de texto
+    const bolsa = `${transcripcion || ''} ${sintomas.join(' ')}`.trim();
+    if (!bolsa) return {};
+
+    // chequeos
+    if (contieneAlguna(bolsa, KEYWORDS_ROJO))      return { nivel: 'rojo',     color: '#EF4444' };
+    if (contieneAlguna(bolsa, KEYWORDS_AMARILLO))  return { nivel: 'amarillo', color: '#F59E0B' };
+    return {};
+  }
+
   function hexToRgba(hex: string, alpha = 0.12) {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
     if (!m) return `rgba(16,185,129,${alpha})` // fallback verde
@@ -288,7 +347,7 @@ export default function PanelRespuestas() {
   }
 
   function getColorHex(r: Respuesta) {
-    // --- Backend: nivel/color ---
+    // --- Backend: nivel/color que llegan guardados ---
     let raw: any = r.campos_personalizados;
     if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = null } }
 
@@ -303,32 +362,37 @@ export default function PanelRespuestas() {
     const beColorFinal: string | undefined =
       beColor || (beNivel ? NIVEL_COLOR_DEF[beNivel] : undefined);
 
-    // --- Front (reglas del panel) ---
+    // --- Front: evaluación por reglas del panel (si existen) ---
     let frNivel: 'verde'|'amarillo'|'rojo'|undefined;
     let frColor: string | undefined;
-
     if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
       const evalFront = evaluarRespuesta(r, reglasClinicas);
       frNivel = evalFront.nivel;
       frColor = evalFront.color;
     }
 
-    // --- Resolución: nunca bajar severidad respecto al backend ---
-    if (beNivel && frNivel) {
-      return (frColor && (frNivel === 'rojo' && beNivel !== 'rojo')) ? frColor
-          : (frNivel === 'amarillo' && beNivel === 'verde') ? (frColor || NIVEL_COLOR_DEF.amarillo)
-          : (beColorFinal || frColor || NIVEL_COLOR_DEF.verde);
-    }
+    // --- Heurística de seguridad por texto libre (transcripción + síntomas) ---
+    const heur = detectarNivelPorTexto(r);
+    const heurNivel = heur.nivel;
+    const heurColor = heur.color;
 
-    // Si solo hay backend
-    if (beColorFinal) return beColorFinal;
+    // --- Resolución: elegir SIEMPRE el peor nivel (no bajar nunca lo del backend) ---
+    const niveles: Array<'verde'|'amarillo'|'rojo'> = [];
+    if (beNivel)   niveles.push(beNivel as any);
+    if (frNivel)   niveles.push(frNivel);
+    if (heurNivel) niveles.push(heurNivel);
 
-    // Si solo hay front
-    if (frColor) return frColor;
+    const peor = niveles.reduce<'verde'|'amarillo'|'rojo'>(
+      (acc, n) => (rank(n) > rank(acc) ? n : acc),
+      'verde'
+    );
 
-    // Fallback final: usar nivel_alerta si vino, o verde
-    const baseNivel = (String(r.nivel_alerta || 'verde').toLowerCase().trim() as 'verde'|'amarillo'|'rojo');
-    return NIVEL_COLOR_DEF[baseNivel] || NIVEL_COLOR_DEF.verde;
+    // Color: usar el color de la fuente que aportó ese peor nivel; si no, map por defecto
+    if (peor === beNivel && beColorFinal) return beColorFinal;
+    if (peor === frNivel && frColor)      return frColor;
+    if (peor === heurNivel && heurColor)  return heurColor;
+
+    return NIVEL_COLOR_DEF[peor] || NIVEL_COLOR_DEF.verde;
   }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
