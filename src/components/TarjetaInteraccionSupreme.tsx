@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageCircle,
@@ -42,6 +41,7 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
     cargarNota();
   }, [pacienteId]);
 
+  
   const guardarNota = async () => {
     const res = await fetch(`${backendUrl}/api/notas`, {
       method: 'POST',
@@ -173,8 +173,13 @@ export const TarjetaInteraccionSupreme = ({
   }, [abierto, paciente_id])
 
   const [analisisVisible, setAnalisisVisible] = useState<number | null>(null)
-  const ultimoMensaje = [...mensajes].sort((a,b)=>+new Date(b.fecha)-+new Date(a.fecha))[0]
-  const sinMensajes = mensajes.length === 0
+  // 🔽 ordenar una sola vez (más nuevo primero) y reutilizar en toda la tarjeta
+  const mensajesOrdenados = useMemo(
+    () => [...mensajes].sort((a, b) => +new Date(b.fecha) - +new Date(a.fecha)),
+    [mensajes]
+  )
+  const ultimoMensaje = mensajesOrdenados[0]
+  const sinMensajes = mensajesOrdenados.length === 0
 
   const enviarFeedback = async (
     paciente_id: string,
@@ -294,9 +299,9 @@ export const TarjetaInteraccionSupreme = ({
                   {t('interacciones.no_respuesta_whatsapp')}
                 </div>
               ) : (
-                mensajes.map((m, i) => (
+                mensajesOrdenados.map((m, i) => (
                   <div
-                    key={i}
+                    key={`${m.fecha}-${i}`}
                     className="bg-gray-50 p-3 rounded-lg shadow-sm border text-sm text-gray-800 space-y-1"
                   >
                     <div className="flex items-start gap-2">
