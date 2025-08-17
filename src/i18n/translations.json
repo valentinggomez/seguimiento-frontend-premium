@@ -226,7 +226,12 @@
       "respuesta_automatica": "Respuesta automática",
       "feedback_bueno": "👍 Ejemplo bueno",
       "feedback_malo": "👎 Ejemplo malo",
-      "ver_analisis_ia": "Ver análisis clínico IA"
+      "ver_analisis_ia": "Ver análisis clínico IA",
+      "archivar": "🗑️ Archivar",
+      "escalar_verde": "Escalar a VERDE",
+      "escalar_amarillo": "Escalar a AMARILLO",
+      "escalar_rojo": "Escalar a ROJO",
+      "escalar_alerta": "Escalar alerta"
     },
     "notas": {
       "titulo": "📝 Nota clínica",
@@ -290,6 +295,16 @@
       "🤕 Nivel de dolor a las 6h": "🤕 Nivel de dolor a las 6h",
       "📄 Observaciones (opcional)": "📄 Observaciones (opcional)",
       "🏃 ¿Horas hasta mover extremidades?": "🏃 ¿Horas hasta mover extremidades?"
+    },
+    "notificaciones": {
+      "nuevo_mensaje": "Nuevo mensaje"
+    },
+    "acciones": {
+      "abrir": "Abrir",
+      "cerrar": "Cerrar"
+    },
+    "paciente": {
+      "desconocido": "Paciente"
     }
   },
   "en": {
@@ -515,7 +530,12 @@
       "respuesta_automatica": "Automated response",
       "feedback_bueno": "👍 Good example",
       "feedback_malo": "👎 Bad example",
-      "ver_analisis_ia": "View clinical AI analysis"
+      "ver_analisis_ia": "View clinical AI analysis",
+      "archivar": "🗑️ Archive",
+      "escalar_verde": "Escalate to GREEN",
+      "escalar_amarillo": "Escalate to YELLOW",
+      "escalar_rojo": "Escalate to RED",
+      "escalar_alerta": "Escalate alert"
     },
     "notas": {
       "titulo": "📝 Clinical note",
@@ -579,6 +599,16 @@
       "🤕 Nivel de dolor a las 6h": "🤕 Pain level at 6h",
       "📄 Observaciones (opcional)": "📄 Observations (optional)",
       "🏃 ¿Horas hasta mover extremidades?": "🏃 Hours until limb movement"
+    },
+    "notificaciones": {
+      "nuevo_mensaje": "New message"
+    },
+    "acciones": {
+      "abrir": "Open",
+      "cerrar": "Close"
+    },
+    "paciente": {
+      "desconocido": "Patient"
     }
   }
 }
