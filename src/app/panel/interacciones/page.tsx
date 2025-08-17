@@ -125,7 +125,7 @@ export default function InteraccionesPage() {
       seenEventsRef.current.add(eid)
 
       const ok =
-        data?.paciente_id && data?.telefono && data?.mensaje &&
+        data?.paciente_id && data?.mensaje &&
         data?.fecha && data?.nivel_alerta && data?.nombre
 
       if (ok) {
@@ -133,7 +133,7 @@ export default function InteraccionesPage() {
           const next = [{
             paciente_id: data.paciente_id,
             nombre: data.nombre,
-            telefono: data.telefono,
+            telefono: data.telefono ?? '',
             mensaje: data.mensaje,
             nivel_alerta: data.nivel_alerta,
             alerta_manual: data.alerta_manual ?? null,
@@ -293,10 +293,13 @@ export default function InteraccionesPage() {
                   paciente_id={pacienteId}
                   onArchivar={async () => {
                     await fetch(
-                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefonoOficial}`,
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/paciente/${pacienteId}`,
                       {
                         method: 'PATCH',
-                        headers: getAuthHeaders(),
+                        headers: {
+                          ...getAuthHeaders(),
+                          'Content-Type': 'application/json',
+                        },
                         body: JSON.stringify({ archivado: true }),
                       }
                     )
@@ -305,7 +308,10 @@ export default function InteraccionesPage() {
                   onEscalarAlerta={async (color: 'rojo' | 'amarillo' | 'verde') => {
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/alerta/${mensajes[0].paciente_id}`, {
                       method: 'PATCH',
-                      headers: getAuthHeaders(),
+                      headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                      },
                       body: JSON.stringify({ alerta_manual: color }),
                     })
                     const data = await res.json().catch(() => null)
@@ -328,7 +334,10 @@ export default function InteraccionesPage() {
                     const toastId = toast.loading(t('interacciones.reenviando_formulario'))
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                       method: 'POST',
-                      headers: getAuthHeaders(),
+                      headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                      },
                       body: JSON.stringify({
                         paciente_id: mensajes[0].paciente_id,
                         telefono: telefonoOficial,
@@ -356,10 +365,13 @@ export default function InteraccionesPage() {
               mensajes={[]}
               paciente_id={paciente.id}
               onReenviarFormulario={async () => {
-                const toastId = toast.loading('⏳ Reenviando formulario...')
+                const toastId = toast.loading(t('interacciones.reenviando_formulario'))
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reenviar-formulario`, {
                   method: 'POST',
-                  headers: getAuthHeaders(),
+                  headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json',
+                  },
                   body: JSON.stringify({
                     paciente_id: paciente.id,
                     telefono: paciente.telefono,

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageCircle,
@@ -13,7 +13,6 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { useEffect } from 'react'
 import { getNotaPorPaciente } from '@/lib/getNotaPorPaciente';
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
@@ -178,7 +177,10 @@ export const TarjetaInteraccionSupreme = ({
     if (abierto && paciente_id) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/marcarLeido`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
+        headers: { 
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ paciente_id }),
       }).catch((err) => {
         console.error('❌ Error al marcar como leído:', err)
@@ -210,7 +212,10 @@ export const TarjetaInteraccionSupreme = ({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ia/feedback`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           paciente_id,
           mensaje_original: mensaje,
