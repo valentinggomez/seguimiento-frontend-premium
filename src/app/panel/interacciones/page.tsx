@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { TarjetaInteraccionSupreme } from '@/components/TarjetaInteraccionSupreme'
 import {
   Tabs,
@@ -26,14 +26,15 @@ type Interaccion = {
 }
 
 // --- Anti-duplicados / control de sonido ---
-const makeMsgId = (m: { paciente_id?: string; telefono?: string; mensaje?: string; fecha?: string }) =>
-  `${m?.paciente_id || ''}|${m?.telefono || ''}|${(m?.mensaje || '').slice(0,120)}|${m?.fecha || ''}`;
+const makeMsgId = (m: { paciente_id?: string; mensaje?: string; fecha?: string }) =>
+  `${m?.paciente_id || ''}|${(m?.mensaje || '').slice(0,120)}|${m?.fecha || ''}`;
 
-function agruparPorTelefono(data: Interaccion[]) {
+function agruparPorPacienteId(data: Interaccion[]) {
   const agrupadas: Record<string, Interaccion[]> = {}
   data.forEach((item) => {
-    if (!agrupadas[item.telefono]) agrupadas[item.telefono] = []
-    agrupadas[item.telefono].push(item)
+    const key = item.paciente_id
+    if (!agrupadas[key]) agrupadas[key] = []
+    agrupadas[key].push(item)
   })
   return agrupadas
 }
@@ -51,6 +52,10 @@ export default function InteraccionesPage() {
   const [activas, setActivas] = useState<Interaccion[]>([])
   const [archivadas, setArchivadas] = useState<Interaccion[]>([])
   const [pacientes, setPacientes] = useState<any[]>([])
+  const pacientesPorId = useMemo(
+    () => Object.fromEntries(pacientes.map((p) => [p.id, p])),
+    [pacientes]
+  )
   const [query, setQuery] = useState('')
   const [resultados, setResultados] = useState<Interaccion[]>([])
   const [buscando, setBuscando] = useState(false)
@@ -112,7 +117,6 @@ export default function InteraccionesPage() {
 
       const eid = makeMsgId({
         paciente_id: data.paciente_id,
-        telefono: data.telefono,
         mensaje: data.mensaje,
         fecha: data.fecha,
       })
@@ -175,8 +179,8 @@ export default function InteraccionesPage() {
     }
   }
 
-  const telefonosConMensajes = new Set(activas.map(i => i.telefono))
-  const pacientesSinMensajes = pacientes.filter((p: any) => !telefonosConMensajes.has(p.telefono))
+  const pacientesConMensajes = new Set(activas.map(i => i.paciente_id))
+  const pacientesSinMensajes = pacientes.filter((p: any) => !pacientesConMensajes.has(p.id))
 
   return (
     <div className="p-6">
@@ -230,19 +234,20 @@ export default function InteraccionesPage() {
           <h2 className="text-lg font-semibold">
             {t('interacciones.resultados')}
           </h2>
-          {Object.entries(agruparPorTelefono(resultados)).map(([telefono, mensajes], index) => {
+          {Object.entries(agruparPorPacienteId(resultados)).map(([pacienteId, mensajes], index) => {
             mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
             const alertaGlobal = getAlertaGlobal(mensajes)
             const { nombre, fecha } = mensajes[mensajes.length - 1]
+            const telefonoOficial = pacientesPorId[pacienteId]?.telefono ?? mensajes[mensajes.length - 1]?.telefono ?? ''
             return (
               <TarjetaInteraccionSupreme
                 key={`res-${index}`}
                 nombre={nombre}
-                telefono={telefono}
+                telefono={telefonoOficial}
                 alerta={alertaGlobal}
                 fecha={new Date(fecha).toLocaleString()}
                 mensajes={mensajes}
-                paciente_id={mensajes[0].paciente_id}
+                paciente_id={pacienteId}
               />
             )
           })}
@@ -271,22 +276,24 @@ export default function InteraccionesPage() {
           {activas.length === 0 ? (
             <p className="text-muted-foreground">{t('interacciones.sin_mensajes_activos')}</p>
           ) : (
-            Object.entries(agruparPorTelefono(activas)).map(([telefono, mensajes], index) => {
+            Object.entries(agruparPorPacienteId(activas)).map(([pacienteId, mensajes], index) => {
               mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
               const alertaGlobal = getAlertaGlobal(mensajes)
               const { nombre, fecha } = mensajes[mensajes.length - 1]
+              const telefonoOficial = pacientesPorId[pacienteId]?.telefono ?? mensajes[mensajes.length - 1]?.telefono ?? ''
+
               return (
                 <TarjetaInteraccionSupreme
                   key={index}
                   nombre={nombre}
-                  telefono={telefono}
+                  telefono={telefonoOficial}
                   alerta={alertaGlobal}
                   fecha={new Date(fecha).toLocaleString()}
                   mensajes={mensajes}
-                  paciente_id={mensajes[0].paciente_id}
+                  paciente_id={pacienteId}
                   onArchivar={async () => {
                     await fetch(
-                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefono}`,
+                      `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/telefono/${telefonoOficial}`,
                       {
                         method: 'PATCH',
                         headers: getAuthHeaders(),
@@ -324,7 +331,7 @@ export default function InteraccionesPage() {
                       headers: getAuthHeaders(),
                       body: JSON.stringify({
                         paciente_id: mensajes[0].paciente_id,
-                        telefono: telefono,
+                        telefono: telefonoOficial,
                       }),
                     })
                     toast.dismiss(toastId)
@@ -374,19 +381,21 @@ export default function InteraccionesPage() {
           {archivadas.length === 0 ? (
             <p className="text-muted-foreground">{t('interacciones.no_archivadas')}</p>
           ) : (
-            Object.entries(agruparPorTelefono(archivadas)).map(([telefono, mensajes], index) => {
+            Object.entries(agruparPorPacienteId(archivadas)).map(([pacienteId, mensajes], index) => {
               mensajes.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
               const alertaGlobal = getAlertaGlobal(mensajes)
               const { nombre, fecha } = mensajes[mensajes.length - 1]
+              const telefonoOficial = pacientesPorId[pacienteId]?.telefono ?? mensajes[mensajes.length - 1]?.telefono ?? ''
+
               return (
                 <TarjetaInteraccionSupreme
                   key={index}
                   nombre={nombre}
-                  telefono={telefono}
+                  telefono={telefonoOficial}
                   alerta={alertaGlobal}
                   fecha={new Date(fecha).toLocaleString()}
                   mensajes={mensajes}
-                  paciente_id={mensajes[0].paciente_id}
+                  paciente_id={pacienteId}
                 />
               )
             })
