@@ -68,8 +68,8 @@
           "faltan_campos": "Por favor, completá todos los campos obligatorios."
         },
       "sexo": "Sexo",
-      "peso": "Peso (kg)",
-      "altura": "Altura (m)",
+      "peso": "Peso",
+      "altura": "Altura",
       "imc": "IMC",
       "calculado": "calculado",
       "obra_social": "Obra social",

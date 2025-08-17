@@ -140,45 +140,66 @@ export default function PanelRespuestas() {
   useEffect(() => { fetchRespuestas() }, [])
 
   useEffect(() => {
-    // si querés, podrías pasar clinica_id como query: `/api/sse?clinica_id=...`
-    const es = new EventSource('/api/sse')
+    let es: EventSource | null = null;
 
-    const onMsg = (ev: MessageEvent) => {
+    (async () => {
       try {
-        const d = JSON.parse(ev.data)
-        if (d?.tipo !== 'nueva_respuesta') return
-        const p = d.payload as {
-          clinica_id: string
-          respuesta_id: string
-          paciente_id: string
-          fecha: string
-          nombre: string
-          telefono: string
-          resumen?: any
-        }
+        // 1) obtener clinica_id
+        const host =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+        const resClin = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`);
+        const dataClin = await resClin.json();
+        const clinicaId = dataClin?.clinica?.id || '';
 
-        const id = String(p.respuesta_id)
-        if (!seenRef.current.has(id)) {
-          seenRef.current.add(id)
-          // Opción B (simple y robusta): recargar listado completo
-          fetchRespuestas()
-        }
-      } catch {}
-    }
+        // 2) abrir SSE con clinica_id
+        es = new EventSource(`/api/sse?clinica_id=${encodeURIComponent(clinicaId)}`);
 
-    es.addEventListener('nueva_respuesta', onMsg as any)
-    es.addEventListener('ready', () => {
-      // opcional: podés mostrar “Conectado a tiempo real”
-    })
-    es.onerror = () => {
-      // el navegador reintenta solo (server envía retry: 10000)
-    }
+        const onMsg = (ev: MessageEvent) => {
+          try {
+            const d = JSON.parse(ev.data);
+            // 3) el servidor manda { tipo: 'nueva_respuesta', payload: {...} }
+            if (d?.tipo !== 'nueva_respuesta') return;
 
+            const p = d.payload as {
+              respuesta_id: string;
+              // ...otros campos
+            };
+
+            const id = String(p.respuesta_id);
+            if (!seenRef.current.has(id)) {
+              seenRef.current.add(id);
+              fetchRespuestas(); // recargar lista completo (simple/robusto)
+            }
+          } catch {}
+        };
+
+        // escuchar 'message' (no 'nueva_respuesta')
+        es.addEventListener('message', onMsg as any);
+        es.addEventListener('ready', () => {/* opcional */});
+        es.onerror = () => {/* el browser reintenta (retry:10000) */};
+
+        // cleanup correcto
+        const cleanup = () => {
+          if (!es) return;
+          es.removeEventListener('message', onMsg as any);
+          try { es.close(); } catch {}
+          es = null;
+        };
+
+        // devolver cleanup desde IIFE si se desmonta rápido
+        return cleanup;
+      } catch {
+        // si falla, no abrimos SSE
+      }
+    })();
+
+    // cleanup del efecto
     return () => {
-      es.removeEventListener('message', onMsg as any)
-      es.close()
-    }
-  }, [])
+      try { es?.close(); } catch {}
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
