@@ -218,6 +218,7 @@ export const TarjetaInteraccionSupreme = ({
         },
         body: JSON.stringify({
           paciente_id,
+          telefono,
           mensaje_original: mensaje,
           nivel_alerta_ia,
           evaluacion_manual
