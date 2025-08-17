@@ -23,6 +23,7 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
   const [fecha, setFecha] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
   const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
   const { t } = useTranslation()
   const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -43,19 +44,30 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
 
   
   const guardarNota = async () => {
-    const res = await fetch(`${backendUrl}/api/notas`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ paciente_id: pacienteId, nota }),
-    });
+    setGuardando(true);
+    try {
+      const res = await fetch(`${backendUrl}/api/notas`, {
+        method: 'POST',
+        headers: { 
+          ...getAuthHeaders(), 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ paciente_id: pacienteId, nota }),
+      });
 
-    if (res.ok) {
-      toast.success(t('notas.guardada_ok'));
+      if (!res.ok) throw new Error('save-failed');
+
+      // El backend devuelve { ok: true, nota, fecha }
+      const data = await res.json();
+      setNota(data?.nota ?? nota);
+      setFecha(data?.fecha ?? new Date().toISOString());
       setEditando(false);
-      const now = new Date();
-      setFecha(now.toISOString());
-    } else {
+      toast.success(t('notas.guardada_ok'));
+    } catch (err) {
+      console.error('❌ Error guardando nota:', err);
       toast.error(t('notas.guardada_error'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -97,13 +109,15 @@ const NotasClinicas = ({ pacienteId }: { pacienteId: string }) => {
           <div className="flex gap-2 mt-2">
             <button
               onClick={guardarNota}
-              className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-1 rounded-md"
+              disabled={guardando}
+              className={`bg-green-600 text-white text-sm px-4 py-1 rounded-md ${guardando ? 'opacity-60 cursor-not-allowed' : 'hover:bg-green-700'}`}
             >
               {t('notas.guardar')}
             </button>
             <button
               onClick={() => setEditando(false)}
-              className="bg-gray-200 hover:bg-gray-300 text-sm px-4 py-1 rounded-md"
+              disabled={guardando}
+              className={`bg-gray-200 text-sm px-4 py-1 rounded-md ${guardando ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-300'}`}
             >
               {t('notas.cancelar')}
             </button>
