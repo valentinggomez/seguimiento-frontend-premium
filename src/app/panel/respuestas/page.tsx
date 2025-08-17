@@ -1,7 +1,7 @@
 // src/app/panel/respuestas/page.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
@@ -113,6 +113,7 @@ function ModalConfirmacion({
 
 export default function PanelRespuestas() {
   const [respuestas, setRespuestas] = useState<Respuesta[]>([])
+  const seenRef = useRef<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [seleccionadas, setSeleccionadas] = useState<string[]>([])
@@ -121,25 +122,62 @@ export default function PanelRespuestas() {
   const [reglasClinicas, setReglasClinicas] = useState<ReglasClinicas>({ condiciones: [] })
   const [labelMap, setLabelMap] = useState<Record<string,string>>({});
 
-  useEffect(() => {
-    const fetchRespuestas = async () => {
-      try {
-        const res = await fetchConToken('/api/respuestas')
-        const data = await res.json()
-        console.log('📦 Respuestas desde backend:', data)
-        if (Array.isArray(data)) {
-          setRespuestas(data)
-        } else if (data && Array.isArray(data.data)) {
-          setRespuestas(data.data)
-        } else {
-          console.warn('❌ Respuesta inesperada del backend:', data)
-          setRespuestas([])
-        }
-      } catch (e) {
-        console.error('Error al cargar respuestas:', e)
-      }
+  const fetchRespuestas = async () => {
+    try {
+      const res = await fetchConToken('/api/respuestas')
+      const data = await res.json()
+      console.log('📦 Respuestas desde backend:', data)
+      const lista = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : [])
+      setRespuestas(lista)
+      // registrar ids en el anti-duplicado
+      for (const r of lista) seenRef.current.add(String(r.id))
+    } catch (e) {
+      console.error('Error al cargar respuestas:', e)
+      setRespuestas([])
     }
-    fetchRespuestas()
+  }
+
+  useEffect(() => { fetchRespuestas() }, [])
+
+  useEffect(() => {
+    // si querés, podrías pasar clinica_id como query: `/api/sse?clinica_id=...`
+    const es = new EventSource('/api/sse')
+
+    const onMsg = (ev: MessageEvent) => {
+      try {
+        const d = JSON.parse(ev.data)
+        if (d?.tipo !== 'nueva_respuesta') return
+        const p = d.payload as {
+          clinica_id: string
+          respuesta_id: string
+          paciente_id: string
+          fecha: string
+          nombre: string
+          telefono: string
+          resumen?: any
+        }
+
+        const id = String(p.respuesta_id)
+        if (!seenRef.current.has(id)) {
+          seenRef.current.add(id)
+          // Opción B (simple y robusta): recargar listado completo
+          fetchRespuestas()
+        }
+      } catch {}
+    }
+
+    es.addEventListener('nueva_respuesta', onMsg as any)
+    es.addEventListener('ready', () => {
+      // opcional: podés mostrar “Conectado a tiempo real”
+    })
+    es.onerror = () => {
+      // el navegador reintenta solo (server envía retry: 10000)
+    }
+
+    return () => {
+      es.removeEventListener('message', onMsg as any)
+      es.close()
+    }
   }, [])
 
   useEffect(() => {
@@ -713,7 +751,9 @@ export default function PanelRespuestas() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {Array.isArray(respuestas) && respuestas.map((r) => (
+        {Array.isArray(respuestas) && [...respuestas].sort(
+          (a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en)
+        ).map((r) => (
         (() => {
           const cardColor = getColorHex(r);
           return (
