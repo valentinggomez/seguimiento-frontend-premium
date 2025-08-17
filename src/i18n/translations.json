@@ -231,7 +231,8 @@
       "escalar_verde": "Escalar a VERDE",
       "escalar_amarillo": "Escalar a AMARILLO",
       "escalar_rojo": "Escalar a ROJO",
-      "escalar_alerta": "Escalar alerta"
+      "escalar_alerta": "Escalar alerta",
+      "reenviar_formulario": "Reenviar formulario"
     },
     "notas": {
       "titulo": "📝 Nota clínica",
@@ -535,7 +536,8 @@
       "escalar_verde": "Escalate to GREEN",
       "escalar_amarillo": "Escalate to YELLOW",
       "escalar_rojo": "Escalate to RED",
-      "escalar_alerta": "Escalate alert"
+      "escalar_alerta": "Escalate alert",
+      "reenviar_formulario": "Resend form"
     },
     "notas": {
       "titulo": "📝 Clinical note",
