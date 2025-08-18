@@ -1,178 +1,271 @@
-"use client";
+'use client'
 
-import { useMemo } from "react";
-import { useOverview, useTable } from "@/hooks/useAnalytics";
-import { useAnalyticsFilters } from "@/store/useAnalyticsFilters";
-import { KpiCard } from "@/components/analytics/KpiCard";
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, AreaChart, Area } from "recharts";
-import { formatInTimeZone } from "date-fns-tz";
-import { es, enUS, ptBR } from "date-fns/locale";
+import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import {
+  ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
+  AreaChart, Area
+} from 'recharts'
+import { formatInTimeZone } from 'date-fns-tz'
+import { es, enUS, ptBR } from 'date-fns/locale'
+import { useTranslation } from '@/i18n/useTranslation'
+import { useClinica } from '@/lib/ClinicaProvider'
+import { fetchConToken } from '@/lib/fetchConToken'
+import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import type { Locale } from 'date-fns'
 
-const locales = { es, en: enUS, pt: ptBR };
+type KPIs = {
+  dolorProm?: number
+  satisfProm?: number
+  tasaRespuesta?: number
+  tiempoPrimeraRespuestaMin?: number
+  alertas?: { verde: number; amarillo: number; rojo: number }
+  nTotal?: number
+}
+type Series = {
+  porCirugia?: Array<{ tipo_cirugia: string; dolor_prom: number; n: number }>
+  porDia?: Array<{
+    day: string
+    dolor_prom?: number
+    a_verde?: number
+    a_amarillo?: number
+    a_rojo?: number
+  }>
+}
+type Overview = { kpis: KPIs; series: Series }
+
+const locales: Record<string, Locale> = { es, en: enUS, pt: ptBR }
+
+function qs(params: Record<string, any>) {
+  const u = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') u.set(k, String(v))
+  })
+  return u.toString()
+}
 
 export default function AnalyticsPage() {
-  const { filters, set, setRangePreset } = useAnalyticsFilters();
-  const { data, pending, hasNew, reload } = useOverview();
-  const { rows, total, pending: pendingTable } = useTable();
+  const { t, language } = useTranslation()
+  const { clinica } = useClinica()
 
-  const t = (k: string) => {
-    const dict: Record<string, Record<string,string>> = {
-      es: {
-        title: "Panel de Estadísticas",
-        refresh: "Actualizar",
-        exportCsv: "Export CSV",
-        exportSheets: "Export Sheets",
-        kpi_dolor: "Dolor promedio",
-        kpi_alertas: "Alertas (%)",
-        kpi_tasa: "Tasa de respuesta",
-        kpi_tiempo: "Tiempo a 1ª respuesta (min)",
-        kpi_satisf: "Satisfacción",
-        newData: "Nuevos",
-        noData: "No hay datos para estos filtros",
-        table: "Detalle",
-      },
-      en: {
-        title: "Analytics",
-        refresh: "Refresh",
-        exportCsv: "Export CSV",
-        exportSheets: "Export Sheets",
-        kpi_dolor: "Avg. pain",
-        kpi_alertas: "Alerts (%)",
-        kpi_tasa: "Response rate",
-        kpi_tiempo: "Time to first response (min)",
-        kpi_satisf: "Satisfaction",
-        newData: "New",
-        noData: "No data for filters",
-        table: "Details",
-      },
-      pt: {
-        title: "Estatísticas",
-        refresh: "Atualizar",
-        exportCsv: "Exportar CSV",
-        exportSheets: "Exportar Sheets",
-        kpi_dolor: "Dor média",
-        kpi_alertas: "Alertas (%)",
-        kpi_tasa: "Taxa de resposta",
-        kpi_tiempo: "Tempo até 1ª resposta (min)",
-        kpi_satisf: "Satisfação",
-        newData: "Novos",
-        noData: "Sem dados para os filtros",
-        table: "Detalhe",
-      },
-    };
-    return dict[filters.idioma][k] ?? k;
-  };
+  const [clinicaId, setClinicaId] = useState<string>('')
+  const [tz, setTz] = useState<string>('America/Argentina/Cordoba')
 
-  const locale = locales[filters.idioma];
-  const fmtDay = (d: string) => formatInTimeZone(new Date(d), filters.tz, "dd MMM", { locale });
+  const [from, setFrom] = useState<string>(new Date(Date.now() - 24 * 3600_000).toISOString())
+  const [to, setTo] = useState<string>(new Date().toISOString())
+  const [ab, setAb] = useState<string>('')
+  const [alerta, setAlerta] = useState<string>('')
 
-  const k = data?.kpis;
-  const s = data?.series;
+  const [data, setData] = useState<Overview | null>(null)
+  const [rows, setRows] = useState<any[]>([])
+  const [total, setTotal] = useState<number>(0)
+  const [pending, setPending] = useState<boolean>(false)
+  const [pendingTable, setPendingTable] = useState<boolean>(false)
+  const [hasNew, setHasNew] = useState<boolean>(false)
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || "";
-  const commonQs = `clinica_id=${filters.clinicaId}&from=${filters.from}&to=${filters.to}`;
-  const headers = { "x-clinica-host": filters.clinicaHost };
+  const api = process.env.NEXT_PUBLIC_API_URL || ''
+  const locale = locales[language] ?? es
+  const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
+
+  // Inicializar clinicaId / tz desde Provider
+  useEffect(() => {
+    if (clinica?.id) setClinicaId(clinica.id)
+    if (clinica?.horario_inicio && clinica?.horario_fin) {
+      // si más adelante guardás tz por clínica, tomalo desde clinica.tz
+    }
+    if ((clinica as any)?.tz) setTz((clinica as any).tz)
+  }, [clinica?.id])
+
+  const commonParams = useMemo(
+    () => ({
+      clinica_id: clinicaId,
+      from,
+      to,
+      ab: ab || undefined,
+      alerta: alerta || undefined,
+    }),
+    [clinicaId, from, to, ab, alerta]
+  )
+
+  // Cargar KPIs + series
+  async function loadOverview() {
+    if (!clinicaId) return
+    try {
+      setPending(true)
+      const url = `/api/analytics/overview?${qs(commonParams)}`
+      const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+      const j = await r.json()
+      setData(j)
+    } catch (e) {
+      console.error('overview error', e)
+      setData(null)
+    } finally {
+      setPending(false)
+      setHasNew(false)
+    }
+  }
+
+  // Cargar tabla
+  async function loadTable() {
+    if (!clinicaId) return
+    try {
+      setPendingTable(true)
+      const url = `/api/analytics/table?${qs({ ...commonParams, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
+      const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+      const j = await r.json()
+      setRows(j?.rows || [])
+      setTotal(j?.total || 0)
+    } catch (e) {
+      console.error('table error', e)
+      setRows([])
+      setTotal(0)
+    } finally {
+      setPendingTable(false)
+    }
+  }
+
+  // Primer load + cuando cambian filtros
+  useEffect(() => {
+    if (!clinicaId) return
+    loadOverview()
+    loadTable()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clinicaId, from, to, ab, alerta])
+
+  // SSE “nuevos”
+  useEffect(() => {
+    if (!clinicaId) return
+    const es = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
+    const onNew = () => setHasNew(true)
+    es.addEventListener('respuesta_creada', onNew)
+    return () => { es.removeEventListener('respuesta_creada', onNew); es.close() }
+  }, [clinicaId, api])
+
+  // helpers
+  const k = data?.kpis
+  const s = data?.series
+  const fmtDay = (d: string) => formatInTimeZone(new Date(d), tz, 'dd MMM', { locale })
+
+  const alertPct = k && k.nTotal! > 0
+    ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
+    : 0
+
+  const exportCsvHref = `${api}/api/analytics/export?${qs({ ...commonParams, format: 'csv' })}`
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* Header sticky */}
-      <div className="sticky top-0 z-20 bg-white/70 backdrop-blur border-b flex flex-wrap items-center justify-between gap-3 p-3 rounded-b-xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="text-xl font-semibold tracking-tight">{t("title")}</div>
-          {hasNew && <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">{t("newData")}</span>}
+          <h1 className="text-2xl font-bold text-[#003466]">{t('navbar.analytics') || 'Estadísticas'}</h1>
+          {hasNew && (
+            <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={reload} className="px-3 py-2 rounded-xl shadow-sm bg-slate-900 text-white hover:opacity-90">
-            {t("refresh")}
+          <button
+            onClick={() => { loadOverview(); loadTable() }}
+            className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
+          >
+            {t('respuestas.actualizar') || 'Actualizar'}
           </button>
-          {/* Export buttons: CSV y Sheets */}
           <a
             className="px-3 py-2 rounded-xl border shadow-sm hover:bg-slate-50"
-            href={`${apiBase}/api/analytics/export?format=csv&${commonQs}`}
-            onClick={(e)=>{ if(!filters.clinicaId){ e.preventDefault(); alert("Seleccioná clinicaId"); } }}
-          >{t("exportCsv")}</a>
+            href={exportCsvHref}
+          >
+            Export CSV
+          </a>
           <button
             className="px-3 py-2 rounded-xl border shadow-sm hover:bg-slate-50"
-            onClick={async ()=>{
-              if (!filters.clinicaId) return alert("Seleccioná clinicaId");
-              const r = await fetch(`${apiBase}/api/analytics/export?format=sheets&${commonQs}`, { headers, credentials: "include" });
-              const j = await r.json();
-              if (j?.spreadsheetUrl) window.open(j.spreadsheetUrl, "_blank");
-              else alert("Export a Sheets enviado");
+            onClick={async () => {
+              try {
+                const url = `/api/analytics/export?${qs({ ...commonParams, format: 'sheets' })}`
+                const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+                const j = await r.json()
+                if (j?.spreadsheetUrl) window.open(j.spreadsheetUrl, '_blank')
+              } catch (e) {
+                console.error('export sheets', e)
+              }
             }}
-          >{t("exportSheets")}</button>
+          >
+            Export Sheets
+          </button>
         </div>
       </div>
 
-      {/* Filtros básicos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-        <input className="border rounded-xl px-3 py-2" placeholder="Clinica UUID"
-          value={filters.clinicaId} onChange={(e)=>set({ clinicaId: e.target.value })} />
-        <input className="border rounded-xl px-3 py-2" placeholder="Clinica host"
-          value={filters.clinicaHost} onChange={(e)=>set({ clinicaHost: e.target.value })} />
+      {/* Filtros */}
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-3">
+        <input className="border rounded-xl px-3 py-2" placeholder="Clínica UUID"
+          value={clinicaId} onChange={(e) => setClinicaId(e.target.value)} />
+        <input className="border rounded-xl px-3 py-2" placeholder="Zona horaria (IANA)"
+          value={tz} onChange={(e) => setTz(e.target.value)} />
         <input className="border rounded-xl px-3 py-2" type="datetime-local"
-          value={filters.from.slice(0,16)} onChange={(e)=>set({ from: new Date(e.target.value).toISOString(), page:1 })}/>
+          value={from.slice(0, 16)} onChange={(e) => setFrom(new Date(e.target.value).toISOString())} />
         <input className="border rounded-xl px-3 py-2" type="datetime-local"
-          value={filters.to.slice(0,16)} onChange={(e)=>set({ to: new Date(e.target.value).toISOString(), page:1 })}/>
-        <select className="border rounded-xl px-3 py-2" value={filters.idioma} onChange={(e)=>set({ idioma: e.target.value as any })}>
+          value={to.slice(0, 16)} onChange={(e) => setTo(new Date(e.target.value).toISOString())} />
+        <select className="border rounded-xl px-3 py-2" value={language} onChange={() => { /* el selector global ya está en navbar */ }}>
           <option value="es">ES</option><option value="en">EN</option><option value="pt">PT</option>
         </select>
-        <select className="border rounded-xl px-3 py-2" value={filters.ab} onChange={(e)=>set({ ab: e.target.value as any })}>
+        <select className="border rounded-xl px-3 py-2" value={ab} onChange={(e) => setAb(e.target.value)}>
           <option value="">A/B</option><option value="A">A</option><option value="B">B</option>
         </select>
-        <select className="border rounded-xl px-3 py-2" value={filters.alerta} onChange={(e)=>set({ alerta: e.target.value as any })}>
+        <select className="border rounded-xl px-3 py-2" value={alerta} onChange={(e) => setAlerta(e.target.value)}>
           <option value="">Alerta</option><option value="verde">Verde</option><option value="amarillo">Amarillo</option><option value="rojo">Rojo</option>
         </select>
 
-        <div className="col-span-1 sm:col-span-2 lg:col-span-7 flex items-center gap-2">
-          <button className="border rounded-xl px-3 py-2" onClick={()=>setRangePreset("24h")}>Últimas 24h</button>
-          <button className="border rounded-xl px-3 py-2" onClick={()=>setRangePreset("7d")}>Última semana</button>
-          <button className="border rounded-xl px-3 py-2" onClick={()=>setRangePreset("30d")}>Último mes</button>
+        <div className="col-span-1 lg:col-span-7 flex items-center gap-2">
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>Últimas 24h</Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Última semana</Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Último mes</Preset>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <KpiCard title={t("kpi_dolor")}  value={k?.dolorProm?.toFixed?.(1) ?? "-"} />
-        <KpiCard title={t("kpi_alertas")} value={k ? Math.round(((k.alertas.amarillo+k.alertas.rojo)/(k.nTotal||1))*100)+"%" : "-"} />
-        <KpiCard title={t("kpi_tasa")}    value={k ? Math.round((k.tasaRespuesta||0)*100)+"%" : "-"} />
-        <KpiCard title={t("kpi_tiempo")}  value={k?.tiempoPrimeraRespuestaMin?.toFixed?.(0) ?? "-"} />
-        <KpiCard title={t("kpi_satisf")}  value={k?.satisfProm?.toFixed?.(1) ?? "-"} />
+        <Kpi loading={pending} title="DOLOR PROMEDIO" value={fmt(k?.dolorProm, 1)} />
+        <Kpi loading={pending} title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} />
+        <Kpi loading={pending} title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} />
+        <Kpi loading={pending} title="TIEMPO A 1ª RESPUESTA (MIN)" value={fmt(k?.tiempoPrimeraRespuestaMin, 0)} />
+        <Kpi loading={pending} title="SATISFACCIÓN" value={fmt(k?.satisfProm, 1)} />
       </div>
 
-      {/* Gráfico: Dolor por cirugía */}
-      <Card title="Dolor por cirugía">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={s?.porCirugia || []}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="tipo_cirugia" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="dolor_prom" />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Dolor por cirugía */}
+      <Card title="Dolor por cirugía" loading={pending}>
+        {s?.porCirugia?.length ? (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={s.porCirugia}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="tipo_cirugia" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="dolor_prom" />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : <Empty />}
       </Card>
 
-      {/* Gráfico: Evolución temporal */}
-      <Card title="Evolución temporal">
-        <ResponsiveContainer width="100%" height={320}>
-          <AreaChart data={(s?.porDia || []).map((d:any)=>({ ...d, dayLabel: fmtDay(d.day) }))}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="dayLabel" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="dolor_prom" />
-            <Area type="monotone" dataKey="a_verde" stackId="1" />
-            <Area type="monotone" dataKey="a_amarillo" stackId="1" />
-            <Area type="monotone" dataKey="a_rojo" stackId="1" />
-          </AreaChart>
-        </ResponsiveContainer>
+      {/* Evolución temporal */}
+      <Card title="Evolución temporal" loading={pending}>
+        {s?.porDia?.length ? (
+          <ResponsiveContainer width="100%" height={340}>
+            <AreaChart data={s.porDia.map(d => ({ ...d, dayLabel: fmtDay(d.day) }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="dayLabel" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Area type="monotone" dataKey="dolor_prom" />
+              <Area type="monotone" dataKey="a_verde" stackId="1" />
+              <Area type="monotone" dataKey="a_amarillo" stackId="1" />
+              <Area type="monotone" dataKey="a_rojo" stackId="1" />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : <Empty />}
       </Card>
 
-      {/* Tabla simple */}
-      <Card title={t("table")}>
+      {/* Tabla */}
+      <Card title="Detalle" loading={pendingTable}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -181,47 +274,68 @@ export default function AnalyticsPage() {
               </tr>
             </thead>
             <tbody>
-              {pendingTable ? (
-                <tr><td className="py-6 text-center text-slate-500" colSpan={5}>Cargando…</td></tr>
-              ) : rows.length ? rows.map((r:any)=>(
+              {rows.length ? rows.map((r: any) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
-                  <Td>{r.tipo_cirugia ?? "-"}</Td>
-                  <Td>{r.nivel_alerta ?? "-"}</Td>
-                  <Td>{r.dolor ?? "-"}</Td>
-                  <Td>{r.satisfaccion ?? "-"}</Td>
+                  <Td>{r.tipo_cirugia ?? '-'}</Td>
+                  <Td>{r.nivel_alerta ?? '-'}</Td>
+                  <Td>{r.dolor ?? '-'}</Td>
+                  <Td>{r.satisfaccion ?? '-'}</Td>
                 </tr>
               )) : (
-                <tr><td className="py-6 text-center text-slate-500" colSpan={5}>{t("noData")}</td></tr>
+                <tr><td className="py-6 text-center text-slate-500" colSpan={5}>No hay datos para estos filtros</td></tr>
               )}
             </tbody>
           </table>
         </div>
-
-        {/* Paginación */}
-        <div className="flex items-center justify-between pt-3">
-          <span className="text-xs text-slate-500">Total: {total}</span>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 border rounded-lg" onClick={()=>set({ page: Math.max(1, filters.page-1) })} disabled={filters.page<=1}>Prev</button>
-            <span className="text-xs">Page {filters.page}</span>
-            <button className="px-3 py-1 border rounded-lg" onClick={()=>set({ page: filters.page+1 })} disabled={rows.length < filters.pageSize}>Next</button>
-          </div>
-        </div>
+        <div className="text-xs text-slate-500 pt-2">Total: {total}</div>
       </Card>
     </div>
-  );
+  )
 }
 
-function Card({ title, children }: any) {
+/* ---------- UI helpers ---------- */
+
+function Kpi({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
+  return (
+    <div className="rounded-2xl border p-4 shadow-sm bg-white min-h-[88px]">
+      <div className="text-[11px] uppercase tracking-wide text-slate-500">{title}</div>
+      <div className="text-2xl font-semibold mt-1">
+        {loading ? <Skeleton className="h-7 w-16" /> : value || '—'}
+      </div>
+    </div>
+  )
+}
+
+function Card({ title, children, loading }: any) {
   return (
     <div className="rounded-2xl border shadow-sm bg-white p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium">{title}</div>
+        {loading ? <Skeleton className="h-4 w-24" /> : null}
       </div>
       {children}
     </div>
-  );
+  )
 }
 
-function Th({ children }: any) { return <th className="py-2 pr-3">{children}</th>; }
-function Td({ children }: any) { return <td className="py-2 pr-3">{children}</td>; }
+function Preset({ children, onClick }: any) {
+  return (
+    <button onClick={onClick} className="px-3 py-2 rounded-xl border shadow-sm bg-white hover:bg-slate-50">
+      {children}
+    </button>
+  )
+}
+function Th({ children }: any) { return <th className="py-2 pr-3">{children}</th> }
+function Td({ children }: any) { return <td className="py-2 pr-3">{children}</td> }
+
+function Skeleton({ className }: { className?: string }) {
+  return <div className={`animate-pulse bg-slate-200 rounded ${className}`} />
+}
+function Empty() {
+  return <div className="h-[260px] flex items-center justify-center text-slate-500">No hay datos para estos filtros</div>
+}
+function fmt(n?: number, digits = 1) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  return Number(n).toFixed(digits)
+}
