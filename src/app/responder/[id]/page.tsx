@@ -239,30 +239,54 @@ export default function ResponderPage() {
     setForm((prev: any) => ({ ...prev, [name]: value }))
   }, [])
 
-  // ⬇️ Cooldown POR FORMULARIO (incluye form_slug)
+  // ⬇️ Cooldown POR FORMULARIO (incluye form_slug / formulario_id)
   const fetchPuedeEnviar = useCallback(async () => {
     try {
       setCheckingCooldown(true)
-      const qs = new URLSearchParams({ paciente_id: String(id) }) // sacá form_slug aquí
+
+      const qs = new URLSearchParams({
+        paciente_id: String(id),
+      })
+      // Prioridad: si tenemos id del form, lo mandamos; si no, mandamos slug
+      if (formulario?.id) {
+        qs.set('formulario_id', String(formulario.id))
+      } else if (formSlug) {
+        qs.set('form_slug', String(formSlug))
+      }
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/respuestas/puede-enviar?${qs.toString()}`,
         { headers: getAuthHeaders() }
       )
       const data = await res.json()
+
       setPuedeEnviar(Boolean(data?.puedeEnviar))
       setRetryAt(data?.retryAt || null)
       setCooldownHoras(data?.horas ?? null)
       setSecondsLeft(data?.secondsLeft ?? null)
       setRetryHuman(data?.retryHuman ?? null)
     } catch {
+      // si falla, no bloquees al usuario
       setPuedeEnviar(true)
       setRetryAt(null)
+      setSecondsLeft(null)
+      setRetryHuman(null)
     } finally {
       setCheckingCooldown(false)
     }
-  }, [id, formSlug])
+  }, [id, formSlug, formulario?.id])
 
-  useEffect(() => { fetchPuedeEnviar() }, [fetchPuedeEnviar])
+  // recalcular cuando cambie el paciente, el slug o se resuelva el formulario
+  useEffect(() => {
+    // reset visual al cambiar de formulario
+    setPuedeEnviar(true)
+    setRetryAt(null)
+    setSecondsLeft(null)
+    setRetryHuman(null)
+    setCountdown(null)
+
+    fetchPuedeEnviar()
+  }, [fetchPuedeEnviar])
 
   useEffect(() => {
     if (secondsLeft != null) {
