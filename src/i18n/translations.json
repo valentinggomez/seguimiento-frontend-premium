@@ -9,7 +9,8 @@
       "registrar": "Registrar",
       "logs": "Logs",
       "clinicas": "Clínicas",
-      "reglas": "Reglas clínicas"
+      "reglas": "Reglas clínicas",
+      "analytics": "Estadísticas"
     },
     "inicio": {
       "bienvenida": "Bienvenido a {{nombre_clinica}}",
@@ -318,7 +319,8 @@
       "registrar": "Register",
       "logs": "Logs",
       "clinicas": "Clinics",
-      "reglas": "Clinical rules"
+      "reglas": "Clinical rules",
+      "analytics": "Analytics"
     },
     "inicio": {
       "bienvenida": "Welcome to {{nombre_clinica}}",

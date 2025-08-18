@@ -130,6 +130,10 @@ export default function Navbar() {
             {t('navbar.respuestas')}
           </Link>
 
+          <Link href="/panel/analytics" className={linkClasses('/panel/analytics')}>
+            {t('navbar.analytics')}
+          </Link>
+
           <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>
             {t('navbar.pacientes')}
           </Link>
