@@ -266,7 +266,6 @@ export default function SeccionAdminClinicas() {
   const handleSave = async () => {
     if (!selected || !validarCampos()) return;
 
-    // 🔒 Seguridad extra: normalizamos columnas_exportables si viene mal
     if (!Array.isArray(selected.columnas_exportables)) {
       selected.columnas_exportables = typeof selected.columnas_exportables === "string"
         ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
@@ -278,18 +277,23 @@ export default function SeccionAdminClinicas() {
     let sheets_map_obj: Record<string, string> = {}
     try {
       sheets_map_obj = sheetsMapJson?.trim() ? JSON.parse(sheetsMapJson) : {}
-    } catch (e) {
+    } catch {
       toast.error("El JSON de hojas por formulario es inválido")
       return
     }
+
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const endpoint = selected?.id
-        ? `${base}/api/clinicas/editar`
-        : `${base}/api/clinicas/nueva`;
+      const isEdit = Boolean(selected?.id);
+
+      const endpoint = isEdit
+        ? `${base}/api/clinicas/editar`  // backend usa PUT
+        : `${base}/api/clinicas/nueva`;  // backend usa POST
+
+      const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(endpoint, {
-        method: "POST",
+        method,
         headers: getAuthHeaders(),
         body: JSON.stringify({
           ...selected,
@@ -301,22 +305,26 @@ export default function SeccionAdminClinicas() {
         }),
       });
 
-      if (res.ok) {
-        toast.success("Clínica guardada correctamente");
-        setSelected(null);
+      // Manejo de error más claro cuando la respuesta no es JSON
+      const raw = await res.text();
+      const maybeJson = raw && raw.startsWith('{') ? JSON.parse(raw) : null;
 
-        const ref = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
-          headers: { ...getAuthHeaders(), rol: 'superadmin' },
-        });
-        const json = await ref.json();
-        const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
-        setClinicas(lista);
+      if (!res.ok) {
+        const msg = maybeJson?.error || `Error ${res.status} al guardar`;
+        toast.error(msg);
+        console.error("Error al guardar:", raw);
         return;
-      } else {
-        const data = await res.json();
-        toast.error(`Error: ${data.error || "No se pudo guardar"}`);
-        console.error("Error al guardar:", data);
       }
+
+      toast.success("Clínica guardada correctamente");
+      setSelected(null);
+
+      const ref = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
+        headers: { ...getAuthHeaders(), rol: 'superadmin' },
+      });
+      const json = await ref.json();
+      const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
+      setClinicas(lista);
     } catch (err) {
       toast.error("Error inesperado al guardar");
       console.error("Error inesperado:", err);
