@@ -53,7 +53,6 @@ export default function AnalyticsPage() {
 
   const [from, setFrom] = useState<string>(new Date(Date.now() - 24 * 3600_000).toISOString())
   const [to, setTo] = useState<string>(new Date().toISOString())
-  const [ab, setAb] = useState<string>('')
   const [alerta, setAlerta] = useState<string>('')
 
   const [data, setData] = useState<Overview | null>(null)
@@ -67,12 +66,9 @@ export default function AnalyticsPage() {
   const locale = locales[language] ?? es
   const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
 
-  // Inicializar clinicaId / tz desde Provider
+  // Inicializar desde Provider (mismo patrón que respuestas)
   useEffect(() => {
     if (clinica?.id) setClinicaId(clinica.id)
-    if (clinica?.horario_inicio && clinica?.horario_fin) {
-      // si más adelante guardás tz por clínica, tomalo desde clinica.tz
-    }
     if ((clinica as any)?.tz) setTz((clinica as any).tz)
   }, [clinica?.id])
 
@@ -81,10 +77,9 @@ export default function AnalyticsPage() {
       clinica_id: clinicaId,
       from,
       to,
-      ab: ab || undefined,
       alerta: alerta || undefined,
     }),
-    [clinicaId, from, to, ab, alerta]
+    [clinicaId, from, to, alerta]
   )
 
   // Cargar KPIs + series
@@ -130,15 +125,15 @@ export default function AnalyticsPage() {
     loadOverview()
     loadTable()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clinicaId, from, to, ab, alerta])
+  }, [clinicaId, from, to, alerta])
 
-  // SSE “nuevos”
+  // SSE “nuevos” (igual patrón que respuestas)
   useEffect(() => {
     if (!clinicaId) return
-    const es = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
+    const esrc = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
     const onNew = () => setHasNew(true)
-    es.addEventListener('respuesta_creada', onNew)
-    return () => { es.removeEventListener('respuesta_creada', onNew); es.close() }
+    esrc.addEventListener('respuesta_creada', onNew)
+    return () => { esrc.removeEventListener('respuesta_creada', onNew); esrc.close() }
   }, [clinicaId, api])
 
   // helpers
@@ -150,78 +145,55 @@ export default function AnalyticsPage() {
     ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
     : 0
 
-  const exportCsvHref = `${api}/api/analytics/export?${qs({ ...commonParams, format: 'csv' })}`
-
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-[#003466]">{t('navbar.analytics') || 'Estadísticas'}</h1>
-          {hasNew && (
-            <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>
-          )}
-        </div>
+    <div className="p-6">
+      {/* Header (mismo look & feel que respuestas) */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-[#003366]">{t('navbar.analytics') || 'Estadísticas'}</h1>
+        {hasNew && (
+          <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>
+        )}
+      </div>
+
+      {/* Filtros: solo fechas + alerta + presets */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
+        <input
+          className="border rounded-xl px-3 py-2"
+          type="datetime-local"
+          value={from.slice(0, 16)}
+          onChange={(e) => setFrom(new Date(e.target.value).toISOString())}
+        />
+        <input
+          className="border rounded-xl px-3 py-2"
+          type="datetime-local"
+          value={to.slice(0, 16)}
+          onChange={(e) => setTo(new Date(e.target.value).toISOString())}
+        />
+        <select
+          className="border rounded-xl px-3 py-2"
+          value={alerta}
+          onChange={(e) => setAlerta(e.target.value)}
+        >
+          <option value="">Alerta</option>
+          <option value="verde">Verde</option>
+          <option value="amarillo">Amarillo</option>
+          <option value="rojo">Rojo</option>
+        </select>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => { loadOverview(); loadTable() }}
-            className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
-          >
-            {t('respuestas.actualizar') || 'Actualizar'}
-          </button>
-          <a
-            className="px-3 py-2 rounded-xl border shadow-sm hover:bg-slate-50"
-            href={exportCsvHref}
-          >
-            Export CSV
-          </a>
-          <button
-            className="px-3 py-2 rounded-xl border shadow-sm hover:bg-slate-50"
-            onClick={async () => {
-              try {
-                const url = `/api/analytics/export?${qs({ ...commonParams, format: 'sheets' })}`
-                const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
-                const j = await r.json()
-                if (j?.spreadsheetUrl) window.open(j.spreadsheetUrl, '_blank')
-              } catch (e) {
-                console.error('export sheets', e)
-              }
-            }}
-          >
-            Export Sheets
-          </button>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Últimas 24h
+          </Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Última semana
+          </Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Último mes
+          </Preset>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-3">
-        <input className="border rounded-xl px-3 py-2" placeholder="Clínica UUID"
-          value={clinicaId} onChange={(e) => setClinicaId(e.target.value)} />
-        <input className="border rounded-xl px-3 py-2" placeholder="Zona horaria (IANA)"
-          value={tz} onChange={(e) => setTz(e.target.value)} />
-        <input className="border rounded-xl px-3 py-2" type="datetime-local"
-          value={from.slice(0, 16)} onChange={(e) => setFrom(new Date(e.target.value).toISOString())} />
-        <input className="border rounded-xl px-3 py-2" type="datetime-local"
-          value={to.slice(0, 16)} onChange={(e) => setTo(new Date(e.target.value).toISOString())} />
-        <select className="border rounded-xl px-3 py-2" value={language} onChange={() => { /* el selector global ya está en navbar */ }}>
-          <option value="es">ES</option><option value="en">EN</option><option value="pt">PT</option>
-        </select>
-        <select className="border rounded-xl px-3 py-2" value={ab} onChange={(e) => setAb(e.target.value)}>
-          <option value="">A/B</option><option value="A">A</option><option value="B">B</option>
-        </select>
-        <select className="border rounded-xl px-3 py-2" value={alerta} onChange={(e) => setAlerta(e.target.value)}>
-          <option value="">Alerta</option><option value="verde">Verde</option><option value="amarillo">Amarillo</option><option value="rojo">Rojo</option>
-        </select>
-
-        <div className="col-span-1 lg:col-span-7 flex items-center gap-2">
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>Últimas 24h</Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Última semana</Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Último mes</Preset>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* KPIs (cards estilo respuestas) */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
         <Kpi loading={pending} title="DOLOR PROMEDIO" value={fmt(k?.dolorProm, 1)} />
         <Kpi loading={pending} title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} />
         <Kpi loading={pending} title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} />
@@ -264,7 +236,7 @@ export default function AnalyticsPage() {
         ) : <Empty />}
       </Card>
 
-      {/* Tabla */}
+      {/* Tabla detalle */}
       <Card title="Detalle" loading={pendingTable}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -294,7 +266,7 @@ export default function AnalyticsPage() {
   )
 }
 
-/* ---------- UI helpers ---------- */
+/* ---------- UI helpers (mismo estilo que respuestas) ---------- */
 
 function Kpi({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
   return (
@@ -309,7 +281,7 @@ function Kpi({ title, value, loading }: { title: string; value: string; loading?
 
 function Card({ title, children, loading }: any) {
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4">
+    <div className="rounded-2xl border shadow-sm bg-white p-4 mt-4">
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium">{title}</div>
         {loading ? <Skeleton className="h-4 w-24" /> : null}
