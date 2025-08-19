@@ -284,7 +284,8 @@
       "error_eliminar": "Error al eliminar respuestas",
       "error_servidor": "Error al conectar con el servidor",
       "transcripcion_voz": "Transcripción por voz",
-      "sintomas_detectados_ia": "Síntomas detectados por IA"
+      "sintomas_detectados_ia": "Síntomas detectados por IA",
+      "actualizar": "Actualizar"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
@@ -590,7 +591,8 @@
       "error_eliminar": "Error deleting responses",
       "error_servidor": "Error connecting to the server",
       "transcripcion_voz": "Voice transcription",
-      "sintomas_detectados_ia": "Symptoms detected by AI"
+      "sintomas_detectados_ia": "Symptoms detected by AI",
+      "actualizar": "Update"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
