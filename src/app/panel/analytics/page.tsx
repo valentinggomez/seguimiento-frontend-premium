@@ -3,39 +3,45 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
-  AreaChart, Area
+  AreaChart, Area, Cell
 } from 'recharts'
 import { formatInTimeZone } from 'date-fns-tz'
 import { es, enUS, ptBR } from 'date-fns/locale'
-import type { Locale } from 'date-fns'           // <- asegura date-fns v2
+import type { Locale } from 'date-fns'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 
+/* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
-  dolorProm?: number
-  satisfProm?: number
+  prom?: number | null                    // promedio de la métrica elegida
   tasaRespuesta?: number | null
   tiempoPrimeraRespuestaMin?: number | null
   alertas?: { verde: number; amarillo: number; rojo: number }
   nTotal?: number
 }
 type Series = {
-  porCirugia?: Array<{ tipo_cirugia: string; dolor_prom: number | null; n: number }>
+  porGrupo?: Array<{ grupo: string; val_prom: number | null; n: number }>
   porDia?: Array<{
     day: string
-    dolor_prom?: number | null
+    val_prom?: number | null
     a_verde?: number
     a_amarillo?: number
     a_rojo?: number
   }>
 }
-type Overview = { kpis: KPIs; series: Series }
+type Overview = { kpis: KPIs; meta?: { metric: string; groupBy: string }; series: Series }
 
+/* ===================== Constantes UI ===================== */
 const locales: Record<string, Locale> = { es, en: enUS, pt: ptBR }
 const C = { verde: '#10B981', amarillo: '#F59E0B', rojo: '#EF4444', brand: '#003466' }
+const PALETTE = [
+  '#4F46E5', '#22C55E', '#F59E0B', '#EC4899', '#06B6D4', '#8B5CF6', '#E11D48', '#10B981',
+  '#F97316', '#0EA5E9', '#84CC16', '#F43F5E'
+]
 
+/* Helpers */
 function qs(params: Record<string, any>) {
   const u = new URLSearchParams()
   Object.entries(params).forEach(([k, v]) => {
@@ -43,15 +49,24 @@ function qs(params: Record<string, any>) {
   })
   return u.toString()
 }
+function fmt(n?: number | null, digits = 1) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—'
+  return Number(n).toFixed(digits)
+}
 
+/* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
   const { clinica } = useClinica()
 
   // filtros visibles
-  const [from, setFrom] = useState<string>(new Date(Date.now() - 7 * 86400_000).toISOString())
-  const [to, setTo] = useState<string>(new Date().toISOString())
+  const [from, setFrom]   = useState<string>(new Date(Date.now() - 7 * 86400_000).toISOString())
+  const [to, setTo]       = useState<string>(new Date().toISOString())
   const [alerta, setAlerta] = useState<string>('')
+
+  // NUEVO: selector de métrica y agrupación
+  const [metric, setMetric]   = useState<'dolor_24h' | 'dolor_6h' | 'satisfaccion'>('dolor_24h')
+  const [groupBy, setGroupBy] = useState<'cirugia' | 'anestesia'>('cirugia')
 
   // estado
   const [data, setData] = useState<Overview | null>(null)
@@ -67,8 +82,13 @@ export default function AnalyticsPage() {
   const clinicaId = clinica?.id ?? ''
 
   const commonParams = useMemo(
-    () => ({ clinica_id: clinicaId, from, to, alerta: alerta || undefined }),
-    [clinicaId, from, to, alerta]
+    () => ({
+      clinica_id: clinicaId,
+      from, to,
+      alerta: alerta || undefined,
+      metric, groupBy,
+    }),
+    [clinicaId, from, to, alerta, metric, groupBy]
   )
 
   // load overview
@@ -89,12 +109,12 @@ export default function AnalyticsPage() {
     }
   }
 
-  // load table
+  // load table (por ahora se mantiene igual; muestra dolor/satisf.)
   async function loadTable() {
     if (!clinicaId) return
     try {
       setPendingTable(true)
-      const url = `/api/analytics/table?${qs({ ...commonParams, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
+      const url = `/api/analytics/table?${qs({ clinica_id: clinicaId, from, to, alerta: alerta || undefined, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
       const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
       const j = await r.json()
       setRows(j?.rows || [])
@@ -109,7 +129,7 @@ export default function AnalyticsPage() {
   }
 
   // first load + deps
-  useEffect(() => { if (clinicaId) { loadOverview(); loadTable() } }, [clinicaId, from, to, alerta])
+  useEffect(() => { if (clinicaId) { loadOverview(); loadTable() } }, [clinicaId, from, to, alerta, metric, groupBy])
 
   // SSE
   useEffect(() => {
@@ -128,6 +148,12 @@ export default function AnalyticsPage() {
     ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
     : 0
 
+  // textos dinámicos según métrica/agrupación
+  const metricLabel = metric === 'dolor_24h' ? 'Dolor 24 h'
+                    : metric === 'dolor_6h'  ? 'Dolor 6 h'
+                    : 'Satisfacción'
+  const groupLabel = groupBy === 'cirugia' ? 'cirugía' : 'anestesia'
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* HEADER */}
@@ -145,7 +171,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* FILTROS */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-7 gap-3">
         <input
           className="border rounded-xl px-3 py-2 col-span-2"
           type="datetime-local"
@@ -164,8 +190,18 @@ export default function AnalyticsPage() {
           <option value="amarillo">Amarillo</option>
           <option value="rojo">Rojo</option>
         </select>
+        {/* NUEVO: Métrica + Agrupar por */}
+        <select className="border rounded-xl px-3 py-2" value={metric} onChange={(e) => setMetric(e.target.value as any)}>
+          <option value="dolor_24h">Dolor 24 h</option>
+          <option value="dolor_6h">Dolor 6 h</option>
+          <option value="satisfaccion">Satisfacción</option>
+        </select>
+        <select className="border rounded-xl px-3 py-2" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}>
+          <option value="cirugia">Agrupar por cirugía</option>
+          <option value="anestesia">Agrupar por anestesia</option>
+        </select>
 
-        <div className="col-span-5 flex items-center gap-2">
+        <div className="col-span-7 flex items-center gap-2">
           <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>Últimas 24h</Preset>
           <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Última semana</Preset>
           <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Último mes</Preset>
@@ -174,24 +210,29 @@ export default function AnalyticsPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi title="DOLOR PROMEDIO" value={fmt(k?.dolorProm, 1)} loading={pending} />
+        <Kpi title={`${metricLabel.toUpperCase()} PROMEDIO`} value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)} loading={pending} />
         <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
         <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
         <Kpi title="TIEMPO A 1ª RESPUESTA (MIN)" value={fmt(k?.tiempoPrimeraRespuestaMin, 0)} loading={pending} />
-        <Kpi title="SATISFACCIÓN" value={fmt(k?.satisfProm, 1)} loading={pending} />
+        {/* si la métrica NO es satisfacción, mostramos satisfacción promedio clásica para referencia */}
+        <Kpi title="SATISFACCIÓN" value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)} loading={pending} />
       </div>
 
-      {/* Dolor por cirugía */}
-      <Card title="Dolor por cirugía" loading={pending}>
-        {s?.porCirugia?.length ? (
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={s.porCirugia}>
+      {/* Barras por grupo */}
+      <Card title={`Promedio por ${groupLabel}`} loading={pending}>
+        {s?.porGrupo?.length ? (
+          <ResponsiveContainer width="100%" height={340}>
+            <BarChart data={s.porGrupo}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="tipo_cirugia" tick={{ fontSize: 12 }} interval={0} height={50} />
+              <XAxis dataKey="grupo" tick={{ fontSize: 12 }} interval={0} height={50} />
               <YAxis />
               <Tooltip contentStyle={{ borderRadius: 12 }} />
               <Legend />
-              <Bar dataKey="dolor_prom" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="val_prom" name={`${metricLabel.toLowerCase()} prom.`} radius={[6, 6, 0, 0]}>
+                {s.porGrupo.map((_, i) => (
+                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         ) : <Empty />}
@@ -200,7 +241,7 @@ export default function AnalyticsPage() {
       {/* Evolución temporal */}
       <Card title="Evolución temporal" loading={pending}>
         {s?.porDia?.length ? (
-          <ResponsiveContainer width="100%" height={340}>
+          <ResponsiveContainer width="100%" height={360}>
             <AreaChart data={s.porDia.map(d => ({ ...d, dayLabel: fmtDay(d.day) }))}>
               <defs>
                 <linearGradient id="gVerde" x1="0" y1="0" x2="0" y2="1">
@@ -221,16 +262,17 @@ export default function AnalyticsPage() {
               <YAxis />
               <Tooltip contentStyle={{ borderRadius: 12 }} />
               <Legend />
-              <Area type="monotone" dataKey="a_verde"   name="Alerta verde"   fill="url(#gVerde)"    stroke={C.verde} stackId="1" />
+              <Area type="monotone" dataKey="a_verde"    name="Alerta verde"    fill="url(#gVerde)"    stroke={C.verde} stackId="1" />
               <Area type="monotone" dataKey="a_amarillo" name="Alerta amarillo" fill="url(#gAmarillo)" stroke={C.amarillo} stackId="1" />
-              <Area type="monotone" dataKey="a_rojo"    name="Alerta rojo"    fill="url(#gRojo)"     stroke={C.rojo} stackId="1" />
-              <Area type="monotone" dataKey="dolor_prom" name="Dolor prom." />
+              <Area type="monotone" dataKey="a_rojo"     name="Alerta rojo"     fill="url(#gRojo)"     stroke={C.rojo} stackId="1" />
+              {/* línea de la métrica elegida */}
+              <Area type="monotone" dataKey="val_prom"   name={`${metricLabel.toLowerCase()} prom.`} stroke={C.brand} fillOpacity={0} />
             </AreaChart>
           </ResponsiveContainer>
         ) : <Empty />}
       </Card>
 
-      {/* Tabla */}
+      {/* Tabla (igual por ahora) */}
       <Card title={`Detalle (${total})`} loading={pendingTable}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -272,7 +314,6 @@ export default function AnalyticsPage() {
 }
 
 /* ---------- UI helpers ---------- */
-
 function Kpi({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
   return (
     <div className="rounded-2xl border p-4 shadow-sm bg-white min-h-[88px]">
@@ -304,8 +345,4 @@ function Skeleton({ className }: { className?: string }) {
 }
 function Empty() {
   return <div className="h-[260px] flex items-center justify-center text-slate-500">No hay datos para estos filtros</div>
-}
-function fmt(n?: number | null, digits = 1) {
-  if (n === null || n === undefined || Number.isNaN(n)) return '—'
-  return Number(n).toFixed(digits)
 }
