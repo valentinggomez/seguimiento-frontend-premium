@@ -569,53 +569,6 @@ export default function ResponderPage() {
               )
             })}
           </div>
-          
-          {/* 🔒 Políticas de privacidad / Términos */}
-          <div className="border rounded-xl bg-white shadow-sm p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700">
-                Políticas de privacidad y condiciones de uso
-              </h3>
-              {politicasLoading && <span className="text-xs text-slate-500">Cargando…</span>}
-            </div>
-
-            {/* Contenido: URL > HTML inline > fallback */}
-            {politicas?.politicas_url ? (
-              <p className="text-sm text-slate-600">
-                Podés leer las políticas completas aquí:{' '}
-                <a href={politicas.politicas_url} target="_blank" rel="noopener noreferrer" className="text-[#003466] underline">
-                  Ver políticas
-                </a>
-                {politicas.politicas_version && (
-                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
-                )}
-              </p>
-            ) : politicas?.politicas_html ? (
-              <div
-                className="prose prose-sm max-w-none text-slate-700"
-                dangerouslySetInnerHTML={{ __html: politicas.politicas_html }}
-              />
-            ) : (
-              <p className="text-sm text-slate-600">
-                Al continuar aceptás el tratamiento de tus datos con fines asistenciales y analíticos,
-                conforme a las políticas de privacidad de esta clínica.
-                {politicas?.politicas_version && (
-                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
-                )}
-              </p>
-            )}
-
-            <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-slate-300"
-                checked={aceptaTerminos}
-                onChange={(e) => setAceptaTerminos(e.target.checked)}
-                disabled={politicasLoading}
-              />
-              <span>Declaro haber leído y aceptar las políticas de privacidad y condiciones de uso.</span>
-            </label>
-          </div>
 
           {/* 🎤 Grabación por voz (audio real -> Whisper) */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
@@ -675,6 +628,53 @@ export default function ResponderPage() {
               Tip: podés elegir completar el formulario <strong>o</strong> enviar una grabación.
               La IA transcribe y mejora la puntuación automáticamente.
             </p>
+          </div>
+
+          {/* 🔒 Políticas de privacidad / Términos */}
+          <div className="border rounded-xl bg-white shadow-sm p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700">
+                Políticas de privacidad y condiciones de uso
+              </h3>
+              {politicasLoading && <span className="text-xs text-slate-500">Cargando…</span>}
+            </div>
+
+            {/* Contenido: URL > HTML inline > fallback */}
+            {politicas?.politicas_url ? (
+              <p className="text-sm text-slate-600">
+                Podés leer las políticas completas aquí:{' '}
+                <a href={politicas.politicas_url} target="_blank" rel="noopener noreferrer" className="text-[#003466] underline">
+                  Ver políticas
+                </a>
+                {politicas.politicas_version && (
+                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
+                )}
+              </p>
+            ) : politicas?.politicas_html ? (
+              <div
+                className="prose prose-sm max-w-none text-slate-700"
+                dangerouslySetInnerHTML={{ __html: politicas.politicas_html }}
+              />
+            ) : (
+              <p className="text-sm text-slate-600">
+                Al continuar aceptás el tratamiento de tus datos con fines asistenciales y analíticos,
+                conforme a las políticas de privacidad de esta clínica.
+                {politicas?.politicas_version && (
+                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
+                )}
+              </p>
+            )}
+
+            <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+                disabled={politicasLoading}
+              />
+              <span>Declaro haber leído y aceptar las políticas de privacidad y condiciones de uso.</span>
+            </label>
           </div>
 
           <div className="flex justify-end">
