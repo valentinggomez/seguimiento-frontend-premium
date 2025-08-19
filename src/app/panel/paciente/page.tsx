@@ -108,19 +108,19 @@ export default function RegistroPaciente() {
     
     const pad = (n: number) => String(n).padStart(2, '0')
 
-    const paciente = {
+    const paciente = { 
       ...form,
       // números
       edad: form.edad !== '' ? Number(form.edad) : null,
       dni: form.dni !== '' ? Number(form.dni) : null,
       peso: form.peso ? Number(String(form.peso).replace(',', '.')) : null,
       altura: form.altura ? Number(String(form.altura).replace(',', '.')) : null,
-      imc: form.imc ? Number(String(form.imc).replace(',', '.')) : null,
+      imc: form.imc ? String(form.imc).replace(',', '.') : null,
       // fecha YYYY-MM-DD con cero a la izquierda
       fecha_cirugia: `${anio}-${pad(mes)}-${pad(dia)}`,
       clinica_id: clinica.id,
       form_slug_inicial: slug,
-      anestesia: form.anestesia || null, 
+      anestesia: (form.anestesia ?? '').trim() || null,
     }
     console.log("📦 Objeto final paciente:", paciente)
     try {
@@ -394,10 +394,18 @@ export default function RegistroPaciente() {
                 value={form.anestesia || ''}
                 onChange={(e) => setForm({ ...form, anestesia: e.target.value })}
                 placeholder=" "
+                list="tipos-anestesia"
                 autoComplete="off"
                 className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 
                           focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
               />
+              <datalist id="tipos-anestesia">
+                <option value="General" />
+                <option value="Regional" />
+                <option value="Local" />
+                <option value="Sedación" />
+                <option value="Otra" />
+              </datalist>
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 
                                 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] 
                                 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base 
