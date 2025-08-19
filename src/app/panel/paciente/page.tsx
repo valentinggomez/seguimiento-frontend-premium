@@ -19,10 +19,11 @@ export default function RegistroPaciente() {
   const [formularios, setFormularios] = useState<any[]>([])
   const [selectedSlug, setSelectedSlug] = useState<string>('')
   const [loadingForms, setLoadingForms] = useState<boolean>(false)
+  const CAMPOS_RESERVADOS = new Set(['anestesia']); // campos fijos, no van como “avanzados”
   const camposPersonalizados: string[] = String(clinica?.campos_avanzados ?? '')
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter((s) => s && !CAMPOS_RESERVADOS.has(s.toLowerCase()));
 
   // Cargar formularios activos de la clínica y elegir uno por defecto
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function RegistroPaciente() {
     e.preventDefault()
 
     // Validación básica
-    const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo']
+    const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo', 'anestesia']
     const vacios = requeridos.filter(k => !form[k] && form[k] !== 0)
     if (vacios.length) {
       setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
@@ -118,7 +119,8 @@ export default function RegistroPaciente() {
       // fecha YYYY-MM-DD con cero a la izquierda
       fecha_cirugia: `${anio}-${pad(mes)}-${pad(dia)}`,
       clinica_id: clinica.id,
-      form_slug_inicial: slug
+      form_slug_inicial: slug,
+      anestesia: form.anestesia || null, 
     }
     console.log("📦 Objeto final paciente:", paciente)
     try {
@@ -381,6 +383,26 @@ export default function RegistroPaciente() {
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.cirugia')}
+              </label>
+            </div>
+
+            {/* ANESTESIA (fijo) */}
+            <div className="relative">
+              <input
+                type="text"
+                name="anestesia"
+                value={form.anestesia || ''}
+                onChange={(e) => setForm({ ...form, anestesia: e.target.value })}
+                placeholder=" "
+                autoComplete="off"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 
+                          focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+              />
+              <label className="absolute left-3 top-2.5 text-sm text-gray-500 
+                                peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] 
+                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base 
+                                peer-placeholder-shown:text-gray-400 transition-all">
+                {t('pacientes.anestesia')}
               </label>
             </div>
 

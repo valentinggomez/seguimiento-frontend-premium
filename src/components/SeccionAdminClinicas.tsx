@@ -39,7 +39,8 @@ const CAMPOS_DISPONIBLES = [
   "fecha_cirugia",
   "nombre_medico",
   'hash_validacion',
-  'codigo_verificador'
+  'codigo_verificador',
+  "anestesia"
 ]
 
 
@@ -481,7 +482,8 @@ export default function SeccionAdminClinicas() {
                   <div>
                     <h4 className="text-md font-semibold text-[#003366] mb-2">🧍 Datos del paciente</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'dni', 'obra_social', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion', 'codigo_verificador'].map(campo => (
+                      {['fecha','paciente_id','nombre','edad','sexo','dni','obra_social','peso','altura','imc','telefono','cirugia','anestesia','fecha_cirugia','nombre_medico','hash_validacion','codigo_verificador'].map(campo => (
+//                           👆 aquí
                         <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox
                             checked={(selected?.columnas_exportables || []).includes(campo)}
@@ -771,7 +773,7 @@ export default function SeccionAdminClinicas() {
                         <div>
                           <h4 className="text-md font-semibold text-[#003366] mb-2">🧍 Datos del paciente</h4>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {['fecha', 'paciente_id', 'nombre', 'edad', 'sexo', 'dni', 'obra_social', 'peso', 'altura', 'imc', 'telefono', 'cirugia', 'fecha_cirugia', 'nombre_medico', 'hash_validacion', 'codigo_verificador'].map(campo => (
+                            {['fecha','paciente_id','nombre','edad','sexo','dni','obra_social','peso','altura','imc','telefono','cirugia','anestesia','fecha_cirugia','nombre_medico','hash_validacion','codigo_verificador'].map(campo => (
                               <label key={campo} className="flex items-center gap-2 text-sm cursor-pointer">
                                 <Checkbox
                                   checked={(selected?.columnas_exportables || []).includes(campo)}

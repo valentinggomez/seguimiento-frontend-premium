@@ -47,6 +47,7 @@ interface Respuesta {
   altura: number
   imc: number
   tipo_cirugia: string
+  anestesia?: string 
   creado_en: string
   dolor_6h: number
   dolor_24h: number
@@ -676,12 +677,13 @@ export default function PanelRespuestas() {
     const fallbacks: Record<string, any> = {
       dolor_6h: r.dolor_6h,
       dolor_24h: r.dolor_24h,
-      nauseas: r.nausea ?? r.nauseas, // por si hay variantes
+      nauseas: r.nausea ?? r.nauseas,
       vomitos: r.vomitos,
       somnolencia: r.somnolencia,
       requiere_mas_medicacion: r.requiere_mas_medicacion ?? (r as any).mas_medicacion,
       desperto_por_dolor: r.desperto_por_dolor ?? (r as any).desperto_dolor,
       satisfaccion: r.satisfaccion,
+      anestesia: (r as any).anestesia ?? dataset.anestesia,  // 👈 nuevo (no rompe si no existe)
     }
 
     for (const [k, v] of Object.entries(fallbacks)) {
@@ -816,7 +818,9 @@ export default function PanelRespuestas() {
                   
 
                   <p className="text-sm text-gray-700">
-                    {r.tipo_cirugia} • {r.edad} {t('respuestas.años')}<br />
+                    {r.tipo_cirugia}
+                    {r.anestesia ? ` • Anestesia: ${r.anestesia}` : ''}  {/* 👈 nuevo */}
+                    {' '}• {r.edad} {t('respuestas.años')}<br />
                     {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
                   </p>
 
