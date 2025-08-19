@@ -94,6 +94,16 @@ export default function ResponderPage() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [retryHuman, setRetryHuman] = useState<string | null>(null)
   const [formulario, setFormulario] = useState<any>(null)
+  // 🇵🇱 Políticas (por clínica/form)
+  const [politicas, setPoliticas] = useState<{
+    require_aceptacion: boolean
+    politicas_version: string
+    politicas_url: string
+    politicas_html: string
+  } | null>(null)
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [politicasLoading, setPoliticasLoading] = useState(false)
+  const [politicasError, setPoliticasError] = useState<string | null>(null)
 
   const camposBase = [
     { name: "telefono", label: "Teléfono de contacto", type: "text" },
@@ -206,14 +216,72 @@ export default function ResponderPage() {
     const loadFormulario = async () => {
       if (!clinica?.id) return
       try {
+        setPoliticasLoading(true)
+        setPoliticasError(null)
         const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`
         const res = await fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
         const raw = await res.json().catch(() => [])
         const arr = Array.isArray(raw) ? raw : (raw?.data || [])
         const found = arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
         setFormulario(found || null)
+  
+        try {
+          const meta = (found?.meta || {}) as any
+          const politicasForm = meta?.politicas || meta // soporta meta.require_aceptacion directo
+
+          // 👇 Fallback para construir link público /politicas cuando no haya URL ni HTML
+          const origin =
+            (typeof window !== 'undefined' && window.location?.origin)
+              ? window.location.origin
+              : (process.env.NEXT_PUBLIC_FRONT_ORIGIN || '')
+
+          const fallbackPoliticasUrl =
+            (clinica?.id && origin)
+              ? `${origin}/politicas?clinica_id=${encodeURIComponent(clinica.id)}`
+              : ''
+
+          const p = {
+            require_aceptacion: Boolean(
+              politicasForm?.require_aceptacion ??
+              clinica?.require_aceptacion ??
+              true
+            ),
+            politicas_version: String(
+              politicasForm?.terminos_version ??
+              politicasForm?.politicas_version ??
+              clinica?.politicas_version ??
+              ''
+            ),
+            // 👉 Prioriza URL/HTML configurados. Si NO hay URL y NO hay HTML, cae al /politicas
+            politicas_url: String(
+              politicasForm?.terminos_url ??
+              politicasForm?.politicas_url ??
+              clinica?.politicas_url ??
+              ((politicasForm?.terminos_html || politicasForm?.politicas_html || clinica?.politicas_html) ? '' : fallbackPoliticasUrl)
+            ),
+            politicas_html: String(
+              politicasForm?.terminos_html ??
+              politicasForm?.politicas_html ??
+              clinica?.politicas_html ??
+              ''
+            ),
+          }
+          setPoliticas(p)
+          setAceptaTerminos(false) // reset si cambia de form
+        } catch (e) {
+          // fallback: exigí aceptación aunque no haya meta
+          setPoliticas({
+            require_aceptacion: true,
+            politicas_version: '',
+            politicas_url: '',
+            politicas_html: ''
+          })
+        }
       } catch {
         setFormulario(null)
+        setPoliticasError('No se pudieron cargar las políticas')
+      } finally {
+        setPoliticasLoading(false)
       }
     }
     loadFormulario()
@@ -306,8 +374,18 @@ export default function ResponderPage() {
     setCountdown(null)
   }, [secondsLeft, retryAt])
 
+  useEffect(() => {
+    if (politicas && !politicas.require_aceptacion) {
+      setAceptaTerminos(true)
+    }
+  }, [politicas])
+
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+    if (politicas?.require_aceptacion && !aceptaTerminos) {
+      alert('Debés aceptar las políticas de privacidad y condiciones de uso para continuar.')
+      return
+    }
     if (!puedeEnviar) { alert('Todavía no podés enviar otra respuesta. Probá más tarde.'); return }
 
     const camposObligatorios = camposFinal.filter(c => c.name !== "observacion" && campoActivo(c.name))
@@ -338,6 +416,15 @@ export default function ResponderPage() {
             ua: navigator.userAgent,
             enviado_en: new Date().toISOString(),
           },
+          _terminos_aceptados: politicas?.require_aceptacion ? !!aceptaTerminos : null,
+          _terminos_aceptados_en: new Date().toISOString(),
+          _terminos_version: politicas?.politicas_version || null,
+          _politicas_url: politicas?.politicas_url || null,
+          _politicas_fingerprint: [
+            politicas?.politicas_version || '',
+            politicas?.politicas_url || '',
+            (politicas?.politicas_html || '').slice(0, 120)
+          ].filter(Boolean).join('|') || null,
         }
         const res = await fetchConToken('/api/respuestas', {
           method: 'POST',
@@ -364,6 +451,16 @@ export default function ResponderPage() {
                   : audioBlob?.type.includes('ogg') ? 'ogg'
                   : 'webm'
         fd.append('audio', audioBlob!, `respuesta.${ext}`)
+        // 👇 trazabilidad de aceptación también en audio
+        fd.append('_terminos_aceptados', String(politicas?.require_aceptacion ? !!aceptaTerminos : ''));
+        fd.append('_terminos_aceptados_en', new Date().toISOString());
+        if (politicas?.politicas_version) fd.append('_terminos_version', politicas.politicas_version);
+        if (politicas?.politicas_url)     fd.append('_politicas_url', politicas.politicas_url);
+        fd.append('_politicas_fingerprint', [
+          politicas?.politicas_version || '',
+          politicas?.politicas_url || '',
+          (politicas?.politicas_html || '').slice(0, 120)
+        ].filter(Boolean).join('|') || '');
 
         // armamos headers desde getAuthHeaders, pero sin Content-Type
         const headersMultipart = { ...getAuthHeaders() }
@@ -421,6 +518,12 @@ export default function ResponderPage() {
           Seguimiento postoperatorio <span className="text-sm text-gray-500">({formSlug})</span>
         </h1>
         <p className="text-center text-gray-600 mb-6 text-sm">Completá cuidadosamente este control clínico.</p>
+        
+        {politicasError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 p-3 text-sm">
+            {politicasError}. Se requerirá aceptación igualmente.
+          </div>
+        )}
 
         {/* Aviso de cooldown */}
         {!checkingCooldown && !puedeEnviar && (
@@ -465,6 +568,53 @@ export default function ResponderPage() {
                 />
               )
             })}
+          </div>
+          
+          {/* 🔒 Políticas de privacidad / Términos */}
+          <div className="border rounded-xl bg-white shadow-sm p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700">
+                Políticas de privacidad y condiciones de uso
+              </h3>
+              {politicasLoading && <span className="text-xs text-slate-500">Cargando…</span>}
+            </div>
+
+            {/* Contenido: URL > HTML inline > fallback */}
+            {politicas?.politicas_url ? (
+              <p className="text-sm text-slate-600">
+                Podés leer las políticas completas aquí:{' '}
+                <a href={politicas.politicas_url} target="_blank" rel="noopener noreferrer" className="text-[#003466] underline">
+                  Ver políticas
+                </a>
+                {politicas.politicas_version && (
+                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
+                )}
+              </p>
+            ) : politicas?.politicas_html ? (
+              <div
+                className="prose prose-sm max-w-none text-slate-700"
+                dangerouslySetInnerHTML={{ __html: politicas.politicas_html }}
+              />
+            ) : (
+              <p className="text-sm text-slate-600">
+                Al continuar aceptás el tratamiento de tus datos con fines asistenciales y analíticos,
+                conforme a las políticas de privacidad de esta clínica.
+                {politicas?.politicas_version && (
+                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
+                )}
+              </p>
+            )}
+
+            <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+                disabled={politicasLoading}
+              />
+              <span>Declaro haber leído y aceptar las políticas de privacidad y condiciones de uso.</span>
+            </label>
           </div>
 
           {/* 🎤 Grabación por voz (audio real -> Whisper) */}
@@ -530,7 +680,12 @@ export default function ResponderPage() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={estado==='enviando' || checkingCooldown || !puedeEnviar}
+              disabled={
+                estado==='enviando' ||
+                checkingCooldown ||
+                !puedeEnviar ||
+                (politicas?.require_aceptacion && !aceptaTerminos)
+              }
               className="bg-[#003366] hover:bg-[#002244] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all"
             >
               {estado === 'enviando' ? 'Enviando...' : 'Enviar respuesta'}
