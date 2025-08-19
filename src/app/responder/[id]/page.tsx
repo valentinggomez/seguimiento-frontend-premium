@@ -65,6 +65,46 @@ function FieldBlock({
   )
 }
 
+function Modal({
+  open, onClose, title, children,
+}: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+  useEffect(() => {
+    if (open) ref.current?.focus()
+  }, [open])
+
+  if (!open) return null
+  return (
+    <div
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="policy-modal-title"
+      tabIndex={-1}
+      ref={ref}
+      className="fixed inset-0 z-[80] grid place-items-center bg-black/40 backdrop-blur-sm p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b">
+          <h2 id="policy-modal-title" className="font-semibold text-slate-800">{title}</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-slate-100" aria-label="Cerrar">✕</button>
+        </div>
+        <div className="max-h-[70vh] overflow-auto p-5">{children}</div>
+        <div className="px-5 py-3 border-t text-right">
+          <button onClick={onClose} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-slate-900 text-white hover:bg-slate-800">
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ResponderPage() {
   const { id } = useParams()
   const search = useSearchParams()
@@ -104,7 +144,8 @@ export default function ResponderPage() {
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [politicasLoading, setPoliticasLoading] = useState(false)
   const [politicasError, setPoliticasError] = useState<string | null>(null)
-
+  const [showPoliticas, setShowPoliticas] = useState(false)
+  
   const camposBase = [
     { name: "telefono", label: "Teléfono de contacto", type: "text" },
     { name: "nombre_medico", label: "Nombre del médico", type: "text" },
@@ -630,52 +671,100 @@ export default function ResponderPage() {
             </p>
           </div>
 
-          {/* 🔒 Políticas de privacidad / Términos */}
-          <div className="border rounded-xl bg-white shadow-sm p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700">
-                Políticas de privacidad y condiciones de uso
-              </h3>
-              {politicasLoading && <span className="text-xs text-slate-500">Cargando…</span>}
+          {/* 🔒 Políticas de privacidad / Términos (versión SUPREME) */}
+          <div className="rounded-2xl border bg-white shadow-sm ring-1 ring-slate-100 overflow-hidden">
+            {/* Header bonito */}
+            <div className="bg-gradient-to-r from-sky-50 to-indigo-50 border-b px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔒</span>
+                <div className="leading-tight">
+                  <p className="font-semibold text-slate-800">Políticas de privacidad y condiciones de uso</p>
+                  <p className="text-xs text-slate-500">Leé y aceptá para continuar con el envío</p>
+                </div>
+              </div>
+              {politicas?.politicas_version ? (
+                <span className="inline-flex items-center rounded-full bg-slate-800/90 px-3 py-1 text-xs font-medium text-white">
+                  v{politicas.politicas_version.replace(/^v/i,'')}
+                </span>
+              ) : null}
             </div>
 
-            {/* Contenido: URL > HTML inline > fallback */}
-            {politicas?.politicas_url ? (
-              <p className="text-sm text-slate-600">
-                Podés leer las políticas completas aquí:{' '}
-                <a href={politicas.politicas_url} target="_blank" rel="noopener noreferrer" className="text-[#003466] underline">
-                  Ver políticas
-                </a>
-                {politicas.politicas_version && (
-                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
-                )}
-              </p>
-            ) : politicas?.politicas_html ? (
-              <div
-                className="prose prose-sm max-w-none text-slate-700"
-                dangerouslySetInnerHTML={{ __html: politicas.politicas_html }}
+            {/* Body */}
+            <div className="p-4 space-y-3">
+              {/* Link / Inline / Fallback */}
+              {politicas?.politicas_url ? (
+                <p className="text-sm text-slate-700">
+                  Podés leer las políticas completas aquí:{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPoliticas(true)}
+                    className="font-medium text-[#003466] underline underline-offset-2 hover:opacity-80"
+                  >
+                    Ver políticas
+                  </button>
+                  {politicas.politicas_version && (
+                    <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
+                  )}
+                </p>
+              ) : politicas?.politicas_html ? (
+                <div className="prose prose-sm max-w-none text-slate-700">
+                  {/* Mostramos resumen corto y modal para lectura completa */}
+                  <div dangerouslySetInnerHTML={{ __html: (politicas.politicas_html || '').slice(0, 280) + '…' }} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPoliticas(true)}
+                    className="mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    Leer completo
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-700">
+                  Al continuar aceptás el tratamiento de tus datos con fines asistenciales y analíticos,
+                  conforme a las políticas de privacidad de esta clínica.
+                </p>
+              )}
+
+              {/* Checkbox custom */}
+              <label className="group mt-1 flex gap-3 items-start">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-5 w-5 appearance-none rounded-md border-2 border-slate-300 checked:border-[#003366] checked:bg-[#003366] grid place-content-center"
+                  checked={aceptaTerminos}
+                  onChange={(e) => setAceptaTerminos(e.target.checked)}
+                  disabled={politicasLoading}
+                />
+                <span className="text-sm text-slate-800">
+                  Declaro haber leído y aceptar las políticas de privacidad y condiciones de uso.
+                </span>
+              </label>
+
+              {/* Microcopy / error */}
+              {politicasLoading && <p className="text-xs text-slate-500">Cargando políticas…</p>}
+              {politicasError && <p className="text-xs text-red-600">No se pudieron cargar. Se requerirá aceptación igualmente.</p>}
+            </div>
+          </div>
+
+          {/* Modal de Políticas */}
+          <Modal
+            open={showPoliticas}
+            onClose={() => setShowPoliticas(false)}
+            title="Políticas de privacidad y condiciones de uso"
+          >
+            {politicas?.politicas_html ? (
+              <div className="prose prose-sm max-w-none text-slate-800" dangerouslySetInnerHTML={{ __html: politicas.politicas_html }} />
+            ) : politicas?.politicas_url ? (
+              <iframe
+                src={politicas.politicas_url}
+                className="w-full h-[60vh] border rounded-lg"
+                title="Políticas"
               />
             ) : (
-              <p className="text-sm text-slate-600">
-                Al continuar aceptás el tratamiento de tus datos con fines asistenciales y analíticos,
-                conforme a las políticas de privacidad de esta clínica.
-                {politicas?.politicas_version && (
-                  <span className="ml-2 text-slate-500">(versión {politicas.politicas_version})</span>
-                )}
+              <p className="text-sm text-slate-700">
+                No hay contenido específico cargado. Consultá la página de políticas o contactá a la clínica.
               </p>
             )}
-
-            <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-slate-300"
-                checked={aceptaTerminos}
-                onChange={(e) => setAceptaTerminos(e.target.checked)}
-                disabled={politicasLoading}
-              />
-              <span>Declaro haber leído y aceptar las políticas de privacidad y condiciones de uso.</span>
-            </label>
-          </div>
+          </Modal>
 
           <div className="flex justify-end">
             <button
