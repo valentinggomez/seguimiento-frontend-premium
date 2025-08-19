@@ -1,32 +1,31 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
 import {
   ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
   AreaChart, Area
 } from 'recharts'
 import { formatInTimeZone } from 'date-fns-tz'
 import { es, enUS, ptBR } from 'date-fns/locale'
+import type { Locale } from 'date-fns'           // <- asegura date-fns v2
 import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
-import type { Locale } from 'date-fns'
 
 type KPIs = {
   dolorProm?: number
   satisfProm?: number
-  tasaRespuesta?: number
-  tiempoPrimeraRespuestaMin?: number
+  tasaRespuesta?: number | null
+  tiempoPrimeraRespuestaMin?: number | null
   alertas?: { verde: number; amarillo: number; rojo: number }
   nTotal?: number
 }
 type Series = {
-  porCirugia?: Array<{ tipo_cirugia: string; dolor_prom: number; n: number }>
+  porCirugia?: Array<{ tipo_cirugia: string; dolor_prom: number | null; n: number }>
   porDia?: Array<{
     day: string
-    dolor_prom?: number
+    dolor_prom?: number | null
     a_verde?: number
     a_amarillo?: number
     a_rojo?: number
@@ -35,6 +34,7 @@ type Series = {
 type Overview = { kpis: KPIs; series: Series }
 
 const locales: Record<string, Locale> = { es, en: enUS, pt: ptBR }
+const C = { verde: '#10B981', amarillo: '#F59E0B', rojo: '#EF4444', brand: '#003466' }
 
 function qs(params: Record<string, any>) {
   const u = new URLSearchParams()
@@ -48,13 +48,12 @@ export default function AnalyticsPage() {
   const { t, language } = useTranslation()
   const { clinica } = useClinica()
 
-  const [clinicaId, setClinicaId] = useState<string>('')
-  const [tz, setTz] = useState<string>('America/Argentina/Cordoba')
-
-  const [from, setFrom] = useState<string>(new Date(Date.now() - 24 * 3600_000).toISOString())
+  // filtros visibles
+  const [from, setFrom] = useState<string>(new Date(Date.now() - 7 * 86400_000).toISOString())
   const [to, setTo] = useState<string>(new Date().toISOString())
   const [alerta, setAlerta] = useState<string>('')
 
+  // estado
   const [data, setData] = useState<Overview | null>(null)
   const [rows, setRows] = useState<any[]>([])
   const [total, setTotal] = useState<number>(0)
@@ -65,24 +64,14 @@ export default function AnalyticsPage() {
   const api = process.env.NEXT_PUBLIC_API_URL || ''
   const locale = locales[language] ?? es
   const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
-
-  // Inicializar desde Provider (mismo patrón que respuestas)
-  useEffect(() => {
-    if (clinica?.id) setClinicaId(clinica.id)
-    if ((clinica as any)?.tz) setTz((clinica as any).tz)
-  }, [clinica?.id])
+  const clinicaId = clinica?.id ?? ''
 
   const commonParams = useMemo(
-    () => ({
-      clinica_id: clinicaId,
-      from,
-      to,
-      nivel_alerta: alerta || undefined, 
-    }),
+    () => ({ clinica_id: clinicaId, from, to, alerta: alerta || undefined }),
     [clinicaId, from, to, alerta]
   )
 
-  // Cargar KPIs + series
+  // load overview
   async function loadOverview() {
     if (!clinicaId) return
     try {
@@ -100,24 +89,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Si el Provider todavía no entregó el id, hacemos fallback como en /panel/respuestas
-  useEffect(() => {
-    (async () => {
-        if (clinicaId) return
-        try {
-        const host =
-            typeof window !== 'undefined'
-            ? window.location.hostname.split(':')[0].toLowerCase().trim()
-            : 'localhost'
-        const res = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`)
-        const data = await res.json().catch(() => ({}))
-        const id = data?.clinica?.id
-        if (id) setClinicaId(id)
-        } catch {}
-    })()
-    }, [clinicaId])
-
-  // Cargar tabla
+  // load table
   async function loadTable() {
     if (!clinicaId) return
     try {
@@ -136,86 +108,77 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Primer load + cuando cambian filtros
-  useEffect(() => {
-    if (!clinicaId) return
-    loadOverview()
-    loadTable()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clinicaId, from, to, alerta])
+  // first load + deps
+  useEffect(() => { if (clinicaId) { loadOverview(); loadTable() } }, [clinicaId, from, to, alerta])
 
-  // SSE “nuevos” (igual patrón que respuestas)
+  // SSE
   useEffect(() => {
     if (!clinicaId) return
-    const esrc = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
+    const es = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
     const onNew = () => setHasNew(true)
-    esrc.addEventListener('respuesta_creada', onNew)
-    return () => { esrc.removeEventListener('respuesta_creada', onNew); esrc.close() }
+    es.addEventListener('respuesta_creada', onNew)
+    return () => { es.removeEventListener('respuesta_creada', onNew); es.close() }
   }, [clinicaId, api])
 
-  // helpers
   const k = data?.kpis
   const s = data?.series
-  const fmtDay = (d: string) => formatInTimeZone(new Date(d), tz, 'dd MMM', { locale })
+  const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
-  const alertPct = k && k.nTotal! > 0
+  const alertPct = k && (k.nTotal || 0) > 0
     ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
     : 0
 
   return (
-    <div className="p-6">
-      {/* Header (mismo look & feel que respuestas) */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-[#003366]">{t('navbar.analytics') || 'Estadísticas'}</h1>
-        {hasNew && (
-          <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>
-        )}
+    <div className="p-4 md:p-6 space-y-6">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[#003466]">{t('navbar.analytics') || 'Estadísticas'}</h1>
+          {hasNew && <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>}
+        </div>
+        <button
+          onClick={() => { loadOverview(); loadTable() }}
+          className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
+        >
+          {t('respuestas.actualizar') || 'Actualizar'}
+        </button>
       </div>
 
-      {/* Filtros: solo fechas + alerta + presets */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
+      {/* FILTROS */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
         <input
-          className="border rounded-xl px-3 py-2"
+          className="border rounded-xl px-3 py-2 col-span-2"
           type="datetime-local"
           value={from.slice(0, 16)}
           onChange={(e) => setFrom(new Date(e.target.value).toISOString())}
         />
         <input
-          className="border rounded-xl px-3 py-2"
+          className="border rounded-xl px-3 py-2 col-span-2"
           type="datetime-local"
           value={to.slice(0, 16)}
           onChange={(e) => setTo(new Date(e.target.value).toISOString())}
         />
-        <select
-          className="border rounded-xl px-3 py-2"
-          value={alerta}
-          onChange={(e) => setAlerta(e.target.value)}
-        >
-          <option value="">Alerta</option>
+        <select className="border rounded-xl px-3 py-2" value={alerta} onChange={(e) => setAlerta(e.target.value)}>
+          <option value="">{t('Alerta') || 'Alerta'}</option>
           <option value="verde">Verde</option>
           <option value="amarillo">Amarillo</option>
           <option value="rojo">Rojo</option>
         </select>
-        <div className="flex items-center gap-2">
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>
-            Últimas 24h
-          </Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
-            Última semana
-          </Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
-            Último mes
-          </Preset>
+
+        <div className="col-span-5 flex items-center gap-2">
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>Últimas 24h</Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Última semana</Preset>
+          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Último mes</Preset>
         </div>
       </div>
 
-      {/* KPIs (cards estilo respuestas) */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-        <Kpi loading={pending} title="DOLOR PROMEDIO" value={fmt(k?.dolorProm, 1)} />
-        <Kpi loading={pending} title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} />
-        <Kpi loading={pending} title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} />
-        <Kpi loading={pending} title="TIEMPO A 1ª RESPUESTA (MIN)" value={fmt(k?.tiempoPrimeraRespuestaMin, 0)} />
-        <Kpi loading={pending} title="SATISFACCIÓN" value={fmt(k?.satisfProm, 1)} />
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Kpi title="DOLOR PROMEDIO" value={fmt(k?.dolorProm, 1)} loading={pending} />
+        <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
+        <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
+        <Kpi title="TIEMPO A 1ª RESPUESTA (MIN)" value={fmt(k?.tiempoPrimeraRespuestaMin, 0)} loading={pending} />
+        <Kpi title="SATISFACCIÓN" value={fmt(k?.satisfProm, 1)} loading={pending} />
       </div>
 
       {/* Dolor por cirugía */}
@@ -224,11 +187,11 @@ export default function AnalyticsPage() {
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={s.porCirugia}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="tipo_cirugia" />
+              <XAxis dataKey="tipo_cirugia" tick={{ fontSize: 12 }} interval={0} height={50} />
               <YAxis />
-              <Tooltip />
+              <Tooltip contentStyle={{ borderRadius: 12 }} />
               <Legend />
-              <Bar dataKey="dolor_prom" />
+              <Bar dataKey="dolor_prom" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : <Empty />}
@@ -239,22 +202,36 @@ export default function AnalyticsPage() {
         {s?.porDia?.length ? (
           <ResponsiveContainer width="100%" height={340}>
             <AreaChart data={s.porDia.map(d => ({ ...d, dayLabel: fmtDay(d.day) }))}>
+              <defs>
+                <linearGradient id="gVerde" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={C.verde} stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={C.verde} stopOpacity={0.05}/>
+                </linearGradient>
+                <linearGradient id="gAmarillo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={C.amarillo} stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={C.amarillo} stopOpacity={0.05}/>
+                </linearGradient>
+                <linearGradient id="gRojo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={C.rojo} stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={C.rojo} stopOpacity={0.05}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="dayLabel" />
               <YAxis />
-              <Tooltip />
+              <Tooltip contentStyle={{ borderRadius: 12 }} />
               <Legend />
-              <Area type="monotone" dataKey="dolor_prom" />
-              <Area type="monotone" dataKey="a_verde" stackId="1" />
-              <Area type="monotone" dataKey="a_amarillo" stackId="1" />
-              <Area type="monotone" dataKey="a_rojo" stackId="1" />
+              <Area type="monotone" dataKey="a_verde"   name="Alerta verde"   fill="url(#gVerde)"    stroke={C.verde} stackId="1" />
+              <Area type="monotone" dataKey="a_amarillo" name="Alerta amarillo" fill="url(#gAmarillo)" stroke={C.amarillo} stackId="1" />
+              <Area type="monotone" dataKey="a_rojo"    name="Alerta rojo"    fill="url(#gRojo)"     stroke={C.rojo} stackId="1" />
+              <Area type="monotone" dataKey="dolor_prom" name="Dolor prom." />
             </AreaChart>
           </ResponsiveContainer>
         ) : <Empty />}
       </Card>
 
-      {/* Tabla detalle */}
-      <Card title="Detalle" loading={pendingTable}>
+      {/* Tabla */}
+      <Card title={`Detalle (${total})`} loading={pendingTable}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -267,7 +244,19 @@ export default function AnalyticsPage() {
                 <tr key={r.id} className="border-b last:border-0">
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
-                  <Td>{r.nivel_alerta ?? '-'}</Td>
+                  <Td>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs"
+                      style={{
+                        background: r.nivel_alerta === 'rojo' ? '#FEE2E2'
+                          : r.nivel_alerta === 'amarillo' ? '#FEF3C7' : '#DCFCE7',
+                        color: r.nivel_alerta === 'rojo' ? '#B91C1C'
+                          : r.nivel_alerta === 'amarillo' ? '#92400E' : '#065F46'
+                      }}
+                    >
+                      {r.nivel_alerta ?? '-'}
+                    </span>
+                  </Td>
                   <Td>{r.dolor ?? '-'}</Td>
                   <Td>{r.satisfaccion ?? '-'}</Td>
                 </tr>
@@ -277,13 +266,12 @@ export default function AnalyticsPage() {
             </tbody>
           </table>
         </div>
-        <div className="text-xs text-slate-500 pt-2">Total: {total}</div>
       </Card>
     </div>
   )
 }
 
-/* ---------- UI helpers (mismo estilo que respuestas) ---------- */
+/* ---------- UI helpers ---------- */
 
 function Kpi({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
   return (
@@ -295,10 +283,9 @@ function Kpi({ title, value, loading }: { title: string; value: string; loading?
     </div>
   )
 }
-
 function Card({ title, children, loading }: any) {
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 mt-4">
+    <div className="rounded-2xl border shadow-sm bg-white p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium">{title}</div>
         {loading ? <Skeleton className="h-4 w-24" /> : null}
@@ -307,24 +294,18 @@ function Card({ title, children, loading }: any) {
     </div>
   )
 }
-
 function Preset({ children, onClick }: any) {
-  return (
-    <button onClick={onClick} className="px-3 py-2 rounded-xl border shadow-sm bg-white hover:bg-slate-50">
-      {children}
-    </button>
-  )
+  return <button onClick={onClick} className="px-3 py-2 rounded-xl border shadow-sm bg-white hover:bg-slate-50">{children}</button>
 }
 function Th({ children }: any) { return <th className="py-2 pr-3">{children}</th> }
 function Td({ children }: any) { return <td className="py-2 pr-3">{children}</td> }
-
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-slate-200 rounded ${className}`} />
 }
 function Empty() {
   return <div className="h-[260px] flex items-center justify-center text-slate-500">No hay datos para estos filtros</div>
 }
-function fmt(n?: number, digits = 1) {
+function fmt(n?: number | null, digits = 1) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—'
   return Number(n).toFixed(digits)
 }
