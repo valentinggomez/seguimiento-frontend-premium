@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
-  AreaChart, Area, Cell
+  AreaChart, Area, Cell, LineChart, Line
 } from 'recharts'
 import { formatInTimeZone } from 'date-fns-tz'
 import { es, enUS, ptBR } from 'date-fns/locale'
@@ -54,6 +54,20 @@ function fmt(n?: number | null, digits = 1) {
   return Number(n).toFixed(digits)
 }
 
+function toCSV(rows: any[]) {
+  if (!rows?.length) return ''
+  const cols = ['creado_en','tipo_cirugia','nivel_alerta','dolor','satisfaccion']
+  const header = cols.join(',')
+  const body = rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(',')).join('\n')
+  return `${header}\n${body}`
+}
+function download(filename: string, text: string) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -75,7 +89,12 @@ export default function AnalyticsPage() {
   const [pending, setPending] = useState<boolean>(false)
   const [pendingTable, setPendingTable] = useState<boolean>(false)
   const [hasNew, setHasNew] = useState<boolean>(false)
+  // Drill-down por grupo (barra clickeada)
+  const [selectedGroup, setSelectedGroup] = useState<string>('')
 
+  // Auto-refresh y sello de última actualización
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false)
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now())
   const api = process.env.NEXT_PUBLIC_API_URL || ''
   const locale = locales[language] ?? es
   const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
@@ -87,8 +106,9 @@ export default function AnalyticsPage() {
       from, to,
       alerta: alerta || undefined,
       metric, groupBy,
+      groupValue: selectedGroup || undefined,   // ⬅️ nuevo
     }),
-    [clinicaId, from, to, alerta, metric, groupBy]
+    [clinicaId, from, to, alerta, metric, groupBy, selectedGroup]
   )
 
   // load overview
@@ -114,7 +134,7 @@ export default function AnalyticsPage() {
     if (!clinicaId) return
     try {
       setPendingTable(true)
-      const url = `/api/analytics/table?${qs({ clinica_id: clinicaId, from, to, alerta: alerta || undefined, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
+      const url = `/api/analytics/table?${qs({ ...commonParams, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
       const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
       const j = await r.json()
       setRows(j?.rows || [])
@@ -128,8 +148,21 @@ export default function AnalyticsPage() {
     }
   }
 
+  async function refreshAll() {
+    await Promise.all([loadOverview(), loadTable()])
+    setLastUpdated(Date.now())
+  }
+
   // first load + deps
-  useEffect(() => { if (clinicaId) { loadOverview(); loadTable() } }, [clinicaId, from, to, alerta, metric, groupBy])
+  useEffect(() => {
+    if (clinicaId) { refreshAll() }
+  }, [clinicaId, from, to, alerta, metric, groupBy, selectedGroup])
+
+  useEffect(() => {
+    if (!autoRefresh || !clinicaId) return
+    const id = setInterval(() => refreshAll(), 90_000) // 90s
+    return () => clearInterval(id)
+  }, [autoRefresh, clinicaId])
 
   // SSE
   useEffect(() => {
@@ -139,6 +172,25 @@ export default function AnalyticsPage() {
     es.addEventListener('respuesta_creada', onNew)
     return () => { es.removeEventListener('respuesta_creada', onNew); es.close() }
   }, [clinicaId, api])
+
+  // Restaurar filtros desde la URL al montar
+  useEffect(() => {
+    const q = new URLSearchParams(location.search)
+    const g = (k: string) => q.get(k) || ''
+    const f = g('from'); if (f) setFrom(new Date(f).toISOString())
+    const tt = g('to');  if (tt) setTo(new Date(tt).toISOString())
+    const a = g('alerta'); if (a) setAlerta(a)
+    const m = g('metric') as any; if (m) setMetric(m)
+    const gb = g('groupBy') as any; if (gb) setGroupBy(gb)
+    const gv = g('groupValue'); if (gv) setSelectedGroup(gv)
+  }, [])
+
+  // Sincronizar filtros hacia la URL
+  useEffect(() => {
+    const params = qs({ from, to, alerta, metric, groupBy, groupValue: selectedGroup || undefined })
+    const url = `${location.pathname}?${params}`
+    window.history.replaceState(null, '', url)
+  }, [from, to, alerta, metric, groupBy, selectedGroup])
 
   const k = data?.kpis
   const s = data?.series
@@ -162,12 +214,22 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold text-[#003466]">{t('navbar.analytics') || 'Estadísticas'}</h1>
           {hasNew && <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Nuevos</span>}
         </div>
-        <button
-          onClick={() => { loadOverview(); loadTable() }}
-          className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
-        >
-          {t('respuestas.actualizar') || 'Actualizar'}
-        </button>
+
+        <div className="flex items-center gap-3 text-xs text-slate-600">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
+            Auto-refresh
+          </label>
+          <span aria-live="polite">
+            act. hace {Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s
+          </span>
+          <button
+            onClick={refreshAll}
+            className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
+          >
+            {t('respuestas.actualizar') || 'Actualizar'}
+          </button>
+        </div>
       </div>
 
       {/* FILTROS */}
@@ -210,7 +272,12 @@ export default function AnalyticsPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi title={`${metricLabel.toUpperCase()} PROMEDIO`} value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)} loading={pending} />
+        <Kpi
+          title={`${metricLabel.toUpperCase()} PROMEDIO`}
+          value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)}
+          loading={pending}
+          spark={<KpiSpark data={s?.porDia} dataKey="val_prom" />}
+        />
         <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
         <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
         {/* si la métrica NO es satisfacción, mostramos satisfacción promedio clásica para referencia */}
@@ -218,7 +285,23 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Barras por grupo */}
-      <Card title={`Promedio por ${groupLabel}`} loading={pending}>
+      <Card
+        title={
+          <div className="flex items-center gap-2">
+            <span>{`Promedio por ${groupLabel}`}</span>
+            {selectedGroup && (
+              <button
+                onClick={() => setSelectedGroup('')}
+                className="text-xs px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200"
+                title="Quitar filtro"
+              >
+                {groupLabel}: <b>{selectedGroup}</b> ✕
+              </button>
+            )}
+          </div>
+        }
+        loading={pending}
+      >
         {s?.porGrupo?.length ? (
           <ResponsiveContainer width="100%" height={340}>
             <BarChart data={s.porGrupo}>
@@ -228,8 +311,15 @@ export default function AnalyticsPage() {
               <Tooltip contentStyle={{ borderRadius: 12 }} />
               <Legend />
               <Bar dataKey="val_prom" name={`${metricLabel.toLowerCase()} prom.`} radius={[6, 6, 0, 0]}>
-                {s.porGrupo.map((_, i) => (
-                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                {s.porGrupo.map((row, i) => (
+                  <Cell
+                    key={i}
+                    fill={PALETTE[i % PALETTE.length]}
+                    cursor="pointer"
+                    onClick={() => setSelectedGroup(row.grupo)}
+                    stroke={selectedGroup === row.grupo ? '#111827' : undefined}
+                    strokeWidth={selectedGroup === row.grupo ? 2 : 1}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -273,6 +363,17 @@ export default function AnalyticsPage() {
 
       {/* Tabla (igual por ahora) */}
       <Card title={`Detalle (${total})`} loading={pendingTable}>
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => download(
+              `detalle_${new Date(from).toISOString()}_${new Date(to).toISOString()}.csv`,
+              toCSV(rows)
+            )}
+            className="text-xs px-3 py-1 rounded border hover:bg-slate-50"
+          >
+            Exportar CSV
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -312,14 +413,28 @@ export default function AnalyticsPage() {
   )
 }
 
+function KpiSpark({ data, dataKey='val_prom' }: { data?: any[]; dataKey?: string }) {
+  if (!data?.length) return null
+  return (
+    <div className="mt-1">
+      <ResponsiveContainer width="100%" height={34}>
+        <LineChart data={data}>
+          <Line type="monotone" dataKey={dataKey} dot={false} strokeWidth={2} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 /* ---------- UI helpers ---------- */
-function Kpi({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
+function Kpi({ title, value, loading, spark }: { title: string; value: string; loading?: boolean; spark?: React.ReactNode }) {
   return (
     <div className="rounded-2xl border p-4 shadow-sm bg-white min-h-[88px]">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">{title}</div>
+      <div className="text-[11px] uppercase tracking-wide text-slate-500" title={title}>{title}</div>
       <div className="text-2xl font-semibold mt-1">
         {loading ? <Skeleton className="h-7 w-16" /> : value || '—'}
       </div>
+      {spark}
     </div>
   )
 }
