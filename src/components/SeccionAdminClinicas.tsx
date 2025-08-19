@@ -302,6 +302,12 @@ export default function SeccionAdminClinicas() {
           telefono: selected.telefono || "",
           columnas_exportables: selected.columnas_exportables,
           sheets_map: sheets_map_obj,
+
+          // 🔒 Políticas
+          politicas_html: selected.politicas_html || "",
+          politicas_version: selected.politicas_version || "v1",
+          politicas_url: selected.politicas_url || "",
+          politicas_requeridas: Number(Boolean(selected.politicas_requeridas)), // 0 | 1
         }),
       });
 
@@ -373,7 +379,12 @@ export default function SeccionAdminClinicas() {
                   color_primario: "#1E90FF",
                   campos_formulario: [],
                   columnas_exportables: [],
-                  campos_avanzados: ""
+                  campos_avanzados: "",
+                  // 🔒 Políticas
+                  politicas_html: "",
+                  politicas_version: "v1",
+                  politicas_url: "",
+                  politicas_requeridas: 1, // 1 = requiere aceptación
                 })
               }}
             >
@@ -451,6 +462,67 @@ export default function SeccionAdminClinicas() {
 
                 <h3 className="text-xl font-semibold text-[#003366] mt-8">🧪 Campos clínicos avanzados</h3>
                 <Textarea value={camposAvanzados} onChange={e => setCamposAvanzados(e.target.value)} placeholder="Ej: frecuencia_respiratoria, presion_sistolica" />
+
+                {/* 🔒 Políticas de privacidad */}
+                <h3 className="text-xl font-semibold text-[#003366] mt-8">🔒 Políticas de privacidad</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-slate-700">Políticas (HTML)</label>
+                    <Textarea
+                      className="mt-1 min-h-[220px]"
+                      placeholder="Pegá aquí el HTML de tus políticas…"
+                      value={selected?.politicas_html || ""}
+                      onChange={(e) =>
+                        setSelected({ ...selected!, politicas_html: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Si cargás HTML, se mostrará inline en el modal del paciente.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-slate-700">Versión (ej: v1)</label>
+                    <Input
+                      className="mt-1"
+                      placeholder="v1"
+                      value={selected?.politicas_version || ""}
+                      onChange={(e) =>
+                        setSelected({ ...selected!, politicas_version: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-slate-700">URL pública (opcional)</label>
+                    <Input
+                      className="mt-1"
+                      placeholder="https://tu-dominio.com/politicas.pdf o /politicas"
+                      value={selected?.politicas_url || ""}
+                      onChange={(e) =>
+                        setSelected({ ...selected!, politicas_url: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Si dejás vacío y no hay HTML, el front usará <code>/politicas?clinica_id=…</code>.
+                    </p>
+                  </div>
+
+                  <label className="flex items-center gap-2 md:col-span-2 mt-2 cursor-pointer">
+                    <Checkbox
+                      checked={Boolean(selected?.politicas_requeridas)}
+                      onCheckedChange={(on) =>
+                        setSelected({
+                          ...selected!,
+                          politicas_requeridas: on ? 1 : 0,
+                        })
+                      }
+                    />
+                    <span className="text-sm text-slate-700">
+                      Requerir aceptación de políticas para enviar respuestas
+                    </span>
+                  </label>
+                </div>
 
                 <h3 className="text-xl font-semibold text-[#003366] mt-8">🧾 Campos del paciente (formulario)</h3>
                 <div className="space-y-4">
@@ -705,6 +777,67 @@ export default function SeccionAdminClinicas() {
 
                       <h3 className="text-xl font-semibold text-[#003366] mt-8">🧪 Campos clínicos avanzados</h3>
                       <Textarea value={camposAvanzados} onChange={e => setCamposAvanzados(e.target.value)} placeholder="Ej: frecuencia_respiratoria, presion_sistolica" />
+                      
+                      {/* 🔒 Políticas de privacidad */}
+                      <h3 className="text-xl font-semibold text-[#003366] mt-8">🔒 Políticas de privacidad</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="text-sm text-slate-700">Políticas (HTML)</label>
+                          <Textarea
+                            className="mt-1 min-h-[220px]"
+                            placeholder="Pegá aquí el HTML de tus políticas…"
+                            value={selected?.politicas_html || ""}
+                            onChange={(e) =>
+                              setSelected({ ...selected!, politicas_html: e.target.value })
+                            }
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Si cargás HTML, se mostrará inline en el modal del paciente.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="text-sm text-slate-700">Versión (ej: v1)</label>
+                          <Input
+                            className="mt-1"
+                            placeholder="v1"
+                            value={selected?.politicas_version || ""}
+                            onChange={(e) =>
+                              setSelected({ ...selected!, politicas_version: e.target.value })
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm text-slate-700">URL pública (opcional)</label>
+                          <Input
+                            className="mt-1"
+                            placeholder="https://tu-dominio.com/politicas.pdf o /politicas"
+                            value={selected?.politicas_url || ""}
+                            onChange={(e) =>
+                              setSelected({ ...selected!, politicas_url: e.target.value })
+                            }
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Si dejás vacío y no hay HTML, el front usará <code>/politicas?clinica_id=…</code>.
+                          </p>
+                        </div>
+
+                        <label className="flex items-center gap-2 md:col-span-2 mt-2 cursor-pointer">
+                          <Checkbox
+                            checked={Boolean(selected?.politicas_requeridas)}
+                            onCheckedChange={(on) =>
+                              setSelected({
+                                ...selected!,
+                                politicas_requeridas: on ? 1 : 0,
+                              })
+                            }
+                          />
+                          <span className="text-sm text-slate-700">
+                            Requerir aceptación de políticas para enviar respuestas
+                          </span>
+                        </label>
+                      </div>
 
                       <h3 className="text-xl font-semibold text-[#003366] mt-8">🧾 Campos del paciente (formulario)</h3>
                       
