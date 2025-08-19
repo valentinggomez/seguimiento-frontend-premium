@@ -320,7 +320,8 @@ export default function SeccionAdminClinicas() {
       setSelected(null);
 
       const ref = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
-        headers: { ...getAuthHeaders(), rol: 'superadmin' },
+        headers: getAuthHeaders(),
+        cache: 'no-store',
       });
       const json = await ref.json();
       const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
