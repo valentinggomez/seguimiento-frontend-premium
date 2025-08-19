@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
       clinica_id: clinicaId,
       from,
       to,
-      alerta: alerta || undefined,
+      nivel_alerta: alerta || undefined, 
     }),
     [clinicaId, from, to, alerta]
   )
@@ -99,6 +99,23 @@ export default function AnalyticsPage() {
       setHasNew(false)
     }
   }
+
+  // Si el Provider todavía no entregó el id, hacemos fallback como en /panel/respuestas
+  useEffect(() => {
+    (async () => {
+        if (clinicaId) return
+        try {
+        const host =
+            typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : 'localhost'
+        const res = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`)
+        const data = await res.json().catch(() => ({}))
+        const id = data?.clinica?.id
+        if (id) setClinicaId(id)
+        } catch {}
+    })()
+    }, [clinicaId])
 
   // Cargar tabla
   async function loadTable() {
