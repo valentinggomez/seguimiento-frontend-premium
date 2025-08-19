@@ -213,7 +213,6 @@ export default function AnalyticsPage() {
         <Kpi title={`${metricLabel.toUpperCase()} PROMEDIO`} value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)} loading={pending} />
         <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
         <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
-        <Kpi title="TIEMPO A 1ª RESPUESTA (MIN)" value={fmt(k?.tiempoPrimeraRespuestaMin, 0)} loading={pending} />
         {/* si la métrica NO es satisfacción, mostramos satisfacción promedio clásica para referencia */}
         <Kpi title="SATISFACCIÓN" value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)} loading={pending} />
       </div>
