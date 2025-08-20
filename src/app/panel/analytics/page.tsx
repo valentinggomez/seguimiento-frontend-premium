@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import  EventSourcePolyfill  from 'event-source-polyfill'
 
 /* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
@@ -164,13 +165,33 @@ export default function AnalyticsPage() {
     return () => clearInterval(id)
   }, [autoRefresh, clinicaId])
 
-  // SSE
+  // SSE con token (autenticado)
   useEffect(() => {
     if (!clinicaId) return
-    const es = new EventSource(`${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`, { withCredentials: true })
+
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') ?? '') : ''
+    if (!token) return
+
+    const url = `${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`
+    const sse = new EventSourcePolyfill(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      // opcionales:
+      // heartbeatTimeout: 120000,
+      // withCredentials: false,
+    })
+
     const onNew = () => setHasNew(true)
-    es.addEventListener('respuesta_creada', onNew)
-    return () => { es.removeEventListener('respuesta_creada', onNew); es.close() }
+    sse.addEventListener('nueva_respuesta', onNew)
+
+    // (opcional) log de errores
+    sse.onerror = (e) => {
+      // console.warn('SSE error', e)
+    }
+
+    return () => {
+      sse.removeEventListener('nueva_respuesta', onNew)
+      sse.close()
+    }
   }, [clinicaId, api])
 
   // Restaurar filtros desde la URL al montar
