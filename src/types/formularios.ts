@@ -29,26 +29,44 @@ export const SchedulingConfigSchema = z.object({
 });
 export type SchedulingConfig = z.infer<typeof SchedulingConfigSchema>;
 
+// NUEVO: regla de programación por offset
+export const ProgramacionEnvioSchema = z.object({
+  tipo: z.literal("offset"),
+  /** Acepta "6h", "90m", "2d" o ISO 8601 tipo "PT6H" */
+  delay: z.string().min(1),
+  canal: z.string().optional(),      // ej: "whatsapp"
+  form_slug: z.string().optional(),  // ej: "control-48h"
+});
+export type ProgramacionEnvio = z.infer<typeof ProgramacionEnvioSchema>;
+
 export const FormularioSchema = z.object({
-  id: z.number().optional(),
-  clinica_id: z.number(),
+  // Si tus IDs son UUID string, usá string. Si hoy usás números en el front, podés dejar number.
+  id: z.union([z.string(), z.number()]).optional(),
+  clinica_id: z.union([z.string(), z.number()]),
+
   nombre: z.string().min(1),
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
   activo: z.boolean().default(true),
 
-  // NUEVO: configuración de envíos por horas
-  scheduling_config: SchedulingConfigSchema,
+  // ⚠️ Si no usás este bloque en el front, hacelo optional para no exigirlo
+  scheduling_config: SchedulingConfigSchema.optional(),
 
-  // Builder de preguntas (reemplaza “Campos JSON”)
+  // Builder de preguntas (lo dejamos como lo tenías)
   preguntas: z.array(PreguntaSchema).default([]),
 
-  // Reglas de alerta
+  // Reglas de alerta (como lo tenías)
   reglas_alertas: z.object({
     condiciones: z.array(ReglaAlertaSchema).default([]),
     sugerencias: z.array(z.string()).default([]),
   }),
 
-  // Meta libre (key/value)
+  // Meta libre (como lo tenías)
   meta: z.record(z.string(), z.any()).optional().default({}),
+
+  // ✅ NUEVO: la fuente de verdad para offsets/“cooldown” de envío
+  programacion_envios: z.array(ProgramacionEnvioSchema).default([]),
+
+  // (Opcional) compat legacy si en algún lado seguís leyendo esto
+  // offsets_horas: z.array(z.number()).optional().default([]),
 });
 export type Formulario = z.infer<typeof FormularioSchema>;

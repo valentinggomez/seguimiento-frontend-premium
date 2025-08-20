@@ -2,7 +2,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +13,7 @@ import {
   type Pregunta,
   type ReglaAlerta,
   SchedulingConfigSchema,
+  type ProgramacionEnvio,  
 } from "@/types/formularios";
 import { nextSendTimes } from "@/lib/scheduling";
 
@@ -60,6 +60,21 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
   const [anchorEjemplo, setAnchorEjemplo] = useState<string>(
     new Date().toISOString().slice(0, 16) // "YYYY-MM-DDTHH:mm"
   );
+
+  // ⏱️ Reglas de envío por offset (persisten en backend)
+  const [programacionEnvios, setProgramacionEnvios] = useState<ProgramacionEnvio[]>(
+    Array.isArray(initial?.programacion_envios) ? (initial!.programacion_envios as ProgramacionEnvio[]) : []
+  );
+
+  // helpers de offset
+  const addOffsetRule = () =>
+    setProgramacionEnvios((r) => [...r, { tipo: "offset", delay: "6h" }]);
+
+  const updateOffsetRule = (idx: number, patch: Partial<ProgramacionEnvio>) =>
+    setProgramacionEnvios((r) => r.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+
+  const removeOffsetRule = (idx: number) =>
+    setProgramacionEnvios((r) => r.filter((_, i) => i !== idx));
   const previewTimes = useMemo(() => {
     try {
       return nextSendTimes(
@@ -104,6 +119,16 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
 
   // ------- guardar -------
   async function handleSave() {
+
+    const delayRegex = /^(\d+)\s*(ms|s|m|h|d)$/i;
+    const looksISO = /^P/i;
+    for (const r of programacionEnvios) {
+      if (!r.delay || (!delayRegex.test(r.delay) && !looksISO.test(r.delay))) {
+        toast.error(`Delay inválido: "${r.delay}". Usá 6h, 90m, 2d o PT6H.`);
+        return;
+      }
+    }
+
     const base = {
       clinica_id: clinicaId,
       nombre,
@@ -113,6 +138,7 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
       preguntas,
       reglas_alertas: { condiciones: reglas, sugerencias },
       meta,
+      programacion_envios: programacionEnvios,
     };
 
     const parse = FormularioSchema.safeParse(base);
@@ -209,6 +235,60 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
             </ul>
           </div>
         </div>
+      </div>
+
+      {/* Reglas de envío por offset */}
+      <div className="rounded-xl border p-4 bg-white space-y-3">
+        <h4 className="font-semibold text-[#003366]">⏲️ Reglas de envío por offset</h4>
+
+        <p className="text-sm text-gray-600">
+          Cada regla crea un envío automático a partir del evento de anclaje (ver arriba).
+          Usá <code>6h</code>, <code>90m</code>, <code>2d</code> o ISO 8601 (<code>PT6H</code>).
+        </p>
+
+        {programacionEnvios.length === 0 && (
+          <div className="text-sm text-gray-500">No hay reglas. Agregá al menos una si querés enviar algo automáticamente.</div>
+        )}
+
+        <div className="space-y-2">
+          {programacionEnvios.map((r, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-3">
+                <label className="text-xs text-gray-500">Tipo</label>
+                <Input value="offset" disabled />
+              </div>
+              <div className="col-span-3">
+                <label className="text-xs text-gray-500">Delay</label>
+                <Input
+                  placeholder="ej: 6h, 90m o PT6H"
+                  value={r.delay}
+                  onChange={(e) => updateOffsetRule(i, { delay: e.target.value })}
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="text-xs text-gray-500">Canal (opcional)</label>
+                <Input
+                  placeholder="whatsapp"
+                  value={r.canal ?? ""}
+                  onChange={(e) => updateOffsetRule(i, { canal: e.target.value || undefined })}
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="text-xs text-gray-500">Form slug destino (opcional)</label>
+                <Input
+                  placeholder="control-48h"
+                  value={r.form_slug ?? ""}
+                  onChange={(e) => updateOffsetRule(i, { form_slug: e.target.value || undefined })}
+                />
+              </div>
+              <div className="col-span-12 flex justify-end">
+                <Button variant="outline" onClick={() => removeOffsetRule(i)}>Eliminar</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Button variant="outline" onClick={addOffsetRule}>+ Agregar regla de offset</Button>
       </div>
 
       {/* Preguntas */}

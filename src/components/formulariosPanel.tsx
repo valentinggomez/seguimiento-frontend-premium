@@ -92,7 +92,7 @@ type Formulario = {
   activo: boolean
   prioridad: number
   version: number
-  programacion?: ReglaProgramacion[]   // 👈 NUEVO (reemplaza offsets_horas)
+  programacion_envios?: ReglaProgramacion[]    // 👈 NUEVO (reemplaza offsets_horas)
   campos: any
   reglas_alertas: any
   meta: any
@@ -193,7 +193,7 @@ export default function FormulariosPanel({
         activo: true,
         prioridad: 10,
         version: 1,
-        programacion: [ { tipo: 'offset', delay: '6h', canal: 'whatsapp' } ], // 👈 por defecto
+        programacion_envios: [ { tipo: 'offset', delay: '6h', canal: 'whatsapp' } ], // 👈 por defecto
         campos: DEFAULT_CAMPOS,
         reglas_alertas: DEFAULT_REGLAS,
         meta: {},
@@ -226,7 +226,7 @@ export default function FormulariosPanel({
     const version = Math.max(1, Number(edit.version || 1));
 
     // Programación: al menos 1 regla válida
-    const prog = Array.isArray(edit.programacion) ? edit.programacion : []
+    const prog = Array.isArray(edit.programacion_envios) ? edit.programacion_envios : []
     const progValid = prog
     .map(r => ({
         tipo: 'offset' as const,
@@ -272,7 +272,7 @@ export default function FormulariosPanel({
       clinica_id: clinicaId,
       hoja_destino: (edit as any).hoja_destino?.toString().trim() || null,
       reglas_alertas: reglasParsed || DEFAULT_REGLAS,
-      programacion: progValid,               // 👈 NUEVO
+      programacion_envios: progValid,               
     }
 
     const method = edit.id ? "PUT" : "POST"
@@ -343,7 +343,7 @@ export default function FormulariosPanel({
               <div className="font-medium">{f.nombre} <span className="text-xs text-gray-500">({f.slug})</span></div>
               <div className="text-xs text-gray-500">
                 v{f.version} · prioridad {f.prioridad}
-                <> · programación: {prettyProgramacion(f.programacion as ReglaProgramacion[])} </>
+                <> · programación: {prettyProgramacion(f.programacion_envios as ReglaProgramacion[])} </>
                 {(f as any).hoja_destino ? <> · hoja: “{(f as any).hoja_destino}”</> : null}
               </div>
             </div>
@@ -418,11 +418,11 @@ export default function FormulariosPanel({
                 </p>
 
                 <div className="space-y-2">
-                    {(edit.programacion || []).length === 0 && (
+                    {(edit.programacion_envios || []).length === 0 && (
                     <div className="text-xs text-slate-400">No hay reglas aún.</div>
                     )}
 
-                    {(edit.programacion || []).map((r, i) => (
+                    {(edit.programacion_envios || []).map((r, i) => (
                     <div key={`rule-${i}`} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center border rounded-lg p-2">
                         <div className="text-xs">
                         <div className="font-medium mb-1">Tipo</div>
@@ -435,9 +435,9 @@ export default function FormulariosPanel({
                             placeholder="p. ej., 6h o PT6H"
                             value={r.delay || ""}
                             onChange={(e) => {
-                            const next = [...(edit.programacion || [])]
+                            const next = [...(edit.programacion_envios || [])]
                             next[i] = { ...r, delay: e.target.value }
-                            upd("programacion" as any, next)
+                            upd("programacion_envios" as any, next)
                             }}
                         />
                         {r.delay && !isValidDelayString(r.delay) && (
@@ -451,10 +451,10 @@ export default function FormulariosPanel({
                             placeholder="whatsapp / sms / email"
                             value={r.canal || ""}
                             onChange={(e) => {
-                            const next = [...(edit.programacion || [])]
+                            const next = [...(edit.programacion_envios || [])]
                             const val = e.target.value.trim()
                             next[i] = { ...r, canal: val || undefined }
-                            upd("programacion" as any, next)
+                            upd("programacion_envios" as any, next)
                             }}
                         />
                         </div>
@@ -465,10 +465,10 @@ export default function FormulariosPanel({
                             placeholder="si querés forzar otro formulario"
                             value={r.form_slug || ""}
                             onChange={(e) => {
-                            const next = [...(edit.programacion || [])]
+                            const next = [...(edit.programacion_envios || [])]
                             const val = e.target.value.trim()
                             next[i] = { ...r, form_slug: val || undefined }
-                            upd("programacion" as any, next)
+                            upd("programacion_envios" as any, next)
                             }}
                         />
                         </div>
@@ -478,9 +478,9 @@ export default function FormulariosPanel({
                             variant="destructive"
                             size="sm"
                             onClick={() => {
-                            const next = [...(edit.programacion || [])]
+                            const next = [...(edit.programacion_envios || [])]
                             next.splice(i, 1)
-                            upd("programacion" as any, next)
+                            upd("programacion_envios" as any, next)
                             }}
                         >
                             Eliminar regla
@@ -494,8 +494,8 @@ export default function FormulariosPanel({
                     <Button
                     variant="outline"
                     onClick={() => {
-                        const next = [...(edit.programacion || []), { tipo: 'offset', delay: '6h', canal: 'whatsapp' } as ReglaProgramacion]
-                        upd("programacion" as any, next)
+                        const next = [...(edit.programacion_envios || []), { tipo: 'offset', delay: '6h', canal: 'whatsapp' } as ReglaProgramacion]
+                        upd("programacion_envios" as any, next)
                     }}
                     >
                     ➕ Agregar regla offset

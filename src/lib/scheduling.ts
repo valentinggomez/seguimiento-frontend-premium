@@ -40,26 +40,22 @@ function pushOutsideQuietHours(d: Date, quietStart?: string, quietEnd?: string) 
 /**
  * Calcula los próximos "count" envíos a partir de un anchorDate.
  */
-export function nextSendTimes(
-  cfg: SchedulingConfig,
-  anchorDate: Date,
-  count = 5
-): Date[] {
-  const tzAnchor = new Date(anchorDate); // (opcional: usar luxon/date-fns-tz si querés estricta TZ)
+export function nextSendTimes(cfg: SchedulingConfig | undefined, anchorDate: Date, count = 5): Date[] {
+  if (!cfg) return [];
+  const tzAnchor = new Date(anchorDate);
   const list: Date[] = [];
+  const max = Math.max(1, Math.min(count ?? 5, 20)); // evita valores raros
 
-  // primer envío
   const first = new Date(tzAnchor.getTime() + cfg.first_after_hours * 3600_000);
   list.push(pushOutsideQuietHours(first, cfg.quiet_hours_start, cfg.quiet_hours_end));
 
-  // repeticiones
   if (cfg.cadence_hours && cfg.cadence_hours > 0) {
     let t = new Date(list[0]);
     const endAt = cfg.end_after_hours
       ? new Date(tzAnchor.getTime() + cfg.end_after_hours * 3600_000)
       : null;
 
-    while (list.length < count) {
+    while (list.length < max) {
       t = new Date(t.getTime() + cfg.cadence_hours * 3600_000);
       if (endAt && t > endAt) break;
       list.push(pushOutsideQuietHours(t, cfg.quiet_hours_start, cfg.quiet_hours_end));
@@ -67,5 +63,5 @@ export function nextSendTimes(
     }
   }
 
-  return list.slice(0, count);
+  return list.slice(0, max);
 }
