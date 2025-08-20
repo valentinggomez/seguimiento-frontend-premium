@@ -12,7 +12,6 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
-import  EventSourcePolyfill  from 'event-source-polyfill'
 
 /* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
@@ -167,32 +166,47 @@ export default function AnalyticsPage() {
 
   // SSE con token (autenticado)
   useEffect(() => {
-    if (!clinicaId) return
+    if (!clinicaId) return;
 
-    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') ?? '') : ''
-    if (!token) return
+    let sse: any;
+    let onNew: any;
 
-    const url = `${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`
-    const sse = new EventSourcePolyfill(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      // opcionales:
-      // heartbeatTimeout: 120000,
-      // withCredentials: false,
-    })
+    (async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') ?? '' : '';
+      if (!token) return;
 
-    const onNew = () => setHasNew(true)
-    sse.addEventListener('nueva_respuesta', onNew)
+      const url = `${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`;
 
-    // (opcional) log de errores
-    sse.onerror = (e) => {
-      // console.warn('SSE error', e)
-    }
+      // intentar cargar el polyfill; si falla, usar nativo
+      let ES: any = typeof window !== 'undefined' ? (window as any).EventSource : undefined;
+      try {
+        const mod: any = await import('event-source-polyfill');
+        ES = mod?.EventSourcePolyfill || mod?.default || ES;
+      } catch {
+        // nos quedamos con el nativo
+      }
+
+      // si usamos el nativo, no soporta headers -> puede dar 401
+      if (ES === (window as any).EventSource) {
+        sse = new ES(url);
+      } else {
+        sse = new ES(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      onNew = () => setHasNew(true);
+      sse.addEventListener?.('nueva_respuesta', onNew);
+      sse.onerror = (e: any) => {
+        // opcional: console.warn('SSE error', e);
+      };
+    })();
 
     return () => {
-      sse.removeEventListener('nueva_respuesta', onNew)
-      sse.close()
-    }
-  }, [clinicaId, api])
+      try { sse?.removeEventListener?.('nueva_respuesta', onNew); } catch {}
+      try { sse?.close?.(); } catch {}
+    };
+  }, [clinicaId, api]);
 
   // Restaurar filtros desde la URL al montar
   useEffect(() => {
