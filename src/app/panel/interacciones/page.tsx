@@ -39,6 +39,13 @@ function agruparPorPacienteId(data: Interaccion[]) {
   return agrupadas
 }
 
+function toArray<T = any>(payload: any): T[] {
+  if (Array.isArray(payload)) return payload
+  if (payload && Array.isArray(payload.data)) return payload.data
+  if (payload && Array.isArray(payload.items)) return payload.items
+  return []
+}
+
 function getAlertaGlobal(mensajes: Interaccion[]): 'rojo' | 'amarillo' | 'verde' {
   const manual = mensajes.find((m) => m.alerta_manual)
   if (manual) return manual.alerta_manual as 'rojo' | 'amarillo' | 'verde'
@@ -74,35 +81,55 @@ export default function InteraccionesPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes-activos`, { headers }),
       ])
 
+      // --- ACTIVAS ---
       let dataActivas: Interaccion[] = []
       if (resActivas.ok) {
         const json = await resActivas.json()
-        if (Array.isArray(json)) {
-          dataActivas = json as Interaccion[]
-        } else {
-          console.error('❌ Error: respuesta inesperada en interacciones:', json)
+        dataActivas = toArray<Interaccion>(json)
+        if (!Array.isArray(dataActivas)) {
+          console.error('❌ respuesta inesperada en interacciones (activas):', json)
           toast.error('Error al obtener interacciones activas')
+          dataActivas = []
         }
       } else {
         console.warn('❗️ Falló resActivas:', resActivas.status)
       }
 
-      const dataArchivadas = await resArchivadas.json()
-      const dataPacientes = await resPacientes.json()
+      // --- ARCHIVADAS ---
+      let dataArchivadas: Interaccion[] = []
+      if (resArchivadas.ok) {
+        const jsonA = await resArchivadas.json()
+        dataArchivadas = toArray<Interaccion>(jsonA)
+        if (!Array.isArray(dataArchivadas)) {
+          console.error('❌ respuesta inesperada en interacciones (archivadas):', jsonA)
+          dataArchivadas = []
+        }
+      }
+
+      // --- PACIENTES ---
+      let dataPacientes: any[] = []
+      if (resPacientes.ok) {
+        const jsonP = await resPacientes.json()
+        dataPacientes = Array.isArray(jsonP) ? jsonP
+                      : Array.isArray(jsonP?.pacientes) ? jsonP.pacientes
+                      : []
+      }
 
       setActivas(dataActivas)
       setArchivadas(dataArchivadas)
-      setPacientes(dataPacientes.pacientes)
+      setPacientes(dataPacientes)
 
       // Firmas conocidas (activas + archivadas)
       const firmas = new Set<string>()
       for (const m of dataActivas) firmas.add(makeMsgId(m))
-      for (const m of dataArchivadas as Interaccion[]) firmas.add(makeMsgId(m))
+      for (const m of dataArchivadas) firmas.add(makeMsgId(m))
       seenEventsRef.current = firmas
 
       setForceUpdate((prev) => prev + 1)
     } catch (err) {
       console.error('❌ Error al cargar interacciones:', err)
+      setActivas([])
+      setArchivadas([])
     }
   }, [])
 
@@ -170,8 +197,30 @@ export default function InteraccionesPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`,
         { headers: getAuthHeaders() }
       )
-      const data = await res.json()
-      setResultados(data)
+      const buscarInteracciones = async (texto: string) => {
+        setBuscando(true)
+        setQuery(texto)
+
+        if (!texto) {
+          setResultados([])
+          setBuscando(false)
+          return
+        }
+
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/buscar?query=${encodeURIComponent(texto)}`,
+            { headers: getAuthHeaders() }
+          )
+          const json = await res.json()
+          setResultados(toArray<Interaccion>(json))   // 👈 normalizamos acá
+        } catch (err) {
+          console.error('❌ Error al buscar interacciones:', err)
+          setResultados([])                           // 👈 por las dudas
+        } finally {
+          setBuscando(false)
+        }
+      }
     } catch (err) {
       console.error('❌ Error al buscar interacciones:', err)
     } finally {
@@ -229,7 +278,7 @@ export default function InteraccionesPage() {
         />
       </div>
 
-      {resultados.length > 0 && (
+      {Array.isArray(resultados) && resultados.length > 0 && (
         <div className="mb-6 space-y-4">
           <h2 className="text-lg font-semibold">
             {t('interacciones.resultados')}
