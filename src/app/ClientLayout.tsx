@@ -1,6 +1,6 @@
 'use client'
 
-import { ClinicaProvider } from './lib/ClinicaProvider'
+import { ClinicaProvider } from '@/lib/ClinicaProvider'
 
 export default function ClientLayout({
   children,
