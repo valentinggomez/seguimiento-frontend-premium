@@ -301,37 +301,40 @@ export default function ResponderPage() {
             ? window.location.hostname.split(':')[0].toLowerCase().trim()
             : '';
 
-        const auth = getAuthHeaders();               // puede venir vacío
-        // limpiá Authorization inválido
+        const auth = getAuthHeaders();
         if (!auth?.Authorization || /undefined|null/i.test(String(auth.Authorization))) {
           delete (auth as any)?.Authorization;
         }
 
-        // 🔹 SIEMPRE mandá x-clinica-host, y si hay token, también Authorization
-        const headersSlug: Record<string, string> = { 'x-clinica-host': host, ...(auth || {}) };
+        const headersBase: Record<string, string> = { 'x-clinica-host': host, ...(auth || {}) };
 
         let res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/formularios/slug/${encodeURIComponent(formSlug)}`,
-          { headers: headersSlug, cache: 'no-store' }
+          { headers: headersBase, cache: 'no-store' }
         );
 
-        // ⬇️ opcional: fallback por clinica_id si el slug siguió fallando
-        if (!res.ok && clinica?.id) {
-          res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`,
-            { headers: { ...headersSlug }, cache: 'no-store' }
-          );
-        }
+        let found: any = null;
 
-        const json = await res.json().catch(() => ({}));
-        const arr  = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
-        const found = arr.length
-          ? arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
-          : (json && !Array.isArray(json) ? json : null);
+        if (res.ok) {
+          // algunos backends devuelven objeto; otros, {data:[...]}
+          const js = await res.json().catch(() => ({}));
+          found = Array.isArray(js) ? js[0] : (js?.data?.[0] ?? js ?? null);
+        } else {
+          // Fallback: buscar por clinica_id y filtrar por slug en el front
+          if (clinica?.id) {
+            const res2 = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`,
+              { headers: headersBase, cache: 'no-store' }
+            );
+            const js2 = await res2.json().catch(() => ({}));
+            const arr = Array.isArray(js2) ? js2 : (Array.isArray(js2?.data) ? js2.data : []);
+            found = arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase()) || null;
+          }
+        }
 
         setFormulario(found || null);
 
-        // ====== Políticas (igual que antes, con fallback a /politicas) ======
+        // ====== Políticas (igual que antes) ======
         try {
           const meta = (found?.meta || {}) as any;
           const politicasForm = meta?.politicas || meta;
@@ -346,7 +349,7 @@ export default function ResponderPage() {
               ? `${origin}/politicas?clinica_id=${encodeURIComponent(clinica.id)}`
               : '';
 
-          const p = {
+          setPoliticas({
             require_aceptacion: Boolean(
               politicasForm?.require_aceptacion ??
               clinica?.require_aceptacion ??
@@ -370,8 +373,7 @@ export default function ResponderPage() {
               clinica?.politicas_html ??
               ''
             ),
-          };
-          setPoliticas(p);
+          });
           setAceptaTerminos(false);
         } catch {
           setPoliticas({
