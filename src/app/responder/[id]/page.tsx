@@ -301,17 +301,25 @@ export default function ResponderPage() {
             ? window.location.hostname.split(':')[0].toLowerCase().trim()
             : '';
 
-        // 1) endpoint público por slug (filtrado por host en backend)
+        const auth = getAuthHeaders();               // puede venir vacío
+        // limpiá Authorization inválido
+        if (!auth?.Authorization || /undefined|null/i.test(String(auth.Authorization))) {
+          delete (auth as any)?.Authorization;
+        }
+
+        // 🔹 SIEMPRE mandá x-clinica-host, y si hay token, también Authorization
+        const headersSlug: Record<string, string> = { 'x-clinica-host': host, ...(auth || {}) };
+
         let res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/formularios/slug/${encodeURIComponent(formSlug)}`,
-          { headers: { 'x-clinica-host': host }, cache: 'no-store' }
+          { headers: headersSlug, cache: 'no-store' }
         );
 
-        // 2) fallback: listado por clinica_id (si hay token y clinica.id)
+        // ⬇️ opcional: fallback por clinica_id si el slug siguió fallando
         if (!res.ok && clinica?.id) {
           res = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`,
-            { headers: { ...getAuthHeaders(), 'x-clinica-host': host }, cache: 'no-store' }
+            { headers: { ...headersSlug }, cache: 'no-store' }
           );
         }
 
