@@ -49,7 +49,7 @@ export default function Inicio() {
 
     const cargarDashboard = async () => {
       try {
-        const data = await getDashboardStats();
+        const data = await getDashboardStats(clinica.id);
         setStats(data);
       } catch (err) {
         console.error('Error al cargar estadísticas:', err);
