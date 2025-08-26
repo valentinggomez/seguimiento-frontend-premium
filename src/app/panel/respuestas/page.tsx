@@ -154,8 +154,16 @@ export default function PanelRespuestas() {
         const dataClin = await resClin.json();
         const clinicaId = dataClin?.clinica?.id || '';
 
-        // 2) abrir SSE con clinica_id
-        es = new EventSource(`/api/sse?clinica_id=${encodeURIComponent(clinicaId)}`);
+        // 2) abrir SSE con clinica_id + host y URL ABSOLUTA al backend
+        const apiBase = process.env.NEXT_PUBLIC_API_URL; // ej: https://seguimiento-backend-premium-production.up.railway.app
+        const hostParam =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+
+        const sseUrl = `${apiBase}/api/sse?clinica_id=${encodeURIComponent(clinicaId)}&host=${encodeURIComponent(hostParam)}&ts=${Date.now()}`;
+
+        es = new EventSource(sseUrl);
 
         const onMsg = (ev: MessageEvent) => {
           try {
