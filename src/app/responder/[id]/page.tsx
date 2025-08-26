@@ -146,37 +146,74 @@ export default function ResponderPage() {
   const [politicasError, setPoliticasError] = useState<string | null>(null)
   const [showPoliticas, setShowPoliticas] = useState(false)
   
-  const camposBase = [
-    { name: "telefono", label: "Teléfono de contacto", type: "text" },
-    { name: "nombre_medico", label: "Nombre del médico", type: "text" },
-    { name: "dolor_6h", label: "🤕 Nivel de dolor a las 6h", type: "text", numeric: true },
-    { name: "dolor_24h", label: "🔥 Nivel de dolor a las 24h", type: "text", numeric: true },
-    { name: "dolor_mayor_7", label: "📈 ¿Dolor mayor a 7?", type: "select" },
-    { name: "nausea", label: "🤢 ¿Tuviste náuseas?", type: "select" },
-    { name: "vomitos", label: "🤮 ¿Tuviste vómitos?", type: "select" },
-    { name: "somnolencia", label: "😴 ¿Tuviste somnolencia?", type: "select" },
-    { name: "requiere_mas_medicacion", label: "💊 ¿Requirió más medicación?", type: "select" },
-    { name: "desperto_por_dolor", label: "🌙 ¿Se despertó por dolor?", type: "select" },
-    { name: "satisfaccion", label: "🌟 Nivel de satisfacción (1 a 10)", type: "text", numeric: true },
-    { name: "horas_movio_extremidades", label: "🏃 ¿Horas hasta mover extremidades?", type: "text", numeric: true },
-    { name: "observacion", label: "📝 Observaciones (opcional)", type: "textarea" }
-  ]
+  // 👈 pegalo arriba del archivo, cerca de los otros types
+  type CampoUI = {
+    name: string;
+    label: string;
+    type: 'text' | 'number' | 'select' | 'textarea';
+    numeric: boolean;
+    options?: string[];
+  };
 
-  // Si el formulario tiene preguntas definidas, usalas; si no, caé a los campos base.
-  type CampoCfg = { name: string; label?: string; type?: string; options?: string[] }
+  const camposBase: CampoUI[] = [
+    { name: "telefono", label: "Teléfono de contacto", type: "text",  numeric: false },
+    { name: "nombre_medico", label: "Nombre del médico", type: "text", numeric: false },
+    { name: "dolor_6h", label: "🤕 Nivel de dolor a las 6h", type: "number", numeric: true },
+    { name: "dolor_24h", label: "🔥 Nivel de dolor a las 24h", type: "number", numeric: true },
+    { name: "dolor_mayor_7", label: "📈 ¿Dolor mayor a 7?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "nausea", label: "🤢 ¿Tuviste náuseas?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "vomitos", label: "🤮 ¿Tuviste vómitos?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "somnolencia", label: "😴 ¿Tuviste somnolencia?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "requiere_mas_medicacion", label: "💊 ¿Requirió más medicación?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "desperto_por_dolor", label: "🌙 ¿Se despertó por dolor?", type: "select", numeric: false, options: ["Sí","No"] },
+    { name: "satisfaccion", label: "🌟 Nivel de satisfacción (1 a 10)", type: "number", numeric: true },
+    { name: "horas_movio_extremidades", label: "🏃 ¿Horas hasta mover extremidades?", type: "number", numeric: true },
+    { name: "observacion", label: "📝 Observaciones (opcional)", type: "textarea", numeric: false },
+  ];
 
-  const camposFromForm: CampoCfg[] =
-    formulario?.campos?.preguntas && Array.isArray(formulario.campos.preguntas)
-      ? formulario.campos.preguntas
-      : []
+  // —— Normalizador de preguntas: soporta {name,label,type,options} y {id,etiqueta,tipo,opciones}
+  type CampoCfgIn =
+    | { name?: string; label?: string; type?: string; options?: string[] | string | null }
+    | { id?: string; etiqueta?: string; tipo?: string; opciones?: string[] | string | null }
+    | any;
 
-  const camposFinal = (camposFromForm.length ? camposFromForm : camposBase).map((c: any) => ({
-    name: c.name,
-    label: c.label || c.name,
-    type: c.type || 'text',
-    numeric: c.type === 'number',
-    options: Array.isArray(c.options) ? c.options : undefined,
-  }))
+  // deja tu CampoCfgIn como lo tenés
+  function normalizarCampo(c: CampoCfgIn): CampoUI {
+    const name  = String(c?.name ?? c?.id ?? '').trim();
+    const label = String(c?.label ?? c?.etiqueta ?? name).trim();
+    const raw   = String(c?.type ?? c?.tipo ?? 'text').trim().toLowerCase();
+
+    const type: CampoUI['type'] =
+      ['text','number','select','textarea'].includes(raw as any)
+        ? (raw as CampoUI['type'])
+        : raw.includes('area') ? 'textarea'
+        : raw.includes('select') ? 'select'
+        : raw.includes('num') ? 'number'
+        : 'text';
+
+    // ---- options robusto ----
+    let options: string[] | undefined;
+    const o = (c as any)?.options ?? (c as any)?.opciones;
+    if (Array.isArray(o)) options = o.map(String);
+    else if (typeof o === 'string') options = o.split(/[,|]/).map(s => s.trim()).filter(Boolean);
+
+    return { name, label, type, numeric: type === 'number', options };
+  }
+
+  // tolerar que "campos" venga como string JSON
+  let camposObj = (formulario as any)?.campos;
+  if (typeof camposObj === 'string') {
+    try { camposObj = JSON.parse(camposObj) } catch { camposObj = undefined }
+  }
+
+  const preguntasFrom: CampoCfgIn[] =
+    Array.isArray(camposObj?.preguntas)         ? camposObj.preguntas :
+    Array.isArray((formulario as any)?.preguntas) ? (formulario as any).preguntas :
+    [];
+
+  const camposFromForm: CampoUI[] = preguntasFrom.map(normalizarCampo);
+
+  const camposFinal: CampoUI[] = (camposFromForm.length ? camposFromForm : camposBase);
 
   // por defecto todos activos (si luego querés flags a nivel campo, se agrega aquí)
   const campoActivo = (_nombre: string) => true
@@ -255,31 +292,51 @@ export default function ResponderPage() {
   // --- nuevo: traer el formulario por slug dentro de la clínica ---
   useEffect(() => {
     const loadFormulario = async () => {
-      if (!clinica?.id) return
       try {
-        setPoliticasLoading(true)
-        setPoliticasError(null)
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`
-        const res = await fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
-        const raw = await res.json().catch(() => [])
-        const arr = Array.isArray(raw) ? raw : (raw?.data || [])
-        const found = arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
-        setFormulario(found || null)
-  
-        try {
-          const meta = (found?.meta || {}) as any
-          const politicasForm = meta?.politicas || meta // soporta meta.require_aceptacion directo
+        setPoliticasLoading(true);
+        setPoliticasError(null);
 
-          // 👇 Fallback para construir link público /politicas cuando no haya URL ni HTML
+        const host =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+
+        // 1) endpoint público por slug (filtrado por host en backend)
+        let res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/formularios/slug/${encodeURIComponent(formSlug)}`,
+          { headers: { 'x-clinica-host': host }, cache: 'no-store' }
+        );
+
+        // 2) fallback: listado por clinica_id (si hay token y clinica.id)
+        if (!res.ok && clinica?.id) {
+          res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/formularios?clinica_id=${encodeURIComponent(clinica.id)}`,
+            { headers: { ...getAuthHeaders(), 'x-clinica-host': host }, cache: 'no-store' }
+          );
+        }
+
+        const json = await res.json().catch(() => ({}));
+        const arr  = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+        const found = arr.length
+          ? arr.find((f: any) => String(f.slug).toLowerCase() === String(formSlug).toLowerCase())
+          : (json && !Array.isArray(json) ? json : null);
+
+        setFormulario(found || null);
+
+        // ====== Políticas (igual que antes, con fallback a /politicas) ======
+        try {
+          const meta = (found?.meta || {}) as any;
+          const politicasForm = meta?.politicas || meta;
+
           const origin =
             (typeof window !== 'undefined' && window.location?.origin)
               ? window.location.origin
-              : (process.env.NEXT_PUBLIC_FRONT_ORIGIN || '')
+              : (process.env.NEXT_PUBLIC_FRONT_ORIGIN || '');
 
           const fallbackPoliticasUrl =
             (clinica?.id && origin)
               ? `${origin}/politicas?clinica_id=${encodeURIComponent(clinica.id)}`
-              : ''
+              : '';
 
           const p = {
             require_aceptacion: Boolean(
@@ -293,7 +350,6 @@ export default function ResponderPage() {
               clinica?.politicas_version ??
               ''
             ),
-            // 👉 Prioriza URL/HTML configurados. Si NO hay URL y NO hay HTML, cae al /politicas
             politicas_url: String(
               politicasForm?.terminos_url ??
               politicasForm?.politicas_url ??
@@ -306,27 +362,27 @@ export default function ResponderPage() {
               clinica?.politicas_html ??
               ''
             ),
-          }
-          setPoliticas(p)
-          setAceptaTerminos(false) // reset si cambia de form
-        } catch (e) {
-          // fallback: exigí aceptación aunque no haya meta
+          };
+          setPoliticas(p);
+          setAceptaTerminos(false);
+        } catch {
           setPoliticas({
             require_aceptacion: true,
             politicas_version: '',
             politicas_url: '',
             politicas_html: ''
-          })
+          });
         }
       } catch {
-        setFormulario(null)
-        setPoliticasError('No se pudieron cargar las políticas')
+        setFormulario(null);
+        setPoliticasError('No se pudieron cargar las políticas');
       } finally {
-        setPoliticasLoading(false)
+        setPoliticasLoading(false);
       }
-    }
-    loadFormulario()
-  }, [clinica?.id, formSlug])
+    };
+
+    if (formSlug) loadFormulario();
+  }, [clinica?.id, formSlug]);
 
   useEffect(() => {
     const fetchPaciente = async () => {
@@ -605,7 +661,7 @@ export default function ResponderPage() {
                   inputMode={campo.numeric ? 'numeric' : 'text'}
                   value={form[campo.name] || ''}
                   onChange={handleChange}
-                  options={campo.options}
+                  options={Array.isArray(campo.options) ? campo.options : undefined}
                 />
               )
             })}

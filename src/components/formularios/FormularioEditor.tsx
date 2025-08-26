@@ -18,8 +18,9 @@ import {
 import { nextSendTimes } from "@/lib/scheduling";
 
 type Props = {
-  clinicaId: number;
-  initial?: Partial<Formulario>;   // si es edición
+  // ⛏️  FIX: los IDs de clínica son UUID → string
+  clinicaId: string;
+  initial?: Partial<Formulario>;
   onSave: (payload: Formulario) => Promise<void>;
 };
 
@@ -27,7 +28,7 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
   // ------- estado -------
   const [nombre, setNombre] = useState(initial?.nombre || "");
   const [slug, setSlug] = useState(initial?.slug || "");
-  const [activo, setActivo] = useState(initial?.activo ?? true);
+  const [activo, setActivo] = useState<boolean>(initial?.activo ?? true);
 
   const [scheduling, setScheduling] = useState(() =>
     SchedulingConfigSchema.parse(
@@ -46,14 +47,12 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
   const [preguntas, setPreguntas] = useState<Pregunta[]>(
     Array.isArray(initial?.preguntas) ? initial!.preguntas : []
   );
-
   const [reglas, setReglas] = useState<ReglaAlerta[]>(
     initial?.reglas_alertas?.condiciones || []
   );
   const [sugerencias, setSugerencias] = useState<string[]>(
     initial?.reglas_alertas?.sugerencias || []
   );
-
   const [meta, setMeta] = useState<Record<string, any>>(initial?.meta || {});
 
   // ------- simulador -------
@@ -119,7 +118,19 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
 
   // ------- guardar -------
   async function handleSave() {
+    // normalizar slug (evita espacios y mayúsculas que luego impiden resolver el formulario por /form/[slug])
+    const slugNorm = slug
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9\-]/g, "");
 
+    if (!slugNorm) {
+      toast.error("El slug es obligatorio.");
+      return;
+    }
+
+    // validar delays de programacion_envios
     const delayRegex = /^(\d+)\s*(ms|s|m|h|d)$/i;
     const looksISO = /^P/i;
     for (const r of programacionEnvios) {
@@ -129,17 +140,18 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
       }
     }
 
-    const base = {
+    const base: Formulario = {
+      // ⛏️  FIX crítico: enviar clinica_id como string correcto
       clinica_id: clinicaId,
-      nombre,
-      slug,
-      activo,
+      nombre: nombre.trim(),
+      slug: slugNorm,
+      activo: !!activo,
       scheduling_config: scheduling,
       preguntas,
       reglas_alertas: { condiciones: reglas, sugerencias },
       meta,
       programacion_envios: programacionEnvios,
-    };
+    } as Formulario;
 
     const parse = FormularioSchema.safeParse(base);
     if (!parse.success) {
@@ -149,7 +161,9 @@ export default function FormularioEditor({ clinicaId, initial, onSave }: Props) 
     }
 
     await onSave(parse.data);
+    toast.success("Formulario guardado ✔️");
   }
+
 
   // ------- UI -------
   return (
