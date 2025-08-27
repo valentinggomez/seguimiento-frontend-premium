@@ -103,10 +103,16 @@ export default function AnalyticsPage() {
   const commonParams = useMemo(
     () => ({
       clinica_id: clinicaId,
-      from, to,
+      from,
+      to,
+      // Compatibilidad: algunos endpoints usan 'nivel' u otros 'nivel_alerta'
+      nivel: alerta || undefined,
+      nivel_alerta: alerta || undefined,
+      // (si algún proxy viejo aún lee 'alerta', lo dejamos también)
       alerta: alerta || undefined,
-      metric, groupBy,
-      groupValue: selectedGroup || undefined,   // ⬅️ nuevo
+      metric,
+      groupBy,
+      groupValue: selectedGroup || undefined,
     }),
     [clinicaId, from, to, alerta, metric, groupBy, selectedGroup]
   )
@@ -118,6 +124,9 @@ export default function AnalyticsPage() {
       setPending(true)
       const url = `/api/analytics/overview?${qs(commonParams)}`
       const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+      if (!r.ok) {
+        console.error('overview status', r.status);
+      }
       const j = await r.json()
       setData(j)
     } catch (e) {
@@ -136,6 +145,9 @@ export default function AnalyticsPage() {
       setPendingTable(true)
       const url = `/api/analytics/table?${qs({ ...commonParams, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
       const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+      if (!r.ok) {
+        console.error('table status', r.status);
+      }
       const j = await r.json()
       setRows(j?.rows || [])
       setTotal(j?.total || 0)
@@ -281,7 +293,11 @@ export default function AnalyticsPage() {
           value={to.slice(0, 16)}
           onChange={(e) => setTo(new Date(e.target.value).toISOString())}
         />
-        <select className="border rounded-xl px-3 py-2" value={alerta} onChange={(e) => setAlerta(e.target.value)}>
+        <select
+          className="border rounded-xl px-3 py-2"
+          value={alerta}
+          onChange={(e) => setAlerta((e.target.value || '').trim().toLowerCase())}
+        >
           <option value="">{t('Alerta') || 'Alerta'}</option>
           <option value="verde">Verde</option>
           <option value="amarillo">Amarillo</option>
