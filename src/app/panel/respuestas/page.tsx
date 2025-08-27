@@ -1043,26 +1043,41 @@ export default function PanelRespuestas() {
             cantidad={seleccionadas.length}
             onCancelar={() => setMostrarModal(false)}
             t={t}
-            onConfirmar={async () => {
-              try {
-                const ids = seleccionadas.map(String); // 👈 mantener como string (UUID)
-                const res = await fetchConToken('/api/respuestas', {
-                  method: 'DELETE',
-                  headers: getAuthHeaders(),
-                  body: JSON.stringify({ ids }),
-                })
-                if (res.ok) {
-                  setRespuestas(prev => prev.filter(r => !ids.includes(String(r.id))))
-                  setSeleccionadas([])
-                  setModoEdicion(false)
-                  setMostrarModal(false)
-                } else {
-                  alert('❌ ' + t('respuestas.error_eliminar'))
-                }
-              } catch (e) {
-                alert('❌ ' + t('respuestas.error_servidor'))
-              }
-            }}
+             onConfirmar={async () => {
+               try {
+                 const ids = seleccionadas.map(String); // UUIDs
+                 // 🛡️ Enviar body + fallback por query string (por si algún proxy ignora body en DELETE)
+                 const qs = new URLSearchParams({ ids: ids.join(',') }).toString();
+                 const res = await fetchConToken(`/api/respuestas?${qs}`, {
+                   method: 'DELETE',
+                   body: JSON.stringify({ ids }),
+                 });
+            
+                 if (res.status === 401) {
+                   // sesión vencida -> a login
+                   window.location.href = '/login';
+                   return;
+                 }
+            
+                 if (!res.ok) {
+                   let msg = t('respuestas.error_eliminar');
+                   try {
+                     const j = await res.json();
+                     if (j?.error) msg = `❌ ${j.error}`;
+                   } catch {}
+                   alert(msg);
+                   return;
+                 }
+            
+                 // ✅ ok: sacar del estado y cerrar modal
+                 setRespuestas(prev => prev.filter(r => !ids.includes(String(r.id))));
+                 setSeleccionadas([]);
+                 setModoEdicion(false);
+                 setMostrarModal(false);
+               } catch (e) {
+                 alert('❌ ' + t('respuestas.error_servidor'));
+               }
+             }}
           />
         </div>
       )}
