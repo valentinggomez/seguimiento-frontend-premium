@@ -103,15 +103,9 @@ export default function AnalyticsPage() {
   const commonParams = useMemo(
     () => ({
       clinica_id: clinicaId,
-      from,
-      to,
-      // Compatibilidad: algunos endpoints usan 'nivel' u otros 'nivel_alerta'
-      nivel: alerta || undefined,
-      nivel_alerta: alerta || undefined,
-      // (si algún proxy viejo aún lee 'alerta', lo dejamos también)
-      alerta: alerta || undefined,
-      metric,
-      groupBy,
+      from, to,
+      alerta: alerta || undefined,   // ← único parámetro
+      metric, groupBy,
       groupValue: selectedGroup || undefined,
     }),
     [clinicaId, from, to, alerta, metric, groupBy, selectedGroup]
@@ -145,16 +139,17 @@ export default function AnalyticsPage() {
       setPendingTable(true)
       const url = `/api/analytics/table?${qs({ ...commonParams, page: 1, pageSize: 20, sort: 'creado_en.desc' })}`
       const r = await fetchConToken(url, { headers: { ...getAuthHeaders(), 'x-clinica-host': hostHeader } })
+      let j: any
+      try { j = await r.json() } catch { j = { raw: await r.text() } }
       if (!r.ok) {
-        console.error('table status', r.status);
+        console.error('table status', r.status, j)
+        setRows([]); setTotal(0)
+        return
       }
-      const j = await r.json()
-      setRows(j?.rows || [])
-      setTotal(j?.total || 0)
+      setRows(j?.rows || []); setTotal(j?.total || 0)
     } catch (e) {
       console.error('table error', e)
-      setRows([])
-      setTotal(0)
+      setRows([]); setTotal(0)
     } finally {
       setPendingTable(false)
     }
