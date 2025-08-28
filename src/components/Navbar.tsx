@@ -2,11 +2,106 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { eventBus } from '@/lib/eventBus'
 import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
+
+function parseJwtEmail(): string | null {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token) return null
+    const [, payload] = token.split('.')
+    if (!payload) return null
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    const email = json?.email || json?.sub || null
+    return typeof email === 'string' ? email : null
+  } catch {
+    return null
+  }
+}
+
+function UserMenu() {
+  const [open, setOpen] = useState(false)
+  const [initial, setInitial] = useState<string>('?')
+  const [email, setEmail] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    // email puede estar guardado directo o lo saco del JWT
+    const savedEmail = typeof window !== 'undefined' ? localStorage.getItem('email') : null
+    const mail = savedEmail || parseJwtEmail()
+    setEmail(mail)
+    setInitial(mail?.[0]?.toUpperCase() || 'U')
+  }, [])
+
+  // cerrar al clickear afuera o al presionar Esc
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!open) return
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const logout = () => {
+    try {
+      localStorage.removeItem('token')
+      localStorage.removeItem('email')
+      localStorage.removeItem('rol')
+    } catch {}
+    window.location.href = '/login'
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold shadow-sm ring-1 ring-slate-900/10 hover:opacity-90"
+        title={email || 'Usuario'}
+      >
+        {initial}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg p-1"
+        >
+          {email && (
+            <div className="px-3 py-2 text-xs text-slate-600 border-b mb-1 truncate">
+              {email}
+            </div>
+          )}
+
+          {/* Ejemplo de futuros ítems:
+          <button role="menuitem" className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-50">
+            Perfil
+          </button>
+          */}
+
+          <button
+            role="menuitem"
+            onClick={logout}
+            className="w-full text-left px-3 py-2 text-sm rounded-lg text-red-600 hover:bg-red-50"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -22,15 +117,13 @@ export default function Navbar() {
           headers: getAuthHeaders()
         })
         const data = await res.json()
-        setTieneMensajesNoLeidos(data.cantidad > 0)
+        setTieneMensajesNoLeidos((data?.cantidad || 0) > 0)
       } catch (error) {
         console.error('Error al verificar mensajes no leídos', error)
       }
     }
-
     verificarMensajesNoLeidos()
-    const intervalo = setInterval(verificarMensajesNoLeidos, 10000) // cada 10s
-
+    const intervalo = setInterval(verificarMensajesNoLeidos, 10000)
     return () => clearInterval(intervalo)
   }, [])
   
@@ -40,7 +133,7 @@ export default function Navbar() {
   }, [])
   
   useEffect(() => {
-    const rolGuardado = localStorage.getItem('rol')
+    const rolGuardado = typeof window !== 'undefined' ? localStorage.getItem('rol') : null
     setRol(rolGuardado)
 
     const reproducirSonido = () => {
@@ -53,13 +146,10 @@ export default function Navbar() {
     const handler = (mensaje: any) => {
       if (mensaje?.tipo === 'nuevo_mensaje') {
         setTieneMensajesNoLeidos(true)
-
-        // ✅ Solo ejecutamos esto una vez acá
         toast.info(`📩 Nuevo mensaje de ${mensaje.nombre}`, {
           description: 'Haz clic en Interacciones para verlo.',
           duration: 4000,
         })
-
         reproducirSonido()
       }
     }
@@ -72,23 +162,14 @@ export default function Navbar() {
 
   useEffect(() => {
     const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
-
     eventSource.onmessage = (e) => {
       const data = JSON.parse(e.data)
-
       if (data.tipo === 'nuevo_mensaje') {
-        console.log('📥 Nuevo mensaje detectado por SSE:', data)
-
-        // 🔴 Mostrar punto rojo visual
         setTieneMensajesNoLeidos(true)
-
-        // 📡 Emitir evento global (el resto se maneja desde el eventBus)
         eventBus.emit('nuevo_mensaje', data)
       }
     }
-    return () => {
-      eventSource.close()
-    }
+    return () => { eventSource.close() }
   }, [])
 
   const linkClasses = (path: string) =>
@@ -100,10 +181,10 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30">
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-3 overflow-x-auto">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3 overflow-x-auto">
 
         {/* Logo + nombre de clínica */}
-        <div className="flex items-center gap-3 min-w-0 max-w-[70%] truncate">
+        <div className="flex items-center gap-3 min-w-0 max-w-[60%] truncate">
           {clinica?.logo_url && (
             <img
               src={clinica.logo_url}
@@ -117,7 +198,7 @@ export default function Navbar() {
         </div>
 
         {/* Navegación */}
-        <nav className="flex gap-1 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1">
+        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1 flex-1">
           <Link href="/panel" className={linkClasses('/panel')}>
             {t('navbar.inicio')}
           </Link>
@@ -141,7 +222,7 @@ export default function Navbar() {
           <Link href="/panel/interacciones" className={`${linkClasses('/panel/interacciones')} relative`}>
             {t('navbar.interacciones')}
             {tieneMensajesNoLeidos && (
-              <span className="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-sm"></span>
+              <span className="absolute -top-1 -right-1 block h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shadow-sm" />
             )}
           </Link>
 
@@ -156,14 +237,23 @@ export default function Navbar() {
               {t('navbar.clinicas')}
             </Link>
           )}
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
-          className="ml-4 px-3 py-1 rounded-xl shadow-sm border border-slate-300 text-sm bg-white hover:cursor-pointer"
-        >
-          <option value="es">🇦🇷 Español</option>
-          <option value="en">🇺🇸 English</option>
-        </select>
+
+          {/* Idioma */}
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
+            className="ml-1 sm:ml-2 px-3 py-1 rounded-xl shadow-sm border border-slate-300 text-sm bg-white hover:cursor-pointer"
+            aria-label="Cambiar idioma"
+          >
+            <option value="es">🇦🇷 Español</option>
+            <option value="en">🇺🇸 English</option>
+          </select>
+
+          {/* Spacer para empujar el avatar a la derecha en pantallas grandes */}
+          <div className="flex-1" />
+          
+          {/* Avatar / User menu */}
+          <UserMenu />
         </nav>
       </div>
     </header>
