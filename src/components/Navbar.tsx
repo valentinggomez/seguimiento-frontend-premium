@@ -62,7 +62,7 @@ function UserMenu() {
   }
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative z-50" ref={menuRef}>
       <button
         onClick={() => setOpen(o => !o)}
         aria-haspopup="menu"
@@ -181,7 +181,7 @@ export default function Navbar() {
 
   return (
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30">
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3 overflow-x-auto">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3">
 
         {/* Logo + nombre de clínica */}
         <div className="flex items-center gap-3 min-w-0 max-w-[60%] truncate">
@@ -249,12 +249,12 @@ export default function Navbar() {
             <option value="en">🇺🇸 English</option>
           </select>
 
-          {/* Spacer para empujar el avatar a la derecha en pantallas grandes */}
-          <div className="flex-1" />
-          
-          {/* Avatar / User menu */}
+          </nav>
+
+          {/* Avatar / User menu (fuera del nav para evitar clipping) */}
+          <div className="shrink-0">
           <UserMenu />
-        </nav>
+        </div>
       </div>
     </header>
   )
