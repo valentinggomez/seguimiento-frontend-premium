@@ -76,7 +76,7 @@ function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg p-1"
+          className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg p-1"
         >
           {email && (
             <div className="px-3 py-2 text-xs text-slate-600 border-b mb-1 truncate">
