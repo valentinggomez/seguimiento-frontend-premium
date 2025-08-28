@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { Plus, Trash2, X, Info, Save } from "lucide-react"
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import Link from "next/link"
+import { fetchConToken } from '@/lib/fetchConToken';
 
 const CAMPOS_DISPONIBLES = [
   "fecha",
@@ -274,14 +275,14 @@ export default function SeccionAdminClinicas() {
     if (!selected) return;
     if (!validarCampos()) return;
 
-    // columnas_exportables siempre array
+    // columnas_exportables en array
     const columnas_exportables: string[] = Array.isArray(selected.columnas_exportables)
       ? selected.columnas_exportables
       : typeof selected.columnas_exportables === 'string'
         ? selected.columnas_exportables.split(',').map((s: string) => s.trim())
         : [];
 
-    // campos del form como "nombre:tipo"
+    // campos del form "nombre:tipo"
     const campos_formulario = (camposForm || []).map(c => `${c.nombre}:${c.tipo}`);
 
     // sheets_map válido
@@ -289,38 +290,38 @@ export default function SeccionAdminClinicas() {
     try {
       sheets_map_obj = sheetsMapJson?.trim() ? JSON.parse(sheetsMapJson) : {};
     } catch {
-      toast.error("El JSON de hojas por formulario es inválido");
+      toast.error('El JSON de hojas por formulario es inválido');
       return;
     }
 
     const isEdit = Boolean(selected?.id);
     const base = process.env.NEXT_PUBLIC_API_URL!;
-    const endpoint = isEdit ? `${base}/api/clinicas/editar` : `${base}/api/clinicas/nueva`;
-    const method = isEdit ? 'PUT' : 'POST';
 
-    // normalizar/validar obligatorios
-    const nombre = String(selected?.nombre_clinica || '').trim();
-    const dominioNorm = normalizeDomain(selected?.dominio || '');
+    // obligatorios normalizados
+    const nombre_clinica = String(selected?.nombre_clinica || '').trim();
+    const dominio = normalizeDomain(selected?.dominio || '');
 
     if (isEdit) {
-      if (!selected?.id || !nombre || !dominioNorm) {
+      if (!selected?.id || !nombre_clinica || !dominio) {
         toast.error('Faltan campos obligatorios (id, nombre, dominio)');
         return;
       }
     } else {
-      if (!nombre || !dominioNorm) {
+      if (!nombre_clinica || !dominio) {
         toast.error('Faltan campos obligatorios (nombre, dominio)');
         return;
       }
     }
 
-    // payload explícito (evita perder claves o mandar basura)
     const payload: any = {
-      nombre_clinica: nombre,
-      dominio: dominioNorm,
+      // 🔴 los tres que el backend exige:
+      ...(isEdit ? { id: selected.id } : {}),
+      nombre_clinica,
+      dominio,
+
+      // resto
       spreadsheet_id: selected?.spreadsheet_id || '',
       nombre_hoja: selected?.nombre_hoja || '',
-      // el backend normalmente espera "telefono_institucional"
       telefono_institucional: selected?.telefono || '',
       color_primario: selected?.color_primario || '#1E90FF',
       campos_formulario,
@@ -330,22 +331,23 @@ export default function SeccionAdminClinicas() {
         .map(c => c.trim())
         .filter(Boolean)
         .join(','),
-
       sheets_map: sheets_map_obj,
 
-      // 🔒 Políticas (claves que usa tu backend)
+      // políticas
       politicas_html: selected?.politicas_html || '',
       politicas_version: selected?.politicas_version || 'v1',
       politicas_url: selected?.politicas_url || '',
-      politicas_requeridas: Number(Boolean(selected?.politicas_requeridas)), // 0 | 1
+      politicas_requeridas: Number(Boolean(selected?.politicas_requeridas)),
     };
 
-    if (isEdit) payload.id = selected.id; // solo en editar
+    // 👀 debug local
+    console.log('➡️ payload clinica', payload);
 
     try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: getAuthHeaders(),
+      const url = isEdit ? '/api/clinicas/editar' : '/api/clinicas/nueva';
+      const res = await fetchConToken(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: getAuthHeaders('application/json'),
         body: JSON.stringify(payload),
       });
 
@@ -367,7 +369,7 @@ export default function SeccionAdminClinicas() {
       setSelected(null);
 
       // refrescar listado
-      const ref = await fetch(`${base}/api/clinicas?rol=superadmin`, {
+      const ref = await fetchConToken('/api/clinicas?rol=superadmin', {
         headers: getAuthHeaders(),
         cache: 'no-store',
       });
@@ -760,6 +762,7 @@ export default function SeccionAdminClinicas() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
                       <div>
                         <DialogTitle className="text-3xl font-bold text-[#003366]">
+                          {selected?.id ? "🏥 Editar Clínica" : "➕ Crear nueva clínica"}
                           {selected?.id && (
                             <Input
                               value={selected.id}
