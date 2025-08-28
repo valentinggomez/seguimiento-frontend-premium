@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 
+/* ------------------ UserMenu ------------------ */
 function parseJwtEmail(): string | null {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -29,14 +30,12 @@ function UserMenu() {
   const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    // email puede estar guardado directo o lo saco del JWT
     const savedEmail = typeof window !== 'undefined' ? localStorage.getItem('email') : null
     const mail = savedEmail || parseJwtEmail()
     setEmail(mail)
     setInitial(mail?.[0]?.toUpperCase() || 'U')
   }, [])
 
-  // cerrar al clickear afuera o al presionar Esc
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!open) return
@@ -76,19 +75,13 @@ function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg p-1"
+          className="absolute left-0 mt-2 w-48 rounded-2xl border border-slate-200 bg-white shadow-lg p-1"
         >
           {email && (
             <div className="px-3 py-2 text-xs text-slate-600 border-b mb-1 truncate">
               {email}
             </div>
           )}
-
-          {/* Ejemplo de futuros ítems:
-          <button role="menuitem" className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-50">
-            Perfil
-          </button>
-          */}
 
           <button
             role="menuitem"
@@ -103,6 +96,7 @@ function UserMenu() {
   )
 }
 
+/* ------------------ Navbar ------------------ */
 export default function Navbar() {
   const pathname = usePathname()
   const { clinica } = useClinica()
@@ -138,9 +132,7 @@ export default function Navbar() {
 
     const reproducirSonido = () => {
       const audio = new Audio('/sounds/notificacion.wav')
-      audio.play().catch(() => {
-        console.warn('🔇 Sonido bloqueado por navegador hasta interacción del usuario')
-      })
+      audio.play().catch(() => {})
     }
 
     const handler = (mensaje: any) => {
@@ -155,9 +147,7 @@ export default function Navbar() {
     }
 
     eventBus.on('nuevo_mensaje', handler)
-    return () => {
-      eventBus.off('nuevo_mensaje', handler)
-    }
+    return () => { eventBus.off('nuevo_mensaje', handler) }
   }, [])
 
   useEffect(() => {
@@ -183,8 +173,9 @@ export default function Navbar() {
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30">
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3">
 
-        {/* Logo + nombre de clínica */}
-        <div className="flex items-center gap-3 min-w-0 max-w-[60%] truncate">
+        {/* Avatar + logo */}
+        <div className="flex items-center gap-3 min-w-0 max-w-[40%] truncate">
+          <UserMenu />
           {clinica?.logo_url && (
             <img
               src={clinica.logo_url}
@@ -198,26 +189,12 @@ export default function Navbar() {
         </div>
 
         {/* Navegación */}
-        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1 flex-1">
-          <Link href="/panel" className={linkClasses('/panel')}>
-            {t('navbar.inicio')}
-          </Link>
-
-          <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>
-            {t('navbar.registrar')}
-          </Link>
-
-          <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>
-            {t('navbar.respuestas')}
-          </Link>
-
-          <Link href="/panel/analytics" className={linkClasses('/panel/analytics')}>
-            {t('navbar.analytics')}
-          </Link>
-
-          <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>
-            {t('navbar.pacientes')}
-          </Link>
+        <nav className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full pl-2 pr-1 flex-1 justify-end">
+          <Link href="/panel" className={linkClasses('/panel')}>{t('navbar.inicio')}</Link>
+          <Link href="/panel/paciente" className={linkClasses('/panel/paciente')}>{t('navbar.registrar')}</Link>
+          <Link href="/panel/respuestas" className={linkClasses('/panel/respuestas')}>{t('navbar.respuestas')}</Link>
+          <Link href="/panel/analytics" className={linkClasses('/panel/analytics')}>{t('navbar.analytics')}</Link>
+          <Link href="/panel/pacientes" className={linkClasses('/panel/pacientes')}>{t('navbar.pacientes')}</Link>
 
           <Link href="/panel/interacciones" className={`${linkClasses('/panel/interacciones')} relative`}>
             {t('navbar.interacciones')}
@@ -227,15 +204,11 @@ export default function Navbar() {
           </Link>
 
           {(rol === 'superadmin' || rol === 'admin') && (
-            <Link href="/panel/logs" className={linkClasses('/panel/logs')}>
-              {t('navbar.logs')}
-            </Link>
+            <Link href="/panel/logs" className={linkClasses('/panel/logs')}>{t('navbar.logs')}</Link>
           )}
 
           {rol === 'superadmin' && (
-            <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>
-              {t('navbar.clinicas')}
-            </Link>
+            <Link href="/panel/clinicas" className={linkClasses('/panel/clinicas')}>{t('navbar.clinicas')}</Link>
           )}
 
           {/* Idioma */}
@@ -248,13 +221,7 @@ export default function Navbar() {
             <option value="es">🇦🇷 Español</option>
             <option value="en">🇺🇸 English</option>
           </select>
-
-          </nav>
-
-          {/* Avatar / User menu (fuera del nav para evitar clipping) */}
-          <div className="shrink-0">
-          <UserMenu />
-        </div>
+        </nav>
       </div>
     </header>
   )
