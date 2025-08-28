@@ -63,6 +63,7 @@ function UserMenu() {
   return (
     <div className="relative z-50" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setOpen(o => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -170,8 +171,8 @@ export default function Navbar() {
     }`
 
   return (
-    <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30">
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3">
+    <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30 overflow-visible">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3 overflow-visible">
 
         {/* Avatar + logo */}
         <div className="flex items-center gap-3 min-w-0 max-w-[40%] truncate">
