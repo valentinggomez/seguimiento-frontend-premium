@@ -263,69 +263,111 @@ export default function SeccionAdminClinicas() {
     return Object.keys(nuevosErrores).length === 0
   }
 
+  const normalizeDomain = (s: string) =>
+    String(s || '')
+      .trim()
+      .replace(/^https?:\/\//i, '')
+      .replace(/\/.*$/, '')
+      .toLowerCase();
+
   const handleSave = async () => {
-    if (!selected || !validarCampos()) return;
+    if (!selected) return;
+    if (!validarCampos()) return;
 
-    if (!Array.isArray(selected.columnas_exportables)) {
-      selected.columnas_exportables = typeof selected.columnas_exportables === "string"
-        ? selected.columnas_exportables.split(",").map((s: string) => s.trim())
+    // columnas_exportables siempre array
+    const columnas_exportables: string[] = Array.isArray(selected.columnas_exportables)
+      ? selected.columnas_exportables
+      : typeof selected.columnas_exportables === 'string'
+        ? selected.columnas_exportables.split(',').map((s: string) => s.trim())
         : [];
-    }
 
-    const campos_formulario = camposForm.map(c => `${c.nombre}:${c.tipo}`);
+    // campos del form como "nombre:tipo"
+    const campos_formulario = (camposForm || []).map(c => `${c.nombre}:${c.tipo}`);
 
-    let sheets_map_obj: Record<string, string> = {}
+    // sheets_map válido
+    let sheets_map_obj: Record<string, string> = {};
     try {
-      sheets_map_obj = sheetsMapJson?.trim() ? JSON.parse(sheetsMapJson) : {}
+      sheets_map_obj = sheetsMapJson?.trim() ? JSON.parse(sheetsMapJson) : {};
     } catch {
-      toast.error("El JSON de hojas por formulario es inválido")
-      return
+      toast.error("El JSON de hojas por formulario es inválido");
+      return;
     }
 
+    const isEdit = Boolean(selected?.id);
+    const base = process.env.NEXT_PUBLIC_API_URL!;
+    const endpoint = isEdit ? `${base}/api/clinicas/editar` : `${base}/api/clinicas/nueva`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    // normalizar/validar obligatorios
+    const nombre = String(selected?.nombre_clinica || '').trim();
+    const dominioNorm = normalizeDomain(selected?.dominio || '');
+
+    if (isEdit) {
+      if (!selected?.id || !nombre || !dominioNorm) {
+        toast.error('Faltan campos obligatorios (id, nombre, dominio)');
+        return;
+      }
+    } else {
+      if (!nombre || !dominioNorm) {
+        toast.error('Faltan campos obligatorios (nombre, dominio)');
+        return;
+      }
+    }
+
+    // payload explícito (evita perder claves o mandar basura)
+    const payload: any = {
+      nombre_clinica: nombre,
+      dominio: dominioNorm,
+      spreadsheet_id: selected?.spreadsheet_id || '',
+      nombre_hoja: selected?.nombre_hoja || '',
+      // el backend normalmente espera "telefono_institucional"
+      telefono_institucional: selected?.telefono || '',
+      color_primario: selected?.color_primario || '#1E90FF',
+      campos_formulario,
+      columnas_exportables,
+      campos_avanzados: (camposAvanzados || '')
+        .split(',')
+        .map(c => c.trim())
+        .filter(Boolean)
+        .join(','),
+
+      sheets_map: sheets_map_obj,
+
+      // 🔒 Políticas (claves que usa tu backend)
+      politicas_html: selected?.politicas_html || '',
+      politicas_version: selected?.politicas_version || 'v1',
+      politicas_url: selected?.politicas_url || '',
+      politicas_requeridas: Number(Boolean(selected?.politicas_requeridas)), // 0 | 1
+    };
+
+    if (isEdit) payload.id = selected.id; // solo en editar
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const isEdit = Boolean(selected?.id);
-
-      const endpoint = isEdit
-        ? `${base}/api/clinicas/editar`  // backend usa PUT
-        : `${base}/api/clinicas/nueva`;  // backend usa POST
-
-      const method = isEdit ? "PUT" : "POST";
-
       const res = await fetch(endpoint, {
         method,
         headers: getAuthHeaders(),
-        body: JSON.stringify({
-          ...selected,
-          campos_formulario,
-          campos_avanzados: camposAvanzados.split(',').map(c => c.trim()).filter(Boolean).join(','),
-          telefono: selected.telefono || "",
-          columnas_exportables: selected.columnas_exportables,
-          sheets_map: sheets_map_obj,
-
-          // 🔒 Políticas
-          politicas_html: selected.politicas_html || "",
-          politicas_version: selected.politicas_version || "v1",
-          politicas_url: selected.politicas_url || "",
-          politicas_requeridas: Number(Boolean(selected.politicas_requeridas)), // 0 | 1
-        }),
+        body: JSON.stringify(payload),
       });
 
-      // Manejo de error más claro cuando la respuesta no es JSON
       const raw = await res.text();
       const maybeJson = raw && raw.startsWith('{') ? JSON.parse(raw) : null;
 
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
       if (!res.ok) {
         const msg = maybeJson?.error || `Error ${res.status} al guardar`;
         toast.error(msg);
-        console.error("Error al guardar:", raw);
+        console.error('Error al guardar:', raw);
         return;
       }
 
-      toast.success("Clínica guardada correctamente");
+      toast.success('Clínica guardada correctamente');
       setSelected(null);
 
-      const ref = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clinicas?rol=superadmin`, {
+      // refrescar listado
+      const ref = await fetch(`${base}/api/clinicas?rol=superadmin`, {
         headers: getAuthHeaders(),
         cache: 'no-store',
       });
@@ -333,8 +375,8 @@ export default function SeccionAdminClinicas() {
       const lista = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
       setClinicas(lista);
     } catch (err) {
-      toast.error("Error inesperado al guardar");
-      console.error("Error inesperado:", err);
+      toast.error('Error inesperado al guardar');
+      console.error('Error inesperado:', err);
     }
   };
 
@@ -718,7 +760,14 @@ export default function SeccionAdminClinicas() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
                       <div>
                         <DialogTitle className="text-3xl font-bold text-[#003366]">
-                          {selected?.id ? "🏥 Editar Clínica" : "➕ Crear nueva clínica"}
+                          {selected?.id && (
+                            <Input
+                              value={selected.id}
+                              readOnly
+                              className="bg-gray-50 text-gray-600"
+                              placeholder="ID de la clínica"
+                            />
+                          )}
                         </DialogTitle>
                         <DialogDescription className="text-gray-500 text-sm">
                           Modificá los datos institucionales, campos clínicos y configuración personalizada.
