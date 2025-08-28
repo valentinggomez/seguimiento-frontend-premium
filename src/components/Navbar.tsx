@@ -36,6 +36,7 @@ function UserMenu() {
     setInitial(mail?.[0]?.toUpperCase() || 'U')
   }, [])
 
+  // click afuera + ESC
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!open) return
@@ -61,7 +62,7 @@ function UserMenu() {
   }
 
   return (
-    <div className="relative z-50" ref={menuRef}>
+    <div className="relative z-50 pointer-events-auto" ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -83,7 +84,6 @@ function UserMenu() {
               {email}
             </div>
           )}
-
           <button
             role="menuitem"
             onClick={logout}
@@ -174,9 +174,13 @@ export default function Navbar() {
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30 overflow-visible">
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3 overflow-visible">
 
-        {/* Avatar + logo */}
-        <div className="flex items-center gap-3 min-w-0 max-w-[40%] truncate">
-          <UserMenu />
+        {/* Avatar + logo + nombre (sin truncate en el contenedor) */}
+        <div className="flex items-center gap-3 min-w-0 max-w-[40%]">
+          {/* Avatar en contenedor propio SIN overflow hidden */}
+          <div className="shrink-0">
+            <UserMenu />
+          </div>
+
           {clinica?.logo_url && (
             <img
               src={clinica.logo_url}
@@ -184,7 +188,9 @@ export default function Navbar() {
               className="w-9 h-9 object-contain rounded-md shrink-0"
             />
           )}
-          <span className="truncate text-[15px] sm:text-lg font-semibold text-[#003466] whitespace-nowrap">
+
+          {/* Truncate SOLO en el texto, no en el contenedor */}
+          <span className="truncate text-[15px] sm:text-lg font-semibold text-[#003466] whitespace-nowrap max-w-[16rem]">
             {clinica?.nombre_clinica || 'SEGUIR+IA™'}
           </span>
         </div>
