@@ -6,7 +6,7 @@ const backendUrl = process.env.NEXT_PUBLIC_API_URL!;
 type FetchConTokenOpts = RequestInit & {
   /** si false, NO redirige automáticamente en 401 */
   redirectOn401?: boolean;
-  /** Content-Type deseado; si omitís, no seteamos ninguno */
+  /** Forzar Content-Type (ej: 'application/json'). Si omitís, auto-detecta. */
   contentType?: string;
 };
 
@@ -16,43 +16,64 @@ export const fetchConToken = async (
 ) => {
   const {
     redirectOn401 = true,
-    contentType,              // ← si querés JSON, pasá 'application/json'
+    contentType,                // si querés forzar, pasalo acá
     headers: callerHeaders,
+    body: callerBody,
     ...rest
   } = options;
 
-  // headers base con (opcional) contentType
-  const base = getAuthHeaders(contentType);
+  // Detectar tipos de body
+  const isFormData =
+    typeof FormData !== 'undefined' && callerBody instanceof FormData;
 
-  // el caller puede sobreescribir algo puntual
+  const isJsonLike =
+    !isFormData &&
+    callerBody !== undefined &&
+    (typeof callerBody === 'object' || typeof callerBody === 'string');
+
+  // Construir headers base (respetando contentType forzado)
+  const base = getAuthHeaders(
+    contentType ?? (isJsonLike ? 'application/json' : undefined)
+  );
+
+  // Armar headers finales (caller puede sobreescribir puntuales)
   const headers: Record<string, string> = {
+    Accept: 'application/json',
     ...base,
     ...(callerHeaders as any),
   };
 
-  // Normalizamos x-clinica-host (por si el caller lo pasó distinto)
-  if (typeof window !== 'undefined') {
-    headers['x-clinica-host'] = window.location.hostname.split(':')[0];
+  // No seteamos Content-Type si es FormData (que lo ponga el browser)
+  if (isFormData) {
+    delete headers['Content-Type'];
   }
 
-  // URL absoluta si hace falta
+  // Normalizamos x-clinica-host
+  if (typeof window !== 'undefined') {
+    headers['x-clinica-host'] = window.location.hostname.split(':')[0].toLowerCase();
+  }
+
+  // Normalizar body (stringify si es objeto y vamos con JSON)
+  let body: BodyInit | undefined = callerBody as any;
+  if (!isFormData && isJsonLike && typeof callerBody === 'object') {
+    body = JSON.stringify(callerBody);
+  }
+
+  // URL absoluta
   const finalUrl = url.startsWith('http') ? url : `${backendUrl}${url}`;
 
   const res = await fetch(finalUrl, {
     cache: 'no-store',
     ...rest,
     headers,
+    body,
   });
 
-  // manejo global de sesión expirada
+  // Manejo global de sesión expirada
   if (res.status === 401 && redirectOn401 && typeof window !== 'undefined') {
-    try {
-      localStorage.removeItem('token');
-    } catch {}
-    // opcional: recordar a dónde volver
+    try { localStorage.removeItem('token'); } catch {}
     const back = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.href = `/login?next=${back}`;
-    // devolvemos la Response igualmente por si el caller la quiere inspeccionar
   }
 
   return res;
