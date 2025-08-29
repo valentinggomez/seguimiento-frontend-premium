@@ -101,7 +101,9 @@
         "alerta_ver_paciente": "🔍 Esta sección mostrará los datos completos del paciente registrado.",
         "titulo": "Registro de Paciente",
         "subtitulo": "Seguimiento postoperatorio",
-        "error_generico": "⚠️ Error: {{mensaje}}"
+        "error_generico": "⚠️ Error: {{mensaje}}",
+        "descargar_qr": "⬇️ Descargar QR",
+        "guardando": "Guardando..."
       },
       "toast_actualizado": "Paciente actualizado correctamente",
       "toast_error_guardar": "Error al guardar cambios",
@@ -411,7 +413,9 @@
         "boton_ver": "View registered patient",
         "alerta_ver_paciente": "🔍 This section will show the full data of the registered patient.",
         "titulo": "Patient Registration",
-        "subtitulo": "Postoperative follow-up"
+        "subtitulo": "Postoperative follow-up",
+        "descargar_qr": "⬇️ Download QR",
+        "guardando": "Saving..."
       },
       "toast_actualizado": "Patient updated successfully",
       "toast_error_guardar": "Error saving changes",

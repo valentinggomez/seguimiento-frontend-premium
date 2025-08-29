@@ -704,7 +704,7 @@ export default function RegistroPaciente() {
                 onClick={descargarQRPNGdesdeSVG}
                 className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
               >
-                ⬇️ Descargar QR
+                {t('pacientes.registro.boton_nuevo')}
               </button>
 
               {copiado && (
