@@ -7,6 +7,8 @@ import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 import { fetchConToken } from '@/lib/fetchConToken'
+import { useRef } from 'react'
+import { toPng } from 'html-to-image'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({})
@@ -25,6 +27,8 @@ export default function RegistroPaciente() {
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s && !CAMPOS_RESERVADOS.has(s.toLowerCase()));
+
+  const qrRef = useRef<HTMLDivElement>(null)
 
   // Cargar formularios activos de la clínica y elegir uno por defecto
   useEffect(() => {
@@ -160,6 +164,19 @@ export default function RegistroPaciente() {
     } catch (err) {
       console.error(err)
       setMensajeError(t('pacientes.errores.error_inesperado'))
+    }
+  }
+
+  async function descargarQR() {
+    if (!qrRef.current) return
+    try {
+      const pngUrl = await toPng(qrRef.current, { pixelRatio: 3 }) // pixelRatio = nitidez
+      const a = document.createElement('a')
+      a.href = pngUrl
+      a.download = `SEGUIR+IA_QR_${Date.now()}.png`
+      a.click()
+    } catch (err) {
+      console.error('Error al generar PNG', err)
     }
   }
 
@@ -616,9 +633,16 @@ export default function RegistroPaciente() {
                 <span className="select-all">{link}</span>
               </div>
 
-              <div className="mt-5 border border-gray-300 p-3 inline-block rounded-xl shadow-sm bg-white">
+              <div ref={qrRef} className="mt-5 border border-gray-300 p-3 inline-block rounded-xl shadow-sm bg-white">
                 <QRCode value={link} size={120} fgColor="#003466" bgColor="#ffffff" />
               </div>
+
+              <button
+                onClick={descargarQR}
+                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
+              >
+                ⬇️ Descargar QR
+              </button>
 
               {copiado && (
                 <motion.div
