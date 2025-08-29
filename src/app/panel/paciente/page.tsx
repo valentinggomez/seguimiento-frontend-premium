@@ -8,7 +8,6 @@ import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { useRef } from 'react'
-import { toPng } from 'html-to-image'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({})
@@ -165,20 +164,6 @@ export default function RegistroPaciente() {
       console.error(err)
       setMensajeError(t('pacientes.errores.error_inesperado'))
     }
-  }
-
-  // Descargar como SVG (vectorial)
-  function descargarQRSVG() {
-    const svg = qrContainerRef.current?.querySelector('svg') as SVGSVGElement | null
-    if (!svg) return
-    const xml = new XMLSerializer().serializeToString(svg)
-    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `SEGUIR+IA_QR_${Date.now()}.svg`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   // Descargar como PNG nítido con padding (sin cortes)
@@ -684,18 +669,18 @@ export default function RegistroPaciente() {
                 ref={qrContainerRef}
                 className="mt-5 inline-block rounded-xl bg-white border border-gray-300 shadow-sm p-3"
               >
+                {/* Tamaño cómodo para impresión/cámara */}
                 <QRCode value={link} size={200} fgColor="#003466" bgColor="#ffffff" />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={descargarQRPNGdesdeSVG}
-                  className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
-                >
-                  ⬇️ PNG nítido
-                </button>
-              </div>
+              {/* 👉 Botón PNG nítido: arriba de los otros dos */}
+              <button
+                type="button"
+                onClick={descargarQRPNGdesdeSVG}
+                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
+              >
+                ⬇️ PNG nítido
+              </button>
 
               {copiado && (
                 <motion.div
