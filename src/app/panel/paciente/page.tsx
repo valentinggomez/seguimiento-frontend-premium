@@ -695,13 +695,6 @@ export default function RegistroPaciente() {
                 >
                   ⬇️ PNG nítido
                 </button>
-                <button
-                  type="button"
-                  onClick={descargarQRSVG}
-                  className="px-5 py-2 rounded-lg bg-white text-[#004080] border border-gray-300 hover:bg-gray-50 transition font-medium shadow"
-                >
-                  ⬇️ SVG vectorial
-                </button>
               </div>
 
               {copiado && (
