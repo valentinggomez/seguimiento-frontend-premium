@@ -28,7 +28,7 @@ export default function RegistroPaciente() {
     .map((s) => s.trim())
     .filter((s) => s && !CAMPOS_RESERVADOS.has(s.toLowerCase()));
 
-  const qrRef = useRef<HTMLDivElement>(null)
+  const qrContainerRef = useRef<HTMLDivElement>(null)
 
   // Cargar formularios activos de la clínica y elegir uno por defecto
   useEffect(() => {
@@ -167,19 +167,66 @@ export default function RegistroPaciente() {
     }
   }
 
-  async function descargarQR() {
-    if (!qrRef.current) return
-    try {
-      const pngUrl = await toPng(qrRef.current, { pixelRatio: 3 }) // pixelRatio = nitidez
-      const a = document.createElement('a')
-      a.href = pngUrl
-      a.download = `SEGUIR+IA_QR_${Date.now()}.png`
-      a.click()
-    } catch (err) {
-      console.error('Error al generar PNG', err)
-    }
+  // Descargar como SVG (vectorial)
+  function descargarQRSVG() {
+    const svg = qrContainerRef.current?.querySelector('svg') as SVGSVGElement | null
+    if (!svg) return
+    const xml = new XMLSerializer().serializeToString(svg)
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `SEGUIR+IA_QR_${Date.now()}.svg`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
+  // Descargar como PNG nítido con padding (sin cortes)
+  function descargarQRPNGdesdeSVG() {
+    const svg = qrContainerRef.current?.querySelector('svg') as SVGSVGElement | null
+    if (!svg) return
+
+    const xml = new XMLSerializer().serializeToString(svg)
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+
+    const img = new Image()
+    const scale = 4   // nitidez (↑ = más grande)
+    const pad = 24    // padding alrededor en px
+
+    img.onload = () => {
+      // tamaño destino = tamaño real del SVG * scale + padding * 2
+      const w = img.width * scale + pad * 2
+      const h = img.height * scale + pad * 2
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')!
+
+      // fondo blanco y dibujo del QR escalado
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, w, h)
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(img, pad, pad, img.width * scale, img.height * scale)
+
+      const dataUrl = canvas.toDataURL('image/png')
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `SEGUIR+IA_QR_${Date.now()}.png`
+      a.click()
+
+      URL.revokeObjectURL(url)
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+    }
+
+    img.src = url
+  }
+
+  
   return (
     <main className="min-h-screen bg-[#f9fafb] px-4 py-14 flex items-center justify-center">
       <motion.div
@@ -633,16 +680,29 @@ export default function RegistroPaciente() {
                 <span className="select-all">{link}</span>
               </div>
 
-              <div ref={qrRef} className="mt-5 border border-gray-300 p-3 inline-block rounded-xl shadow-sm bg-white">
-                <QRCode value={link} size={120} fgColor="#003466" bgColor="#ffffff" />
+              <div
+                ref={qrContainerRef}
+                className="mt-5 inline-block rounded-xl bg-white border border-gray-300 shadow-sm p-3"
+              >
+                <QRCode value={link} size={200} fgColor="#003466" bgColor="#ffffff" />
               </div>
 
-              <button
-                onClick={descargarQR}
-                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
-              >
-                ⬇️ Descargar QR
-              </button>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={descargarQRPNGdesdeSVG}
+                  className="px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
+                >
+                  ⬇️ PNG nítido
+                </button>
+                <button
+                  type="button"
+                  onClick={descargarQRSVG}
+                  className="px-5 py-2 rounded-lg bg-white text-[#004080] border border-gray-300 hover:bg-gray-50 transition font-medium shadow"
+                >
+                  ⬇️ SVG vectorial
+                </button>
+              </div>
 
               {copiado && (
                 <motion.div
@@ -690,13 +750,6 @@ export default function RegistroPaciente() {
                 {t('pacientes.registro.boton_nuevo')}
               </button>
 
-              <button
-                type="button"
-                onClick={() => alert(t('pacientes.registro.alerta_ver_paciente'))}
-                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#f0f4f8] border border-gray-300 text-[#004080] hover:bg-gray-100 hover:shadow transition font-medium"
-              >
-                🔍 {t('pacientes.registro.boton_ver')}
-              </button>
             </div>
           </motion.div>
         )}
