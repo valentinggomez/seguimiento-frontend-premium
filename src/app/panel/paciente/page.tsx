@@ -30,6 +30,14 @@ export default function RegistroPaciente() {
   const qrContainerRef = useRef<HTMLDivElement>(null)
   const [sending, setSending] = useState(false)
   
+
+  const PAISES: Record<string, { flag: string; cc: string; ejemplo?: string }> = {
+    AR: { flag: '🇦🇷', cc: '54', ejemplo: '11 2345 6789' },
+    CL: { flag: '🇨🇱', cc: '56', ejemplo: '912345678' },
+    UY: { flag: '🇺🇾', cc: '598', ejemplo: '91234567' },
+    ES: { flag: '🇪🇸', cc: '34', ejemplo: '612345678' },
+  };
+
   // Cargar formularios activos de la clínica y elegir uno por defecto
   useEffect(() => {
     const cargarFormularios = async () => {
@@ -63,13 +71,28 @@ export default function RegistroPaciente() {
     }
     cargarFormularios()
   }, [clinica?.id])
+
+  useEffect(() => {
+    if (clinica?.pais && !form.pais_telefono) {
+      setForm((prev: any) => ({ ...prev, pais_telefono: clinica.pais }));
+    }
+  }, [clinica?.pais, form.pais_telefono]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (sending) return          // evita doble click 
 
     // Validación básica
-    const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo', 'anestesia']
+    const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo','anestesia','pais_telefono'];
+
+    if (!form.pais_telefono || !PAISES[form.pais_telefono]) {
+      setMensajeError('Seleccioná el país del teléfono');
+      return;
+    }
+    if (!form.telefono || String(form.telefono).replace(/\D/g,'').length < 7) {
+      setMensajeError('Número de teléfono demasiado corto');
+      return;
+    }
     const vacios = requeridos.filter(k => !form[k] && form[k] !== 0)
     if (vacios.length) {
       setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
@@ -127,6 +150,7 @@ export default function RegistroPaciente() {
       clinica_id: clinica.id,
       form_slug_inicial: slug,
       anestesia: (form.anestesia ?? '').trim() || null,
+      pais_telefono: form.pais_telefono || clinica.pais || null,
     }
     console.log("📦 Objeto final paciente:", paciente)
     setSending(true)
@@ -422,11 +446,11 @@ export default function RegistroPaciente() {
                   className="w-1/3 px-3 py-3 border border-gray-300 rounded-l-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
                 >
                   <option value="" disabled hidden>🌍 País</option>
-                  <option value="AR">🇦🇷 +54</option>
-                  <option value="CL">🇨🇱 +56</option>
-                  <option value="UY">🇺🇾 +598</option>
-                  <option value="ES">🇪🇸 +34</option>
-                  {/* se pueden agregar más países */}
+                  {Object.entries(PAISES).map(([iso, data]) => (
+                    <option key={iso} value={iso}>
+                      {data.flag} +{data.cc}
+                    </option>
+                  ))}
                 </select>
 
                 {/* INPUT TELÉFONO */}
@@ -434,8 +458,15 @@ export default function RegistroPaciente() {
                   type="tel"
                   name="telefono"
                   value={form.telefono || ''}
-                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                  placeholder={form.pais_telefono === 'AR' ? 'Ej: 11 2345 6789' : 'Ej: 123456789'}
+                  onChange={(e) => {
+                    const soloDigitos = e.target.value.replace(/\D/g, '');
+                    setForm({ ...form, telefono: soloDigitos });
+                  }}
+                  placeholder={
+                    form.pais_telefono && PAISES[form.pais_telefono]?.ejemplo
+                      ? `Ej: ${PAISES[form.pais_telefono].ejemplo}`
+                      : 'Ej: 123456789'
+                  }
                   autoComplete="off"
                   className="flex-1 px-3 py-3 border border-gray-300 rounded-r-xl bg-white text-gray-800 
                             focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
