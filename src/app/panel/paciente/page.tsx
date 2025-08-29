@@ -408,24 +408,44 @@ export default function RegistroPaciente() {
                 {t('pacientes.imc')} ({t('pacientes.calculado')})
               </label>
             </div>
-            {/* 
-              🧩 Teléfono del paciente
-              Campo simple para ingresar el número de contacto. 
-              Se puede adaptar luego a validación por país si se desea internacionalizar.
-            */}
-            <div className="relative">
-              <input
-                type="tel"
-                name="telefono"
-                value={form.telefono || ''}
-                onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                placeholder=" "
-                autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
-              />
-              <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
-                {t('pacientes.telefono')}
-              </label>
+            {/* PAÍS DEL TELÉFONO */}
+            <div className="flex gap-3">
+              <div className="relative w-1/3">
+                <select
+                  name="pais_telefono"
+                  value={form.pais_telefono || ''}
+                  onChange={(e) => setForm({ ...form, pais_telefono: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 
+                            focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                >
+                  <option value="" disabled hidden>🌎 País</option>
+                  <option value="AR">🇦🇷 Argentina (+54)</option>
+                  <option value="CL">🇨🇱 Chile (+56)</option>
+                  <option value="UY">🇺🇾 Uruguay (+598)</option>
+                  <option value="ES">🇪🇸 España (+34)</option>
+                  {/* agregar más países según clínicas destino */}
+                </select>
+              </div>
+
+              {/* TELÉFONO */}
+              <div className="relative flex-1">
+                <input
+                  type="tel"
+                  name="telefono"
+                  value={form.telefono || ''}
+                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                  placeholder="Ej: 3516781234"
+                  autoComplete="off"
+                  className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white 
+                            text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                />
+                <label className="absolute left-3 top-2.5 text-sm text-gray-500 
+                                peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] 
+                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base 
+                                peer-placeholder-shown:text-gray-400 transition-all">
+                  {t('pacientes.telefono')}
+                </label>
+              </div>
             </div>
 
             {/* 
