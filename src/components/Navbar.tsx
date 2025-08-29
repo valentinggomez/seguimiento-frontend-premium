@@ -7,16 +7,15 @@ import { eventBus } from '@/lib/eventBus'
 import { toast } from 'sonner'
 import { useTranslation } from '@/i18n/useTranslation'
 
-// ✅ nuevos imports centralizados
-import { http } from '@/lib/http'
+// ✅ hooks/utilidades nuevas
 import { useAuth } from '@/hooks/useAuth'
+import { fetchConToken } from '@/lib/fetchConToken'
 
 /* ------------------ UserMenu ------------------ */
 function UserMenu() {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
-  // Datos y acciones del usuario vienen del hook
   const { email, initial, logout } = useAuth()
 
   // click afuera + ESC
@@ -79,12 +78,17 @@ export default function Navbar() {
   const [rol, setRol] = useState<string | null>(null)
   const [tieneMensajesNoLeidos, setTieneMensajesNoLeidos] = useState(false)
 
-  // 🔔 no leídos usando http.ts (maneja headers/401/JSON)
+  // 🔔 no leídos usando fetchConToken (endpoint protegido)
   useEffect(() => {
     const verificarMensajesNoLeidos = async () => {
       try {
-        const { cantidad } = await http.json<{ cantidad: number }>('/api/interacciones/noleidos')
-        setTieneMensajesNoLeidos((cantidad ?? 0) > 0)
+        const res = await fetchConToken('/api/interacciones/noleidos')
+        if (!res.ok) {
+          // si hay 401, fetchConToken ya redirige (si redirectOn401 = true por defecto)
+          throw new Error(`HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        setTieneMensajesNoLeidos(((data?.cantidad as number) || 0) > 0)
       } catch (error) {
         console.error('Error al verificar mensajes no leídos', error)
       }
@@ -126,7 +130,7 @@ export default function Navbar() {
     return () => { eventBus.off('nuevo_mensaje', handler) }
   }, [])
 
-  // SSE directo (si lo querés, lo podés pasar a un GlobalSSEListener luego)
+  // SSE directo
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL || ''
     const eventSource = new EventSource(`${base}/api/sse`)
