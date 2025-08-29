@@ -28,7 +28,8 @@ export default function RegistroPaciente() {
     .filter((s) => s && !CAMPOS_RESERVADOS.has(s.toLowerCase()));
 
   const qrContainerRef = useRef<HTMLDivElement>(null)
-
+  const [sending, setSending] = useState(false)
+  
   // Cargar formularios activos de la clínica y elegir uno por defecto
   useEffect(() => {
     const cargarFormularios = async () => {
@@ -65,6 +66,7 @@ export default function RegistroPaciente() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (sending) return          // evita doble click 
 
     // Validación básica
     const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo', 'anestesia']
@@ -127,6 +129,7 @@ export default function RegistroPaciente() {
       anestesia: (form.anestesia ?? '').trim() || null,
     }
     console.log("📦 Objeto final paciente:", paciente)
+    setSending(true)
     try {
       // asegurar nombre trim
       paciente.nombre = String(paciente.nombre || '').trim()
@@ -137,14 +140,12 @@ export default function RegistroPaciente() {
 
       const res = await fetchConToken('/api/pacientes', {
         method: 'POST',
-        // 👇 pasar objeto → fetchConToken lo serializa a JSON y agrega Content-Type
         body: paciente,
-        headers: { 'Content-Type': 'application/json' }, // (opcional, por claridad)
+        headers: { 'Content-Type': 'application/json' },
         retries: 1,
       })
 
       const resultado = await res.json().catch(() => ({} as any))
-
       if (!res.ok) {
         const msg = resultado?.error || t('pacientes.errores.error_guardado')
         setMensajeError(t('pacientes.errores.error_generico', { mensaje: msg }))
@@ -163,6 +164,8 @@ export default function RegistroPaciente() {
     } catch (err) {
       console.error(err)
       setMensajeError(t('pacientes.errores.error_inesperado'))
+    } finally {
+      setSending(false)
     }
   }
 
@@ -241,7 +244,7 @@ export default function RegistroPaciente() {
                 {t('pacientes.errores.error_generico', { mensaje: mensajeError })}
             </motion.div>
             )}
-
+          <fieldset disabled={sending} aria-busy={sending} className="space-y-6">
           <div className="space-y-6">
             {/* NOMBRE COMPLETO */}
             <div className="relative">
@@ -629,11 +632,33 @@ export default function RegistroPaciente() {
             */}
             <button
               type="submit"
-              className="w-full mt-6 bg-[#004080] text-white py-3 rounded-lg hover:bg-[#003466] transition font-semibold shadow"
+              disabled={sending}
+              aria-disabled={sending}
+              className={`w-full mt-6 rounded-lg py-3 font-semibold shadow transition
+                ${sending
+                  ? 'bg-[#003466]/60 cursor-not-allowed text-white'
+                  : 'bg-[#004080] hover:bg-[#003466] text-white'}`}
             >
-              {t('pacientes.registro.guardar_y_generar')}
+              {sending ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg
+                    className="h-5 w-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  </svg>
+                  {t('pacientes.registro.guardando') || 'Guardando...'}
+                </span>
+              ) : (
+                t('pacientes.registro.guardar_y_generar')
+              )}
             </button>
           </div>
+
+          </fieldset>
         </form>
         ) : (
           <motion.div
@@ -679,7 +704,7 @@ export default function RegistroPaciente() {
                 onClick={descargarQRPNGdesdeSVG}
                 className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
               >
-                ⬇️ PNG nítido
+                ⬇️ Descargar QR
               </button>
 
               {copiado && (
