@@ -408,43 +408,38 @@ export default function RegistroPaciente() {
                 {t('pacientes.imc')} ({t('pacientes.calculado')})
               </label>
             </div>
-            {/* PAÍS DEL TELÉFONO */}
-            <div className="flex gap-3">
-              <div className="relative w-1/3">
+            {/* 📞 Teléfono con País */}
+            <div className="relative">
+              <label className="block mb-2 text-sm text-gray-600">
+                {t('pacientes.telefono')}
+              </label>
+              <div className="flex">
+                {/* SELECT PAÍS */}
                 <select
                   name="pais_telefono"
                   value={form.pais_telefono || ''}
                   onChange={(e) => setForm({ ...form, pais_telefono: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 
-                            focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                  className="w-1/3 px-3 py-3 border border-gray-300 rounded-l-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
                 >
-                  <option value="" disabled hidden>🌎 País</option>
-                  <option value="AR">🇦🇷 Argentina (+54)</option>
-                  <option value="CL">🇨🇱 Chile (+56)</option>
-                  <option value="UY">🇺🇾 Uruguay (+598)</option>
-                  <option value="ES">🇪🇸 España (+34)</option>
-                  {/* agregar más países según clínicas destino */}
+                  <option value="" disabled hidden>🌍 País</option>
+                  <option value="AR">🇦🇷 +54</option>
+                  <option value="CL">🇨🇱 +56</option>
+                  <option value="UY">🇺🇾 +598</option>
+                  <option value="ES">🇪🇸 +34</option>
+                  {/* se pueden agregar más países */}
                 </select>
-              </div>
 
-              {/* TELÉFONO */}
-              <div className="relative flex-1">
+                {/* INPUT TELÉFONO */}
                 <input
                   type="tel"
                   name="telefono"
                   value={form.telefono || ''}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                  placeholder="Ej: 3516781234"
+                  placeholder={form.pais_telefono === 'AR' ? 'Ej: 11 2345 6789' : 'Ej: 123456789'}
                   autoComplete="off"
-                  className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white 
-                            text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                  className="flex-1 px-3 py-3 border border-gray-300 rounded-r-xl bg-white text-gray-800 
+                            focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
                 />
-                <label className="absolute left-3 top-2.5 text-sm text-gray-500 
-                                peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] 
-                                peer-placeholder-shown:top-4 peer-placeholder-shown:text-base 
-                                peer-placeholder-shown:text-gray-400 transition-all">
-                  {t('pacientes.telefono')}
-                </label>
               </div>
             </div>
 
