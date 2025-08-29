@@ -6,6 +6,7 @@ import QRCode from 'react-qr-code'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
+import { fetchConToken } from '@/lib/fetchConToken'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({})
@@ -124,28 +125,35 @@ export default function RegistroPaciente() {
     }
     console.log("📦 Objeto final paciente:", paciente)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pacientes`, {
+      // asegurar nombre trim
+      paciente.nombre = String(paciente.nombre || '').trim()
+      if (!paciente.nombre) {
+        setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
+        return
+      }
+
+      const res = await fetchConToken('/api/pacientes', {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(paciente)
+        // 👇 pasar objeto → fetchConToken lo serializa a JSON y agrega Content-Type
+        body: paciente,
+        headers: { 'Content-Type': 'application/json' }, // (opcional, por claridad)
+        retries: 1,
       })
 
-      const resultado = await res.json();
+      const resultado = await res.json().catch(() => ({} as any))
 
       if (!res.ok) {
-        setMensajeError(t('pacientes.errores.error_guardado'))
-        console.error(resultado.error)
+        const msg = resultado?.error || t('pacientes.errores.error_guardado')
+        setMensajeError(t('pacientes.errores.error_generico', { mensaje: msg }))
+        console.error('POST /api/pacientes', msg, resultado)
         return
       }
 
       const nuevoId = resultado.data?.id || ''
-
-      // 🌐 base del link: dominio de la clínica si existe; si no, el origin actual
       const dominio = (clinica?.dominio && clinica.dominio.trim())
         ? (clinica.dominio.startsWith('http') ? clinica.dominio : `https://${clinica.dominio}`)
         : window.location.origin
 
-      // ✅ link nuevo con slug
       const url = `${dominio}/responder/${nuevoId}?f=${encodeURIComponent(slug)}`
       setLink(url)
       setEnviado(true)
