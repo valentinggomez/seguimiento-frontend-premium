@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import Navbar from '@/components/Navbar'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'   // ✅
 
 function PanelContenido({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -28,7 +29,7 @@ function PanelContenido({ children }: { children: React.ReactNode }) {
     if (!clinica?.id && !esRutaPermitida && !esAdmin) {
       router.push('/responder/error')
     }
-  }, [clinica, esperar, pathname])
+  }, [clinica, esperar, pathname, router])
 
   if (esperar) {
     return <div className="text-center mt-20 text-gray-500">Cargando clínica...</div>
@@ -37,7 +38,9 @@ function PanelContenido({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <ErrorBoundary>
+        <main>{children}</main>
+      </ErrorBoundary>
     </>
   )
 }

@@ -5,36 +5,19 @@ import { useClinica } from '@/lib/ClinicaProvider'
 import { useEffect, useRef, useState } from 'react'
 import { eventBus } from '@/lib/eventBus'
 import { toast } from 'sonner'
-import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 
-/* ------------------ UserMenu ------------------ */
-function parseJwtEmail(): string | null {
-  try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    if (!token) return null
-    const [, payload] = token.split('.')
-    if (!payload) return null
-    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-    const email = json?.email || json?.sub || null
-    return typeof email === 'string' ? email : null
-  } catch {
-    return null
-  }
-}
+// ✅ nuevos imports centralizados
+import { http } from '@/lib/http'
+import { useAuth } from '@/hooks/useAuth'
 
+/* ------------------ UserMenu ------------------ */
 function UserMenu() {
   const [open, setOpen] = useState(false)
-  const [initial, setInitial] = useState<string>('?')
-  const [email, setEmail] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    const savedEmail = typeof window !== 'undefined' ? localStorage.getItem('email') : null
-    const mail = savedEmail || parseJwtEmail()
-    setEmail(mail)
-    setInitial(mail?.[0]?.toUpperCase() || 'U')
-  }, [])
+  // Datos y acciones del usuario vienen del hook
+  const { email, initial, logout } = useAuth()
 
   // click afuera + ESC
   useEffect(() => {
@@ -51,15 +34,6 @@ function UserMenu() {
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
-
-  const logout = () => {
-    try {
-      localStorage.removeItem('token')
-      localStorage.removeItem('email')
-      localStorage.removeItem('rol')
-    } catch {}
-    window.location.href = '/login'
-  }
 
   return (
     <div className="relative z-50 pointer-events-auto" ref={menuRef}>
@@ -105,28 +79,29 @@ export default function Navbar() {
   const [rol, setRol] = useState<string | null>(null)
   const [tieneMensajesNoLeidos, setTieneMensajesNoLeidos] = useState(false)
 
+  // 🔔 no leídos usando http.ts (maneja headers/401/JSON)
   useEffect(() => {
     const verificarMensajesNoLeidos = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interacciones/noleidos`, {
-          headers: getAuthHeaders()
-        })
-        const data = await res.json()
-        setTieneMensajesNoLeidos((data?.cantidad || 0) > 0)
+        const { cantidad } = await http.json<{ cantidad: number }>('/api/interacciones/noleidos')
+        setTieneMensajesNoLeidos((cantidad ?? 0) > 0)
       } catch (error) {
         console.error('Error al verificar mensajes no leídos', error)
       }
     }
+
     verificarMensajesNoLeidos()
     const intervalo = setInterval(verificarMensajesNoLeidos, 10000)
     return () => clearInterval(intervalo)
   }, [])
-  
+
+  // precarga sonido
   useEffect(() => {
     const preload = new Audio('/sounds/notificacion.wav')
     preload.load()
   }, [])
-  
+
+  // rol + toasts de nuevos mensajes (eventBus)
   useEffect(() => {
     const rolGuardado = typeof window !== 'undefined' ? localStorage.getItem('rol') : null
     setRol(rolGuardado)
@@ -151,14 +126,18 @@ export default function Navbar() {
     return () => { eventBus.off('nuevo_mensaje', handler) }
   }, [])
 
+  // SSE directo (si lo querés, lo podés pasar a un GlobalSSEListener luego)
   useEffect(() => {
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/sse`)
+    const base = process.env.NEXT_PUBLIC_API_URL || ''
+    const eventSource = new EventSource(`${base}/api/sse`)
     eventSource.onmessage = (e) => {
-      const data = JSON.parse(e.data)
-      if (data.tipo === 'nuevo_mensaje') {
-        setTieneMensajesNoLeidos(true)
-        eventBus.emit('nuevo_mensaje', data)
-      }
+      try {
+        const data = JSON.parse(e.data)
+        if (data?.tipo === 'nuevo_mensaje') {
+          setTieneMensajesNoLeidos(true)
+          eventBus.emit('nuevo_mensaje', data)
+        }
+      } catch {}
     }
     return () => { eventSource.close() }
   }, [])
@@ -174,9 +153,8 @@ export default function Navbar() {
     <header className="w-full bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-30 overflow-visible">
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-8 py-3 overflow-visible">
 
-        {/* Avatar + logo + nombre (sin truncate en el contenedor) */}
+        {/* Avatar + logo + nombre */}
         <div className="flex items-center gap-3 min-w-0 max-w-[40%]">
-          {/* Avatar en contenedor propio SIN overflow hidden */}
           <div className="shrink-0">
             <UserMenu />
           </div>
@@ -189,7 +167,6 @@ export default function Navbar() {
             />
           )}
 
-          {/* Truncate SOLO en el texto, no en el contenedor */}
           <span className="truncate text-[15px] sm:text-lg font-semibold text-[#003466] whitespace-nowrap max-w-[16rem]">
             {clinica?.nombre_clinica || 'SEGUIR+IA™'}
           </span>

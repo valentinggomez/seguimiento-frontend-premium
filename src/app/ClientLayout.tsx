@@ -1,6 +1,10 @@
 'use client'
 
 import { ClinicaProvider } from '@/lib/ClinicaProvider'
+import { LanguageProvider } from '@/i18n/LanguageProvider'
+import GlobalSSEListener from '@/components/GlobalSSEListener'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'     // ✅
+import { Toaster } from 'sonner'
 
 export default function ClientLayout({
   children,
@@ -11,7 +15,13 @@ export default function ClientLayout({
 }) {
   return (
     <ClinicaProvider clinicaInicial={clinicaInicial}>
-      {children}
+      <LanguageProvider>
+        <ErrorBoundary>
+          <GlobalSSEListener />
+          {children}
+        </ErrorBoundary>
+      </LanguageProvider>
+      <Toaster position="top-center" richColors />
     </ClinicaProvider>
   )
 }
