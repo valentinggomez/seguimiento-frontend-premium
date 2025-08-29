@@ -691,7 +691,7 @@ export default function RegistroPaciente() {
                 <button
                   type="button"
                   onClick={descargarQRPNGdesdeSVG}
-                  className="px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
+                  className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
                 >
                   ⬇️ PNG nítido
                 </button>
