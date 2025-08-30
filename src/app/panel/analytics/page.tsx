@@ -16,12 +16,15 @@ import { KpiCard } from '@/components/analytics/KpiCard'
 
 /* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
-  prom?: number | null                    // promedio de la métrica elegida
-  tasaRespuesta?: number | null
+  prom?: number | null
+  tasaRespuesta?: number | null   // fracción 0–1 (o % si en el futuro la cambias)
   tiempoPrimeraRespuestaMin?: number | null
   alertas?: { verde: number; amarillo: number; rojo: number }
   nTotal?: number
+  nEnviados?: number
+  alertPct?: number               // % ya calculado en backend
 }
+
 type Series = {
   porGrupo?: Array<{ grupo: string; val_prom: number | null; n: number }>
   porDia?: Array<{
@@ -32,7 +35,15 @@ type Series = {
     a_rojo?: number
   }>
 }
-type Overview = { kpis: KPIs; meta?: { metric: string; groupBy: string }; series: Series }
+
+type Meta = {
+  metric: string
+  groupBy: string
+  metrics?: Array<{ slug: string; label: string; enabled: boolean; sample?: number }>
+  groups?:  Array<{ slug: string; label: string; enabled: boolean }>
+}
+
+type Overview = { kpis: KPIs; meta?: Meta; series: Series }
 
 /* ===================== Constantes UI ===================== */
 const locales: Record<string, Locale> = { es, en: enUS, pt: ptBR }
@@ -237,64 +248,41 @@ export default function AnalyticsPage() {
 
   const k = data?.kpis
   const s = data?.series
+
+  // Listas que vienen del backend (solo habilitadas)
+  const metricsList = data?.meta?.metrics?.filter(m => m.enabled) ?? []
+  const groupsList  = data?.meta?.groups?.filter(g => g.enabled) ?? []
+
+  // Si el backend normaliza la selección, sincronizamos el estado local
+  useEffect(() => {
+    if (data?.meta?.metric && metric !== data.meta.metric) setMetric(data.meta.metric as any)
+    if (data?.meta?.groupBy && groupBy !== data.meta.groupBy) setGroupBy(data.meta.groupBy as any)
+  }, [data?.meta?.metric, data?.meta?.groupBy])
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
-  // Totales desde las series (fallback)
-  const totalRespFromSeries =
-    s?.porDia?.reduce(
-      (acc, d) => acc + ((d.a_verde ?? 0) + (d.a_amarillo ?? 0) + (d.a_rojo ?? 0)),
-      0
-    ) ?? 0;
 
-  const totalAlertFromSeries =
-    s?.porDia?.reduce(
-      (acc, d) => acc + ((d.a_amarillo ?? 0) + (d.a_rojo ?? 0)),
-      0
-    ) ?? 0;
-
-  // Respondidos = suma de alertas por color (si el backend lo trae) o series
-  const responded = (() => {
-    const fromK =
-      (k?.alertas?.verde ?? 0) +
-      (k?.alertas?.amarillo ?? 0) +
-      (k?.alertas?.rojo ?? 0);
-    return fromK > 0 ? fromK : totalRespFromSeries;
-  })();
-
-  // Enviados / universo (denominador para tasa). Probamos varias claves.
-  const enviados =
-    (k as any)?.nEnviados ??
-    (k as any)?.nInvitados ??
-    (k as any)?.nContactados ??
-    k?.nTotal ??
-    undefined;
-
-  // Tasa de respuesta: si viene numérica (fracción o %) la usamos; sino: responded / enviados
-  const tasaPct = (() => {
-    const raw = (k?.tasaRespuesta ?? (k as any)?.tasa_respuesta) as number | undefined;
-    if (typeof raw === 'number') {
-      const frac = raw > 1 ? raw / 100 : raw;
-      return Math.round(frac * 100);
+  // Tasa: viene como fracción 0–1 (o % en el futuro). Normalizamos a % entero.
+  const tasaPct = ((): number | undefined => {
+    if (typeof k?.tasaRespuesta === 'number') {
+      const frac = k.tasaRespuesta > 1 ? k.tasaRespuesta / 100 : k.tasaRespuesta
+      return Math.round(frac * 100)
     }
-    if (typeof enviados === 'number' && enviados > 0) {
-      return Math.round((responded / enviados) * 100);
-    }
-    return undefined; // sin denominador confiable, mostramos "—"
-  })();
+    return undefined
+  })()
 
-  // % de alertas (amarillo+rojo) sobre respondidos
-  const alertPct = (() => {
-    const alertsK = (k?.alertas?.amarillo ?? 0) + (k?.alertas?.rojo ?? 0);
-    const alerts = alertsK > 0 ? alertsK : totalAlertFromSeries;
-    if (!responded) return 0;
-    return Math.round((alerts / responded) * 100);
-  })();
+  // % de alertas: lo trae el backend listo; si no, fallback a 0
+  const alertPct = typeof k?.alertPct === 'number' ? k.alertPct : 0
 
   // textos dinámicos según métrica/agrupación
-  const metricLabel = metric === 'dolor_24h' ? 'Dolor 24 h'
-                    : metric === 'dolor_6h'  ? 'Dolor 6 h'
-                    : 'Satisfacción'
-  const groupLabel = groupBy === 'cirugia' ? 'cirugía' : 'anestesia'
+  const metricLabel =
+    metricsList.find(m => m.slug === metric)?.label
+    || data?.meta?.metrics?.find(m => m.slug === metric)?.label
+    || metric
+
+  const groupLabel =
+    groupsList.find(g => g.slug === groupBy)?.label
+    || data?.meta?.groups?.find(g => g.slug === groupBy)?.label
+    || groupBy
 
   const kpiHelp = {
     prom:
@@ -362,14 +350,30 @@ export default function AnalyticsPage() {
           <option value="rojo">Rojo</option>
         </select>
         {/* NUEVO: Métrica + Agrupar por */}
-        <select className="border rounded-xl px-3 py-2" value={metric} onChange={(e) => setMetric(e.target.value as any)}>
-          <option value="dolor_24h">Dolor 24 h</option>
-          <option value="dolor_6h">Dolor 6 h</option>
-          <option value="satisfaccion">Satisfacción</option>
+        <select
+          className="border rounded-xl px-3 py-2"
+          value={metric}
+          onChange={(e) => setMetric(e.target.value as any)}
+        >
+          {metricsList.length
+            ? metricsList.map(m => (
+                <option key={m.slug} value={m.slug} title={m.sample ? `muestra: ${m.sample}` : undefined}>
+                  {m.label}{m.sample ? ` (${m.sample})` : ''}
+                </option>
+              ))
+            : <option value={metric}>{metric}</option>}
         </select>
-        <select className="border rounded-xl px-3 py-2" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}>
-          <option value="cirugia">Agrupar por cirugía</option>
-          <option value="anestesia">Agrupar por anestesia</option>
+
+        <select
+          className="border rounded-xl px-3 py-2"
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as any)}
+        >
+          {groupsList.length
+            ? groupsList.map(g => (
+                <option key={g.slug} value={g.slug}>{g.label}</option>
+              ))
+            : <option value={groupBy}>{groupBy}</option>}
         </select>
 
         <div className="col-span-7 flex items-center gap-2">
