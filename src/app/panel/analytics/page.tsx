@@ -239,37 +239,56 @@ export default function AnalyticsPage() {
   const s = data?.series
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
-  // Totales desde las series (fallback robusto)
+  // Totales desde las series (fallback)
   const totalRespFromSeries =
-    s?.porDia?.reduce((acc, d) =>
-      acc + ((d.a_verde ?? 0) + (d.a_amarillo ?? 0) + (d.a_rojo ?? 0)), 0) ?? 0
+    s?.porDia?.reduce(
+      (acc, d) => acc + ((d.a_verde ?? 0) + (d.a_amarillo ?? 0) + (d.a_rojo ?? 0)),
+      0
+    ) ?? 0;
 
   const totalAlertFromSeries =
-    s?.porDia?.reduce((acc, d) =>
-      acc + ((d.a_amarillo ?? 0) + (d.a_rojo ?? 0)), 0) ?? 0
+    s?.porDia?.reduce(
+      (acc, d) => acc + ((d.a_amarillo ?? 0) + (d.a_rojo ?? 0)),
+      0
+    ) ?? 0;
 
-  // Tasa de respuesta: acepta fracción (0–1) o pct (0–100); si no viene, calcula por series
+  // Respondidos = suma de alertas por color (si el backend lo trae) o series
+  const responded = (() => {
+    const fromK =
+      (k?.alertas?.verde ?? 0) +
+      (k?.alertas?.amarillo ?? 0) +
+      (k?.alertas?.rojo ?? 0);
+    return fromK > 0 ? fromK : totalRespFromSeries;
+  })();
+
+  // Enviados / universo (denominador para tasa). Probamos varias claves.
+  const enviados =
+    (k as any)?.nEnviados ??
+    (k as any)?.nInvitados ??
+    (k as any)?.nContactados ??
+    k?.nTotal ??
+    undefined;
+
+  // Tasa de respuesta: si viene numérica (fracción o %) la usamos; sino: responded / enviados
   const tasaPct = (() => {
-    const raw = (k?.tasaRespuesta ?? (k as any)?.tasa_respuesta) as number | undefined
+    const raw = (k?.tasaRespuesta ?? (k as any)?.tasa_respuesta) as number | undefined;
     if (typeof raw === 'number') {
-      const frac = raw > 1 ? raw / 100 : raw
-      return Math.round(frac * 100)
+      const frac = raw > 1 ? raw / 100 : raw;
+      return Math.round(frac * 100);
     }
-    const base = k?.nTotal ?? totalRespFromSeries
-    if (!base) return 0
-    // Si el backend no trae nTotal correcto, usamos total de series también como base
-    const responded = totalRespFromSeries
-    return Math.round((responded / base) * 100)
-  })()
+    if (typeof enviados === 'number' && enviados > 0) {
+      return Math.round((responded / enviados) * 100);
+    }
+    return undefined; // sin denominador confiable, mostramos "—"
+  })();
 
-  // % de alertas (amarillo+rojo) sobre total respondido
+  // % de alertas (amarillo+rojo) sobre respondidos
   const alertPct = (() => {
-    const base = (k?.nTotal ?? 0) || totalRespFromSeries
-    if (!base) return 0
-    const am = (k?.alertas?.amarillo ?? 0) || (s?.porDia?.reduce((a, d) => a + (d.a_amarillo ?? 0), 0) ?? 0)
-    const ro = (k?.alertas?.rojo ?? 0) || (s?.porDia?.reduce((a, d) => a + (d.a_rojo ?? 0), 0) ?? 0)
-    return Math.round(((am + ro) / base) * 100)
-  })()
+    const alertsK = (k?.alertas?.amarillo ?? 0) + (k?.alertas?.rojo ?? 0);
+    const alerts = alertsK > 0 ? alertsK : totalAlertFromSeries;
+    if (!responded) return 0;
+    return Math.round((alerts / responded) * 100);
+  })();
 
   // textos dinámicos según métrica/agrupación
   const metricLabel = metric === 'dolor_24h' ? 'Dolor 24 h'
@@ -375,15 +394,15 @@ export default function AnalyticsPage() {
           title="ALERTAS (%)"
           value={`${alertPct}%`}
           help={kpiHelp.alertas}
-          accent={alertAccent}
+          accent={alertPct >= 60 ? C.rojo : alertPct >= 20 ? C.amarillo : C.verde}
           loading={pending}
         />
 
         <KpiCard
           title="TASA DE RESPUESTA"
-          value={`${tasaPct}%`}
+          value={tasaPct == null ? '—' : `${tasaPct}%`}
           help={kpiHelp.tasa}
-          accent={tasaPct >= 70 ? C.verde : tasaPct >= 40 ? C.amarillo : C.rojo}
+          accent={tasaPct == null ? C.brand : (tasaPct >= 70 ? C.verde : tasaPct >= 40 ? C.amarillo : C.rojo)}
           loading={pending}
         />
 
