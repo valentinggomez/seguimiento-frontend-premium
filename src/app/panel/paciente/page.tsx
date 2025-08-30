@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
 import { useTranslation } from '@/i18n/useTranslation'
 import { fetchConToken } from '@/lib/fetchConToken'
-import { useRef } from 'react'
+import { toast } from 'sonner'
 
 export default function RegistroPaciente() {
   const [form, setForm] = useState<any>({ pais_telefono: 'AR' })
@@ -72,15 +72,22 @@ export default function RegistroPaciente() {
     cargarFormularios()
   }, [clinica?.id])
   
+  // Toast de error + seteo de estado
+  const fail = (msg: string) => {
+    setMensajeError(msg)
+    toast.error(msg)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (sending) return          // evita doble click 
-
+    setMensajeError('')
+    
     // Validación básica
     const requeridos = ['nombre','edad','telefono','cirugia','fecha_cirugia','sexo','anestesia','pais_telefono'];
 
     if (!form.pais_telefono || !PAISES[form.pais_telefono]) {
-      setMensajeError('Seleccioná el país del teléfono');
+      fail('Seleccioná el país del teléfono');
       return;
     }
     const LEN_MIN: Record<string, number> = { AR: 10, CL: 9, UY: 8, ES: 9 };
@@ -88,12 +95,12 @@ export default function RegistroPaciente() {
     const iso = form.pais_telefono || 'AR';
     const min = LEN_MIN[iso] ?? 8;
     if (!tel || tel.length < min) {
-      setMensajeError(`Número de teléfono demasiado corto para ${iso}`);
+      fail(`Número de teléfono demasiado corto para ${iso}`);
       return;
     }
     const vacios = requeridos.filter(k => !form[k] && form[k] !== 0)
     if (vacios.length) {
-      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
+      fail(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
       return
     }
 
@@ -122,12 +129,12 @@ export default function RegistroPaciente() {
 
     if (parseInt(form.edad) < 0 || parseInt(form.edad) > 120) {
       setErrores({ ...errores, edad: t('pacientes.errores.edad_maxima') })
-      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.edad_maxima') }))
+      fail(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.edad_maxima') }))
       return
     }
 
     if (!clinica?.id) {
-      setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.no_clinica') }))
+      fail(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.no_clinica') }))
       return
     }
 
@@ -156,7 +163,7 @@ export default function RegistroPaciente() {
       // asegurar nombre trim
       paciente.nombre = String(paciente.nombre || '').trim()
       if (!paciente.nombre) {
-        setMensajeError(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
+        fail(t('pacientes.errores.error_generico', { mensaje: t('pacientes.errores.error_guardado') }))
         return
       }
 
@@ -170,7 +177,7 @@ export default function RegistroPaciente() {
       const resultado = await res.json().catch(() => ({} as any))
       if (!res.ok) {
         const msg = resultado?.error || t('pacientes.errores.error_guardado')
-        setMensajeError(t('pacientes.errores.error_generico', { mensaje: msg }))
+        fail(t('pacientes.errores.error_generico', { mensaje: msg }))
         console.error('POST /api/pacientes', msg, resultado)
         return
       }
@@ -183,9 +190,10 @@ export default function RegistroPaciente() {
       const url = `${dominio}/responder/${nuevoId}?f=${encodeURIComponent(slug)}`
       setLink(url)
       setEnviado(true)
+      toast.success('Paciente creado y link generado')
     } catch (err) {
       console.error(err)
-      setMensajeError(t('pacientes.errores.error_inesperado'))
+      fail(t('pacientes.errores.error_inesperado'))
     } finally {
       setSending(false)
     }
@@ -785,12 +793,13 @@ export default function RegistroPaciente() {
                       .then(() => {
                         setCopiado(true)
                         setTimeout(() => setCopiado(false), 2000)
+                        toast.success('Link copiado al portapapeles')
                       })
                       .catch(() => {
-                        alert(t('pacientes.registro.error_copiar'))
+                        toast.error(t('pacientes.registro.error_copiar'))
                       })
                   } else {
-                    alert(t('pacientes.registro.no_compatible'))
+                    toast.warning(t('pacientes.registro.no_compatible'))
                   }
                 }}
                 animate={copiado ? { scale: [1, 1.05, 1], backgroundColor: "#16a34a" } : {}}

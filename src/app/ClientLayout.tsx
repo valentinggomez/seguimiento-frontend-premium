@@ -21,7 +21,7 @@ export default function ClientLayout({
           {children}
         </ErrorBoundary>
       </LanguageProvider>
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" richColors closeButton duration={4000} />
     </ClinicaProvider>
   )
 }
