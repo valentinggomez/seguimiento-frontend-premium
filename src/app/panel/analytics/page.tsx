@@ -249,9 +249,9 @@ export default function AnalyticsPage() {
   const k = data?.kpis
   const s = data?.series
 
-  // Listas que vienen del backend (solo habilitadas)
-  const metricsList = data?.meta?.metrics?.filter(m => m.enabled) ?? []
-  const groupsList  = data?.meta?.groups?.filter(g => g.enabled) ?? []
+  // Mostrar todas; el option se deshabilita si enabled=false
+  const metricsList = data?.meta?.metrics ?? []
+  const groupsList  = data?.meta?.groups  ?? []
 
   // Si el backend normaliza la selección, sincronizamos el estado local
   useEffect(() => {
@@ -273,16 +273,17 @@ export default function AnalyticsPage() {
   // % de alertas: lo trae el backend listo; si no, fallback a 0
   const alertPct = typeof k?.alertPct === 'number' ? k.alertPct : 0
 
+  const humanize = (s: string) =>
+    s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
   // textos dinámicos según métrica/agrupación
   const metricLabel =
-    metricsList.find(m => m.slug === metric)?.label
-    || data?.meta?.metrics?.find(m => m.slug === metric)?.label
-    || metric
+    data?.meta?.metrics?.find(m => m.slug === metric)?.label
+    ?? humanize(metric)
 
   const groupLabel =
-    groupsList.find(g => g.slug === groupBy)?.label
-    || data?.meta?.groups?.find(g => g.slug === groupBy)?.label
-    || groupBy
+    data?.meta?.groups?.find(g => g.slug === groupBy)?.label
+    ?? humanize(groupBy)
 
   const kpiHelp = {
     prom:
@@ -357,8 +358,17 @@ export default function AnalyticsPage() {
         >
           {metricsList.length
             ? metricsList.map(m => (
-                <option key={m.slug} value={m.slug} title={m.sample ? `muestra: ${m.sample}` : undefined}>
-                  {m.label}{m.sample ? ` (${m.sample})` : ''}
+                <option
+                  key={m.slug}
+                  value={m.slug}
+                  disabled={m.enabled === false}
+                  title={
+                    m.enabled === false
+                      ? (m.sample ? `Sin muestras suficientes (${m.sample})` : 'Sin datos en el rango')
+                      : undefined
+                  }
+                >
+                  {m.label ?? m.slug}{m.sample != null ? ` (${m.sample})` : ''}
                 </option>
               ))
             : <option value={metric}>{metric}</option>}
@@ -371,7 +381,9 @@ export default function AnalyticsPage() {
         >
           {groupsList.length
             ? groupsList.map(g => (
-                <option key={g.slug} value={g.slug}>{g.label}</option>
+                <option key={g.slug} value={g.slug} disabled={g.enabled === false}>
+                  {g.label ?? g.slug}
+                </option>
               ))
             : <option value={groupBy}>{groupBy}</option>}
         </select>
