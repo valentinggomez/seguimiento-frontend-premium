@@ -12,19 +12,15 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
-import { KpiCard } from '@/components/analytics/KpiCard'
 
 /* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
-  prom?: number | null
-  tasaRespuesta?: number | null   // fracción 0–1 (o % si en el futuro la cambias)
+  prom?: number | null                    // promedio de la métrica elegida
+  tasaRespuesta?: number | null
   tiempoPrimeraRespuestaMin?: number | null
   alertas?: { verde: number; amarillo: number; rojo: number }
   nTotal?: number
-  nEnviados?: number
-  alertPct?: number               // % ya calculado en backend
 }
-
 type Series = {
   porGrupo?: Array<{ grupo: string; val_prom: number | null; n: number }>
   porDia?: Array<{
@@ -35,15 +31,7 @@ type Series = {
     a_rojo?: number
   }>
 }
-
-type Meta = {
-  metric: string
-  groupBy: string
-  metrics?: Array<{ slug: string; label: string; enabled: boolean; sample?: number }>
-  groups?:  Array<{ slug: string; label: string; enabled: boolean }>
-}
-
-type Overview = { kpis: KPIs; meta?: Meta; series: Series }
+type Overview = { kpis: KPIs; meta?: { metric: string; groupBy: string }; series: Series }
 
 /* ===================== Constantes UI ===================== */
 const locales: Record<string, Locale> = { es, en: enUS, pt: ptBR }
@@ -80,12 +68,6 @@ function download(filename: string, text: string) {
   a.href = url; a.download = filename; a.click()
   URL.revokeObjectURL(url)
 }
-
-const normNivel = (v: any): 'rojo' | 'amarillo' | 'verde' | null => {
-  const s = String(v ?? '').trim().toLowerCase()
-  return s === 'rojo' || s === 'amarillo' || s === 'verde' ? (s as any) : null
-}
-
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -97,8 +79,8 @@ export default function AnalyticsPage() {
   const [alerta, setAlerta] = useState<string>('')
 
   // NUEVO: selector de métrica y agrupación
-  const [metric, setMetric]   = useState<string>('') 
-  const [groupBy, setGroupBy] = useState<string>('') 
+  const [metric, setMetric]   = useState<'dolor_24h' | 'dolor_6h' | 'satisfaccion'>('dolor_24h')
+  const [groupBy, setGroupBy] = useState<'cirugia' | 'anestesia'>('cirugia')
 
   // estado
   const [data, setData] = useState<Overview | null>(null)
@@ -189,64 +171,49 @@ export default function AnalyticsPage() {
     return () => clearInterval(id)
   }, [autoRefresh, clinicaId])
 
-  // SSE con token (autenticado) — usa el mismo bus que Respuestas
+  // SSE con token (autenticado)
   useEffect(() => {
-    let es: EventSource | null = null;
+    if (!clinicaId) return;
+
+    let sse: any;
+    let onNew: any;
 
     (async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') ?? '' : '';
+      if (!token) return;
+
+      const url = `${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`;
+
+      // intentar cargar el polyfill; si falla, usar nativo
+      let ES: any = typeof window !== 'undefined' ? (window as any).EventSource : undefined;
       try {
-        // 1) obtener clinica_id por host actual (como en Respuestas)
-        const host =
-          typeof window !== 'undefined'
-            ? window.location.hostname.split(':')[0].toLowerCase().trim()
-            : '';
-        const resClin = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`);
-        const dataClin = await resClin.json();
-        const clinicaId = dataClin?.clinica?.id || '';
-        if (!clinicaId) return;
-
-        // 2) URL ABSOLUTA al backend del bus SSE
-        const apiBase = process.env.NEXT_PUBLIC_API_URL;
-        const hostParam =
-          typeof window !== 'undefined'
-            ? window.location.hostname.split(':')[0].toLowerCase().trim()
-            : '';
-
-        const sseUrl = `${apiBase}/api/sse?clinica_id=${encodeURIComponent(clinicaId)}&host=${encodeURIComponent(hostParam)}&ts=${Date.now()}`;
-
-        // 3) abrir EventSource (sin headers; el bus no los necesita)
-        es = new EventSource(sseUrl);
-
-        const onMsg = (ev: MessageEvent) => {
-          try {
-            const d = JSON.parse(ev.data);
-            // El bus publica: { tipo: 'nueva_respuesta', payload: {...} }
-            if (d?.tipo === 'nueva_respuesta') {
-              setHasNew(true);   // muestra el badge “Nuevos”
-            }
-          } catch {}
-        };
-
-        es.addEventListener('message', onMsg as any);
-        es.addEventListener('ready', () => {/* opcional */});
-        es.onerror = () => {/* el browser reintenta (retry:10000) */};
-
-        // cleanup
-        return () => {
-          if (!es) return;
-          es.removeEventListener('message', onMsg as any);
-          try { es.close(); } catch {}
-          es = null;
-        };
+        const mod: any = await import('event-source-polyfill');
+        ES = mod?.EventSourcePolyfill || mod?.default || ES;
       } catch {
-        // si falla, no abrimos SSE
+        // nos quedamos con el nativo
       }
+
+      // si usamos el nativo, no soporta headers -> puede dar 401
+      if (ES === (window as any).EventSource) {
+        sse = new ES(url);
+      } else {
+        sse = new ES(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      onNew = () => setHasNew(true);
+      sse.addEventListener?.('nueva_respuesta', onNew);
+      sse.onerror = (e: any) => {
+        // opcional: console.warn('SSE error', e);
+      };
     })();
 
     return () => {
-      try { es?.close(); } catch {}
+      try { sse?.removeEventListener?.('nueva_respuesta', onNew); } catch {}
+      try { sse?.close?.(); } catch {}
     };
-  }, []);
+  }, [clinicaId, api]);
 
   // Restaurar filtros desde la URL al montar
   useEffect(() => {
@@ -269,71 +236,17 @@ export default function AnalyticsPage() {
 
   const k = data?.kpis
   const s = data?.series
-
-  // Mostrar todas; el option se deshabilita si enabled=false
-  const metricsList = data?.meta?.metrics ?? []
-  const groupsList  = data?.meta?.groups  ?? []
-
-  // Normalizar selección con las listas que vienen en meta
-  useEffect(() => {
-    const mm = data?.meta?.metrics ?? []
-    const gm = data?.meta?.groups  ?? []
-
-    if (mm.length) {
-      const enabled = mm.filter(m => m.enabled !== false).map(m => m.slug)
-      const wanted  = data?.meta?.metric
-      const next    = enabled.includes(wanted!) ? wanted! : enabled[0]
-      if (next && metric !== next) setMetric(next)
-    }
-    if (gm.length) {
-      const enabledG = gm.filter(g => g.enabled !== false).map(g => g.slug)
-      const wantedG  = data?.meta?.groupBy
-      const nextG    = enabledG.includes(wantedG!) ? wantedG! : enabledG[0]
-      if (nextG && groupBy !== nextG) setGroupBy(nextG)
-    }
-  }, [data?.meta?.metric, data?.meta?.groupBy, data?.meta?.metrics, data?.meta?.groups])
-
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
-
-  // Tasa: viene como fracción 0–1 (o % en el futuro). Normalizamos a % entero.
-  const tasaPct = ((): number | undefined => {
-    if (typeof k?.tasaRespuesta === 'number') {
-      const frac = k.tasaRespuesta > 1 ? k.tasaRespuesta / 100 : k.tasaRespuesta
-      return Math.round(frac * 100)
-    }
-    return undefined
-  })()
-
-  // % de alertas: lo trae el backend listo; si no, fallback a 0
-  const alertPct = typeof k?.alertPct === 'number' ? k.alertPct : 0
-
-  const humanize = (s: string) =>
-    s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const alertPct = k && (k.nTotal || 0) > 0
+    ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
+    : 0
 
   // textos dinámicos según métrica/agrupación
-  const metricLabel =
-    data?.meta?.metrics?.find(m => m.slug === metric)?.label
-    ?? humanize(metric || '')
-
-  const groupLabel =
-    data?.meta?.groups?.find(g => g.slug === groupBy)?.label
-    ?? humanize(groupBy || '')
-
-  const kpiHelp = {
-    prom:
-      metric === 'satisfaccion'
-        ? 'Promedio de satisfacción (0–10) en el período seleccionado.'
-        : `Promedio de ${metricLabel.toLowerCase()} en el período seleccionado.`,
-    alertas: 'Porcentaje de respuestas con alerta amarilla o roja.',
-    tasa: 'Porcentaje de pacientes que respondieron al seguimiento.',
-    satisfaccion: 'Promedio de satisfacción (0–10).',
-  }
-
-  const accentForPct = (pct: number) =>
-    pct >= 60 ? C.rojo : pct >= 20 ? C.amarillo : C.verde
-
-  const alertAccent = accentForPct(alertPct)
+  const metricLabel = metric === 'dolor_24h' ? 'Dolor 24 h'
+                    : metric === 'dolor_6h'  ? 'Dolor 6 h'
+                    : 'Satisfacción'
+  const groupLabel = groupBy === 'cirugia' ? 'cirugía' : 'anestesia'
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -386,39 +299,14 @@ export default function AnalyticsPage() {
           <option value="rojo">Rojo</option>
         </select>
         {/* NUEVO: Métrica + Agrupar por */}
-        <select
-          className="border rounded-xl px-3 py-2"
-          value={metric}
-          onChange={(e) => setMetric(e.target.value as any)}
-        >
-          {(!data?.meta?.metrics || !data.meta.metrics.length) && (
-            <option value="" disabled>Cargando métricas…</option>
-          )}
-          {(data?.meta?.metrics ?? []).map(m => (
-            <option
-              key={m.slug}
-              value={m.slug}
-              // siempre seleccionables; el backend decide enabled/strict
-              title={m.sample === 0 ? 'Sin datos en el rango' : (m.sample != null ? `Muestras: ${m.sample}` : undefined)}
-            >
-              {(m.label || humanize(m.slug)) + (m.sample != null ? ` (${m.sample})` : '') + (m.sample === 0 ? ' — sin datos' : '')}
-            </option>
-          ))}
+        <select className="border rounded-xl px-3 py-2" value={metric} onChange={(e) => setMetric(e.target.value as any)}>
+          <option value="dolor_24h">Dolor 24 h</option>
+          <option value="dolor_6h">Dolor 6 h</option>
+          <option value="satisfaccion">Satisfacción</option>
         </select>
-
-        <select
-          className="border rounded-xl px-3 py-2"
-          value={groupBy}
-          onChange={(e) => setGroupBy(e.target.value as any)}
-        >
-          {(!data?.meta?.groups || !data.meta.groups.length) && (
-            <option value="" disabled>Cargando agrupaciones…</option>
-          )}
-          {(data?.meta?.groups ?? []).map(g => (
-            <option key={g.slug} value={g.slug}>
-              {g.label || humanize(g.slug)}
-            </option>
-          ))}
+        <select className="border rounded-xl px-3 py-2" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}>
+          <option value="cirugia">Agrupar por cirugía</option>
+          <option value="anestesia">Agrupar por anestesia</option>
         </select>
 
         <div className="col-span-7 flex items-center gap-2">
@@ -429,39 +317,17 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Kpi
           title={`${metricLabel.toUpperCase()} PROMEDIO`}
           value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)}
-          help={kpiHelp.prom}
-          accent={C.brand}
           loading={pending}
           spark={<KpiSpark data={s?.porDia} dataKey="val_prom" />}
         />
-
-        <KpiCard
-          title="ALERTAS (%)"
-          value={`${alertPct}%`}
-          help={kpiHelp.alertas}
-          accent={alertAccent}
-          loading={pending}
-        />
-
-        <KpiCard
-          title="TASA DE RESPUESTA"
-          value={tasaPct == null ? '—' : `${tasaPct}%`}
-          help={kpiHelp.tasa}
-          accent={tasaPct == null ? C.brand : (tasaPct >= 70 ? C.verde : tasaPct >= 40 ? C.amarillo : C.rojo)}
-          loading={pending}
-        />
-
-        <KpiCard
-          title="SATISFACCIÓN"
-          value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)}
-          help={kpiHelp.satisfaccion}
-          accent={C.brand}
-          loading={pending}
-        />
+        <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
+        <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
+        {/* si la métrica NO es satisfacción, mostramos satisfacción promedio clásica para referencia */}
+        <Kpi title="SATISFACCIÓN" value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)} loading={pending} />
       </div>
 
       {/* Barras por grupo */}
@@ -567,27 +433,17 @@ export default function AnalyticsPage() {
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
                   <Td>
-                    {(() => {
-                      const nivel = normNivel(r.nivel_alerta)
-                      const styles =
-                        nivel === 'rojo'
-                          ? { bg: '#FEE2E2', fg: '#B91C1C', label: 'rojo' }
-                          : nivel === 'amarillo'
-                            ? { bg: '#FEF3C7', fg: '#92400E', label: 'amarillo' }
-                            : nivel === 'verde'
-                              ? { bg: '#DCFCE7', fg: '#065F46', label: 'verde' }
-                              // ⬇️ sin nivel → badge gris (no lo pintes de verde)
-                              : { bg: '#E5E7EB', fg: '#374151', label: '—' }
-
-                      return (
-                        <span
-                          className="px-2 py-0.5 rounded-full text-xs"
-                          style={{ background: styles.bg, color: styles.fg }}
-                        >
-                          {styles.label}
-                        </span>
-                      )
-                    })()}
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs"
+                      style={{
+                        background: r.nivel_alerta === 'rojo' ? '#FEE2E2'
+                          : r.nivel_alerta === 'amarillo' ? '#FEF3C7' : '#DCFCE7',
+                        color: r.nivel_alerta === 'rojo' ? '#B91C1C'
+                          : r.nivel_alerta === 'amarillo' ? '#92400E' : '#065F46'
+                      }}
+                    >
+                      {r.nivel_alerta ?? '-'}
+                    </span>
                   </Td>
                   <Td>{r.dolor ?? '-'}</Td>
                   <Td>{r.satisfaccion ?? '-'}</Td>
@@ -617,6 +473,17 @@ function KpiSpark({ data, dataKey='val_prom' }: { data?: any[]; dataKey?: string
 }
 
 /* ---------- UI helpers ---------- */
+function Kpi({ title, value, loading, spark }: { title: string; value: string; loading?: boolean; spark?: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border p-4 shadow-sm bg-white min-h-[88px]">
+      <div className="text-[11px] uppercase tracking-wide text-slate-500" title={title}>{title}</div>
+      <div className="text-2xl font-semibold mt-1">
+        {loading ? <Skeleton className="h-7 w-16" /> : value || '—'}
+      </div>
+      {spark}
+    </div>
+  )
+}
 function Card({ title, children, loading }: any) {
   return (
     <div className="rounded-2xl border shadow-sm bg-white p-4">
