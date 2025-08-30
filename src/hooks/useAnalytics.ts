@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAnalyticsFilters } from "@/store/useAnalyticsFilters";
 
-const API = process.env.NEXT_PUBLIC_API_BASE || "";
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 function qs(params: Record<string,string|number|boolean|undefined>) {
   const u = new URLSearchParams();
@@ -43,11 +43,24 @@ export function useOverview() {
 
   useEffect(() => {
     if (!filters.clinicaId) return;
-    const url = `${API}/api/analytics/stream?clinica_id=${filters.clinicaId}`;
-    const es = new EventSource(url, { withCredentials: true });
-    const onMsg = () => setHasNew(true);
-    es.addEventListener("respuesta_creada", onMsg);
-    return () => { es.removeEventListener("respuesta_creada", onMsg); es.close(); };
+
+    // 🎯 igual que en Respuestas: resolvemos host para withClinica
+    const host =
+      typeof window !== 'undefined'
+        ? window.location.hostname.split(':')[0].toLowerCase().trim()
+        : '';
+
+    const url = `${API}/api/sse?clinica_id=${encodeURIComponent(filters.clinicaId)}&host=${encodeURIComponent(host)}&ts=${Date.now()}`;
+
+    const es = new EventSource(url); // sin headers
+    const onMsg = (ev: MessageEvent) => {
+      try {
+        const d = JSON.parse(ev.data);
+        if (d?.tipo === 'nueva_respuesta') setHasNew(true);
+      } catch {}
+    };
+    es.addEventListener('message', onMsg as any);
+    return () => { es.removeEventListener('message', onMsg as any); es.close(); };
   }, [filters.clinicaId]);
 
   return { data, pending, hasNew, reload: load };

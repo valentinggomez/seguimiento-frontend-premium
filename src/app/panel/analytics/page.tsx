@@ -189,49 +189,64 @@ export default function AnalyticsPage() {
     return () => clearInterval(id)
   }, [autoRefresh, clinicaId])
 
-  // SSE con token (autenticado)
+  // SSE con token (autenticado) — usa el mismo bus que Respuestas
   useEffect(() => {
-    if (!clinicaId) return;
-
-    let sse: any;
-    let onNew: any;
+    let es: EventSource | null = null;
 
     (async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') ?? '' : '';
-      if (!token) return;
-
-      const url = `${api}/api/analytics/stream?clinica_id=${encodeURIComponent(clinicaId)}`;
-
-      // intentar cargar el polyfill; si falla, usar nativo
-      let ES: any = typeof window !== 'undefined' ? (window as any).EventSource : undefined;
       try {
-        const mod: any = await import('event-source-polyfill');
-        ES = mod?.EventSourcePolyfill || mod?.default || ES;
+        // 1) obtener clinica_id por host actual (como en Respuestas)
+        const host =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+        const resClin = await fetchConToken(`/api/clinicas/clinica?host=${encodeURIComponent(host)}`);
+        const dataClin = await resClin.json();
+        const clinicaId = dataClin?.clinica?.id || '';
+        if (!clinicaId) return;
+
+        // 2) URL ABSOLUTA al backend del bus SSE
+        const apiBase = process.env.NEXT_PUBLIC_API_URL;
+        const hostParam =
+          typeof window !== 'undefined'
+            ? window.location.hostname.split(':')[0].toLowerCase().trim()
+            : '';
+
+        const sseUrl = `${apiBase}/api/sse?clinica_id=${encodeURIComponent(clinicaId)}&host=${encodeURIComponent(hostParam)}&ts=${Date.now()}`;
+
+        // 3) abrir EventSource (sin headers; el bus no los necesita)
+        es = new EventSource(sseUrl);
+
+        const onMsg = (ev: MessageEvent) => {
+          try {
+            const d = JSON.parse(ev.data);
+            // El bus publica: { tipo: 'nueva_respuesta', payload: {...} }
+            if (d?.tipo === 'nueva_respuesta') {
+              setHasNew(true);   // muestra el badge “Nuevos”
+            }
+          } catch {}
+        };
+
+        es.addEventListener('message', onMsg as any);
+        es.addEventListener('ready', () => {/* opcional */});
+        es.onerror = () => {/* el browser reintenta (retry:10000) */};
+
+        // cleanup
+        return () => {
+          if (!es) return;
+          es.removeEventListener('message', onMsg as any);
+          try { es.close(); } catch {}
+          es = null;
+        };
       } catch {
-        // nos quedamos con el nativo
+        // si falla, no abrimos SSE
       }
-
-      // si usamos el nativo, no soporta headers -> puede dar 401
-      if (ES === (window as any).EventSource) {
-        sse = new ES(url);
-      } else {
-        sse = new ES(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-
-      onNew = () => setHasNew(true);
-      sse.addEventListener?.('nueva_respuesta', onNew);
-      sse.onerror = (e: any) => {
-        // opcional: console.warn('SSE error', e);
-      };
     })();
 
     return () => {
-      try { sse?.removeEventListener?.('nueva_respuesta', onNew); } catch {}
-      try { sse?.close?.(); } catch {}
+      try { es?.close(); } catch {}
     };
-  }, [clinicaId, api]);
+  }, []);
 
   // Restaurar filtros desde la URL al montar
   useEffect(() => {
