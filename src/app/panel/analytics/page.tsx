@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { useClinica } from '@/lib/ClinicaProvider'
 import { fetchConToken } from '@/lib/fetchConToken'
 import { getAuthHeaders } from '@/lib/getAuthHeaders'
+import { KpiCard } from '@/components/analytics/KpiCard'
 
 /* ===================== Tipos (alineados al nuevo backend) ===================== */
 type KPIs = {
@@ -248,6 +249,22 @@ export default function AnalyticsPage() {
                     : 'Satisfacción'
   const groupLabel = groupBy === 'cirugia' ? 'cirugía' : 'anestesia'
 
+  const kpiHelp = {
+    prom:
+      metric === 'satisfaccion'
+        ? 'Promedio de satisfacción (0–10) en el período seleccionado.'
+        : `Promedio de ${metricLabel.toLowerCase()} en el período seleccionado.`,
+    alertas: 'Porcentaje de respuestas con alerta amarilla o roja.',
+    tasa: 'Porcentaje de pacientes que respondieron al seguimiento.',
+    satisfaccion: 'Promedio de satisfacción (0–10).',
+  }
+
+  const accentForPct = (pct: number) =>
+    pct >= 60 ? C.rojo : pct >= 20 ? C.amarillo : C.verde
+
+  const tasaPct = Math.round(((k?.tasaRespuesta || 0) * 100))
+  const alertAccent = accentForPct(alertPct)
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* HEADER */}
@@ -317,17 +334,39 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard
           title={`${metricLabel.toUpperCase()} PROMEDIO`}
           value={fmt(k?.prom, metric === 'satisfaccion' ? 1 : 1)}
+          help={kpiHelp.prom}
+          accent={C.brand}
           loading={pending}
           spark={<KpiSpark data={s?.porDia} dataKey="val_prom" />}
         />
-        <Kpi title="ALERTAS (%)" value={k ? `${alertPct}%` : '—'} loading={pending} />
-        <Kpi title="TASA DE RESPUESTA" value={k ? `${Math.round((k.tasaRespuesta || 0) * 100)}%` : '—'} loading={pending} />
-        {/* si la métrica NO es satisfacción, mostramos satisfacción promedio clásica para referencia */}
-        <Kpi title="SATISFACCIÓN" value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)} loading={pending} />
+
+        <KpiCard
+          title="ALERTAS (%)"
+          value={k ? `${alertPct}%` : '—'}
+          help={kpiHelp.alertas}
+          accent={alertAccent}
+          loading={pending}
+        />
+
+        <KpiCard
+          title="TASA DE RESPUESTA"
+          value={k ? `${tasaPct}%` : '—'}
+          help={kpiHelp.tasa}
+          accent={tasaPct >= 70 ? C.verde : tasaPct >= 40 ? C.amarillo : C.rojo}
+          loading={pending}
+        />
+
+        <KpiCard
+          title="SATISFACCIÓN"
+          value={metric !== 'satisfaccion' ? '—' : fmt(k?.prom, 1)}
+          help={kpiHelp.satisfaccion}
+          accent={C.brand}
+          loading={pending}
+        />
       </div>
 
       {/* Barras por grupo */}
@@ -473,17 +512,6 @@ function KpiSpark({ data, dataKey='val_prom' }: { data?: any[]; dataKey?: string
 }
 
 /* ---------- UI helpers ---------- */
-function Kpi({ title, value, loading, spark }: { title: string; value: string; loading?: boolean; spark?: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border p-4 shadow-sm bg-white min-h-[88px]">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500" title={title}>{title}</div>
-      <div className="text-2xl font-semibold mt-1">
-        {loading ? <Skeleton className="h-7 w-16" /> : value || '—'}
-      </div>
-      {spark}
-    </div>
-  )
-}
 function Card({ title, children, loading }: any) {
   return (
     <div className="rounded-2xl border shadow-sm bg-white p-4">
