@@ -356,22 +356,24 @@ export default function AnalyticsPage() {
           value={metric}
           onChange={(e) => setMetric(e.target.value as any)}
         >
-          {metricsList.length
-            ? metricsList.map(m => (
-                <option
-                  key={m.slug}
-                  value={m.slug}
-                  disabled={m.enabled === false}
-                  title={
-                    m.enabled === false
-                      ? (m.sample ? `Sin muestras suficientes (${m.sample})` : 'Sin datos en el rango')
-                      : undefined
-                  }
-                >
-                  {m.label ?? m.slug}{m.sample != null ? ` (${m.sample})` : ''}
-                </option>
-              ))
-            : <option value={metric}>{metric}</option>}
+          {(data?.meta?.metrics ?? []).map(m => (
+            <option
+              key={m.slug}
+              value={m.slug}
+              // NO usar disabled
+              title={
+                m.sample === 0
+                  ? 'Sin datos en el rango'
+                  : m.sample != null
+                    ? `Muestras: ${m.sample}`
+                    : undefined
+              }
+            >
+              {m.label ?? m.slug}
+              {m.sample != null ? ` (${m.sample})` : ''}
+              {m.sample === 0 ? ' — sin datos' : ''}
+            </option>
+          ))}
         </select>
 
         <select
