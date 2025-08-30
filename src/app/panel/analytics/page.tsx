@@ -80,6 +80,12 @@ function download(filename: string, text: string) {
   a.href = url; a.download = filename; a.click()
   URL.revokeObjectURL(url)
 }
+
+const normNivel = (v: any): 'rojo' | 'amarillo' | 'verde' | null => {
+  const s = String(v ?? '').trim().toLowerCase()
+  return s === 'rojo' || s === 'amarillo' || s === 'verde' ? (s as any) : null
+}
+
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -422,7 +428,7 @@ export default function AnalyticsPage() {
           title="ALERTAS (%)"
           value={`${alertPct}%`}
           help={kpiHelp.alertas}
-          accent={alertPct >= 60 ? C.rojo : alertPct >= 20 ? C.amarillo : C.verde}
+          accent={alertAccent}
           loading={pending}
         />
 
@@ -546,17 +552,27 @@ export default function AnalyticsPage() {
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
                   <Td>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs"
-                      style={{
-                        background: r.nivel_alerta === 'rojo' ? '#FEE2E2'
-                          : r.nivel_alerta === 'amarillo' ? '#FEF3C7' : '#DCFCE7',
-                        color: r.nivel_alerta === 'rojo' ? '#B91C1C'
-                          : r.nivel_alerta === 'amarillo' ? '#92400E' : '#065F46'
-                      }}
-                    >
-                      {r.nivel_alerta ?? '-'}
-                    </span>
+                    {(() => {
+                      const nivel = normNivel(r.nivel_alerta)
+                      const styles =
+                        nivel === 'rojo'
+                          ? { bg: '#FEE2E2', fg: '#B91C1C', label: 'rojo' }
+                          : nivel === 'amarillo'
+                            ? { bg: '#FEF3C7', fg: '#92400E', label: 'amarillo' }
+                            : nivel === 'verde'
+                              ? { bg: '#DCFCE7', fg: '#065F46', label: 'verde' }
+                              // ⬇️ sin nivel → badge gris (no lo pintes de verde)
+                              : { bg: '#E5E7EB', fg: '#374151', label: '—' }
+
+                      return (
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs"
+                          style={{ background: styles.bg, color: styles.fg }}
+                        >
+                          {styles.label}
+                        </span>
+                      )
+                    })()}
                   </Td>
                   <Td>{r.dolor ?? '-'}</Td>
                   <Td>{r.satisfaccion ?? '-'}</Td>
