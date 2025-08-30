@@ -91,8 +91,8 @@ export default function AnalyticsPage() {
   const [alerta, setAlerta] = useState<string>('')
 
   // NUEVO: selector de métrica y agrupación
-  const [metric, setMetric]   = useState<'dolor_24h' | 'dolor_6h' | 'satisfaccion'>('dolor_24h')
-  const [groupBy, setGroupBy] = useState<'cirugia' | 'anestesia'>('cirugia')
+  const [metric, setMetric]   = useState<string>('') 
+  const [groupBy, setGroupBy] = useState<string>('') 
 
   // estado
   const [data, setData] = useState<Overview | null>(null)
@@ -253,11 +253,25 @@ export default function AnalyticsPage() {
   const metricsList = data?.meta?.metrics ?? []
   const groupsList  = data?.meta?.groups  ?? []
 
-  // Si el backend normaliza la selección, sincronizamos el estado local
+  // Normalizar selección con las listas que vienen en meta
   useEffect(() => {
-    if (data?.meta?.metric && metric !== data.meta.metric) setMetric(data.meta.metric as any)
-    if (data?.meta?.groupBy && groupBy !== data.meta.groupBy) setGroupBy(data.meta.groupBy as any)
-  }, [data?.meta?.metric, data?.meta?.groupBy])
+    const mm = data?.meta?.metrics ?? []
+    const gm = data?.meta?.groups  ?? []
+
+    if (mm.length) {
+      const enabled = mm.filter(m => m.enabled !== false).map(m => m.slug)
+      const wanted  = data?.meta?.metric
+      const next    = enabled.includes(wanted!) ? wanted! : enabled[0]
+      if (next && metric !== next) setMetric(next)
+    }
+    if (gm.length) {
+      const enabledG = gm.filter(g => g.enabled !== false).map(g => g.slug)
+      const wantedG  = data?.meta?.groupBy
+      const nextG    = enabledG.includes(wantedG!) ? wantedG! : enabledG[0]
+      if (nextG && groupBy !== nextG) setGroupBy(nextG)
+    }
+  }, [data?.meta?.metric, data?.meta?.groupBy, data?.meta?.metrics, data?.meta?.groups])
+
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
 
@@ -279,11 +293,11 @@ export default function AnalyticsPage() {
   // textos dinámicos según métrica/agrupación
   const metricLabel =
     data?.meta?.metrics?.find(m => m.slug === metric)?.label
-    ?? humanize(metric)
+    ?? humanize(metric || '')
 
   const groupLabel =
     data?.meta?.groups?.find(g => g.slug === groupBy)?.label
-    ?? humanize(groupBy)
+    ?? humanize(groupBy || '')
 
   const kpiHelp = {
     prom:
@@ -356,22 +370,17 @@ export default function AnalyticsPage() {
           value={metric}
           onChange={(e) => setMetric(e.target.value as any)}
         >
+          {(!data?.meta?.metrics || !data.meta.metrics.length) && (
+            <option value="" disabled>Cargando métricas…</option>
+          )}
           {(data?.meta?.metrics ?? []).map(m => (
             <option
               key={m.slug}
               value={m.slug}
-              // NO usar disabled
-              title={
-                m.sample === 0
-                  ? 'Sin datos en el rango'
-                  : m.sample != null
-                    ? `Muestras: ${m.sample}`
-                    : undefined
-              }
+              // siempre seleccionables; el backend decide enabled/strict
+              title={m.sample === 0 ? 'Sin datos en el rango' : (m.sample != null ? `Muestras: ${m.sample}` : undefined)}
             >
-              {m.label ?? m.slug}
-              {m.sample != null ? ` (${m.sample})` : ''}
-              {m.sample === 0 ? ' — sin datos' : ''}
+              {(m.label || humanize(m.slug)) + (m.sample != null ? ` (${m.sample})` : '') + (m.sample === 0 ? ' — sin datos' : '')}
             </option>
           ))}
         </select>
@@ -381,13 +390,14 @@ export default function AnalyticsPage() {
           value={groupBy}
           onChange={(e) => setGroupBy(e.target.value as any)}
         >
-          {groupsList.length
-            ? groupsList.map(g => (
-                <option key={g.slug} value={g.slug} disabled={g.enabled === false}>
-                  {g.label ?? g.slug}
-                </option>
-              ))
-            : <option value={groupBy}>{groupBy}</option>}
+          {(!data?.meta?.groups || !data.meta.groups.length) && (
+            <option value="" disabled>Cargando agrupaciones…</option>
+          )}
+          {(data?.meta?.groups ?? []).map(g => (
+            <option key={g.slug} value={g.slug}>
+              {g.label || humanize(g.slug)}
+            </option>
+          ))}
         </select>
 
         <div className="col-span-7 flex items-center gap-2">
