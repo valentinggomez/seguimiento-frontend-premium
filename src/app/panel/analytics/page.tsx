@@ -239,9 +239,37 @@ export default function AnalyticsPage() {
   const s = data?.series
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
-  const alertPct = k && (k.nTotal || 0) > 0
-    ? Math.round(((k.alertas?.rojo ?? 0) + (k.alertas?.amarillo ?? 0)) / (k.nTotal || 1) * 100)
-    : 0
+  // Totales desde las series (fallback robusto)
+  const totalRespFromSeries =
+    s?.porDia?.reduce((acc, d) =>
+      acc + ((d.a_verde ?? 0) + (d.a_amarillo ?? 0) + (d.a_rojo ?? 0)), 0) ?? 0
+
+  const totalAlertFromSeries =
+    s?.porDia?.reduce((acc, d) =>
+      acc + ((d.a_amarillo ?? 0) + (d.a_rojo ?? 0)), 0) ?? 0
+
+  // Tasa de respuesta: acepta fracción (0–1) o pct (0–100); si no viene, calcula por series
+  const tasaPct = (() => {
+    const raw = (k?.tasaRespuesta ?? (k as any)?.tasa_respuesta) as number | undefined
+    if (typeof raw === 'number') {
+      const frac = raw > 1 ? raw / 100 : raw
+      return Math.round(frac * 100)
+    }
+    const base = k?.nTotal ?? totalRespFromSeries
+    if (!base) return 0
+    // Si el backend no trae nTotal correcto, usamos total de series también como base
+    const responded = totalRespFromSeries
+    return Math.round((responded / base) * 100)
+  })()
+
+  // % de alertas (amarillo+rojo) sobre total respondido
+  const alertPct = (() => {
+    const base = (k?.nTotal ?? 0) || totalRespFromSeries
+    if (!base) return 0
+    const am = (k?.alertas?.amarillo ?? 0) || (s?.porDia?.reduce((a, d) => a + (d.a_amarillo ?? 0), 0) ?? 0)
+    const ro = (k?.alertas?.rojo ?? 0) || (s?.porDia?.reduce((a, d) => a + (d.a_rojo ?? 0), 0) ?? 0)
+    return Math.round(((am + ro) / base) * 100)
+  })()
 
   // textos dinámicos según métrica/agrupación
   const metricLabel = metric === 'dolor_24h' ? 'Dolor 24 h'
@@ -262,7 +290,6 @@ export default function AnalyticsPage() {
   const accentForPct = (pct: number) =>
     pct >= 60 ? C.rojo : pct >= 20 ? C.amarillo : C.verde
 
-  const tasaPct = Math.round(((k?.tasaRespuesta || 0) * 100))
   const alertAccent = accentForPct(alertPct)
 
   return (
@@ -346,7 +373,7 @@ export default function AnalyticsPage() {
 
         <KpiCard
           title="ALERTAS (%)"
-          value={k ? `${alertPct}%` : '—'}
+          value={`${alertPct}%`}
           help={kpiHelp.alertas}
           accent={alertAccent}
           loading={pending}
@@ -354,7 +381,7 @@ export default function AnalyticsPage() {
 
         <KpiCard
           title="TASA DE RESPUESTA"
-          value={k ? `${tasaPct}%` : '—'}
+          value={`${tasaPct}%`}
           help={kpiHelp.tasa}
           accent={tasaPct >= 70 ? C.verde : tasaPct >= 40 ? C.amarillo : C.rojo}
           loading={pending}
