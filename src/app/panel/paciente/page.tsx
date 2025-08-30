@@ -10,7 +10,7 @@ import { fetchConToken } from '@/lib/fetchConToken'
 import { useRef } from 'react'
 
 export default function RegistroPaciente() {
-  const [form, setForm] = useState<any>({})
+  const [form, setForm] = useState<any>({ pais_telefono: 'AR' })
   const [enviado, setEnviado] = useState(false)
   const { t } = useTranslation()
   const [link, setLink] = useState('')
@@ -71,12 +71,6 @@ export default function RegistroPaciente() {
     }
     cargarFormularios()
   }, [clinica?.id])
-
-  useEffect(() => {
-    if (clinica?.pais && !form.pais_telefono) {
-      setForm((prev: any) => ({ ...prev, pais_telefono: clinica.pais }));
-    }
-  }, [clinica?.pais, form.pais_telefono]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,8 +83,12 @@ export default function RegistroPaciente() {
       setMensajeError('Seleccioná el país del teléfono');
       return;
     }
-    if (!form.telefono || String(form.telefono).replace(/\D/g,'').length < 7) {
-      setMensajeError('Número de teléfono demasiado corto');
+    const LEN_MIN: Record<string, number> = { AR: 10, CL: 9, UY: 8, ES: 9 };
+    const tel = String(form.telefono || '').replace(/\D/g, '');
+    const iso = form.pais_telefono || 'AR';
+    const min = LEN_MIN[iso] ?? 8;
+    if (!tel || tel.length < min) {
+      setMensajeError(`Número de teléfono demasiado corto para ${iso}`);
       return;
     }
     const vacios = requeridos.filter(k => !form[k] && form[k] !== 0)

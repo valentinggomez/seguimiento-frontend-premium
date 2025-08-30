@@ -8,6 +8,8 @@ type Clinica = {
   logo_url?: string
   color_primario?: string
   columnas_exportables?: string[]
+  dominio?: string
+  pais?: string 
   [key: string]: any
 }
 
@@ -32,6 +34,7 @@ export const ClinicaProvider = ({
   useEffect(() => {
     if (clinicaInicial) {
       const normalizada = { ...clinicaInicial }
+      if (!normalizada.pais) normalizada.pais = 'AR'
 
       if (!Array.isArray(normalizada.columnas_exportables)) {
         if (typeof normalizada.columnas_exportables === "string") {
