@@ -243,7 +243,10 @@ export default function RegistroPaciente() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-2xl bg-white/90 border border-gray-200 backdrop-blur-md shadow-xl rounded-3xl p-10"
+        className="w-full max-w-2xl bg-white/90 border border-gray-200 backdrop-blur-md
+                  rounded-3xl p-10 shadow-[0_12px_30px_rgba(0,0,0,0.08)]
+                  transition-shadow duration-200
+                  hover:shadow-[0_16px_46px_rgba(0,0,0,0.10)]"
       >
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-[#003466] tracking-tight">
@@ -278,7 +281,11 @@ export default function RegistroPaciente() {
                 placeholder=" "
                 autoComplete="off"
                 autoFocus
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+               className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800
+                          transition-all duration-200
+                          hover:border-[#004080]/40
+                          focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60
+                          shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.nombre')}
@@ -301,9 +308,11 @@ export default function RegistroPaciente() {
                 }}
                 placeholder=" "
                 autoComplete="off"
-                className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all ${
-                  errores.edad ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800
+                            transition-all duration-200 hover:border-[#004080]/40
+                            focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60
+                            shadow-sm focus:shadow-md
+                            ${errores.edad ? 'border-red-500' : 'border-gray-300'}`}
               />
               {errores.edad && (
                 <p className="text-red-600 text-sm mt-1">{errores.edad}</p>
@@ -322,7 +331,7 @@ export default function RegistroPaciente() {
                 onChange={(e) => setForm({ ...form, dni: e.target.value })}
                 placeholder=" "
                 autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.dni')}
@@ -338,7 +347,7 @@ export default function RegistroPaciente() {
                 onChange={(e) => setForm({ ...form, obra_social: e.target.value })}
                 placeholder=" "
                 autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.obra_social')}
@@ -351,7 +360,7 @@ export default function RegistroPaciente() {
                 name="sexo"
                 value={form.sexo || ''}
                 onChange={(e) => setForm({ ...form, sexo: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               >
                 <option value="" disabled hidden>{t('pacientes.seleccionar_sexo')}</option>
                 <option value="Masculino">{t('pacientes.masculino')}</option>
@@ -381,7 +390,7 @@ export default function RegistroPaciente() {
                 }}
                 placeholder=" "
                 autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.peso')} (kg)
@@ -409,7 +418,7 @@ export default function RegistroPaciente() {
                 }}
                 placeholder=" "
                 autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.altura')} (m)
@@ -441,7 +450,7 @@ export default function RegistroPaciente() {
                   name="pais_telefono"
                   value={form.pais_telefono || ''}
                   onChange={(e) => setForm({ ...form, pais_telefono: e.target.value })}
-                  className="w-1/3 px-3 py-3 border border-gray-300 rounded-l-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                  className="w-1/3 px-3 py-3 border border-gray-300 rounded-l-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
                 >
                   <option value="" disabled hidden>🌍 País</option>
                   {Object.entries(PAISES).map(([iso, data]) => (
@@ -466,8 +475,7 @@ export default function RegistroPaciente() {
                       : 'Ej: 123456789'
                   }
                   autoComplete="off"
-                  className="flex-1 px-3 py-3 border border-gray-300 rounded-r-xl bg-white text-gray-800 
-                            focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                  className="flex-1 px-3 py-3 border border-gray-300 rounded-r-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
                 />
               </div>
             </div>
@@ -484,7 +492,7 @@ export default function RegistroPaciente() {
                 onChange={(e) => setForm({ ...form, cirugia: e.target.value })}
                 placeholder=" "
                 autoComplete="off"
-                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               />
               <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                 {t('pacientes.cirugia')}
@@ -559,9 +567,11 @@ export default function RegistroPaciente() {
                   }))
                 }}
                 autoComplete="off"
-                className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all ${
-                  errores.fecha_cirugia ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`peer w-full px-3 pt-6 pb-2 border rounded-xl bg-white text-gray-800
+                            transition-all duration-200 hover:border-[#004080]/40
+                            focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60
+                            shadow-sm focus:shadow-md
+                            ${errores.fecha_cirugia ? 'border-red-500' : 'border-gray-300'}`}
               />
 
               {errores.fecha_cirugia && (
@@ -577,7 +587,8 @@ export default function RegistroPaciente() {
             Este bloque se deja visualmente preparado, pero sin campos por defecto.
             Cada institución puede definir qué mediciones quiere registrar (bloqueo, dosis, fármacos, escalas, etc.)
             */}
-            <div className="border border-gray-200 rounded-xl px-4 py-6 shadow-sm bg-blue-50 mt-8">
+            <div className="border border-gray-200 rounded-xl px-4 py-6 bg-blue-50 mt-8
+                            shadow-sm hover:shadow-md transition-shadow duration-200">
               <h3 className="text-[#004080] font-semibold mb-3 text-sm">
                 {t('pacientes.avanzado_titulo')}
               </h3>
@@ -595,7 +606,7 @@ export default function RegistroPaciente() {
                         onChange={(e) => setForm({ ...form, [campoKey]: e.target.value })}
                         placeholder=" "
                         autoComplete="off"
-                        className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                        className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
                       />
                       <label className="absolute left-3 top-2.5 text-sm text-gray-500 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#004080] peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">
                         {campoKey}
@@ -619,7 +630,7 @@ export default function RegistroPaciente() {
                 value={selectedSlug}
                 onChange={(e) => setSelectedSlug(e.target.value)}
                 disabled={loadingForms || formularios.length === 0}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
               >
                 {loadingForms && <option>Cargando formularios…</option>}
                 {!loadingForms && formularios.length === 0 && (
@@ -659,7 +670,7 @@ export default function RegistroPaciente() {
                   onChange={(e) => setForm({ ...form, nombre_medico: e.target.value })}
                   placeholder=" "
                   autoComplete="off"
-                  className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#004080] transition-all"
+                  className="peer w-full px-3 pt-6 pb-2 border border-gray-300 rounded-xl bg-white text-gray-800 transition-all duration-200 hover:border-[#004080]/40 focus:outline-none focus:ring-2 focus:ring-[#004080]/30 focus:border-[#004080]/60 shadow-sm focus:shadow-md"
                 />
                 <label
                   htmlFor="nombre_medico"
@@ -679,10 +690,11 @@ export default function RegistroPaciente() {
               type="submit"
               disabled={sending}
               aria-disabled={sending}
-              className={`w-full mt-6 rounded-lg py-3 font-semibold shadow transition
-                ${sending
-                  ? 'bg-[#003466]/60 cursor-not-allowed text-white'
-                  : 'bg-[#004080] hover:bg-[#003466] text-white'}`}
+              className={`w-full mt-6 rounded-lg py-3 font-semibold text-white
+                          transition-all duration-200 shadow-md
+                          ${sending
+                            ? 'bg-[#003466]/60 cursor-not-allowed'
+                            : 'bg-[#004080] hover:bg-[#003466] hover:shadow-lg transform-gpu hover:-translate-y-0.5 active:translate-y-0 active:shadow-md'}`}
             >
               {sending ? (
                 <span className="inline-flex items-center gap-2">
@@ -737,7 +749,8 @@ export default function RegistroPaciente() {
 
               <div
                 ref={qrContainerRef}
-                className="mt-5 inline-block rounded-xl bg-white border border-gray-300 shadow-sm p-3"
+                className="mt-5 inline-block rounded-xl bg-white border border-gray-300 p-3
+                          shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 {/* Tamaño cómodo para impresión/cámara */}
                 <QRCode value={link} size={200} fgColor="#003466" bgColor="#ffffff" />
@@ -747,7 +760,10 @@ export default function RegistroPaciente() {
               <button
                 type="button"
                 onClick={descargarQRPNGdesdeSVG}
-                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white hover:bg-[#003466] transition font-medium shadow"
+                className="w-full mt-3 px-5 py-2 rounded-lg bg-[#004080] text-white
+                          transition-all duration-200 font-medium
+                          shadow-md hover:shadow-lg hover:bg-[#003466]
+                          transform-gpu hover:-translate-y-0.5 active:translate-y-0"
               >
                 {t('pacientes.registro.descargar_qr')}
               </button>
@@ -779,9 +795,11 @@ export default function RegistroPaciente() {
                 }}
                 animate={copiado ? { scale: [1, 1.05, 1], backgroundColor: "#16a34a" } : {}}
                 transition={{ duration: 0.3 }}
-                className={`w-full mt-5 px-6 py-2.5 rounded-lg text-white font-semibold transition-all shadow-md inline-flex items-center justify-center gap-2 ${
-                  copiado ? 'bg-green-600 hover:bg-green-700' : 'bg-[#004080] hover:bg-[#003466]'
-                }`}
+                className={`w-full mt-5 px-6 py-2.5 rounded-lg text-white font-semibold
+                            transition-all duration-200 shadow-md inline-flex items-center justify-center gap-2
+                            ${copiado
+                              ? 'bg-green-600 hover:bg-green-700'
+                              : 'bg-[#004080] hover:bg-[#003466] hover:shadow-lg transform-gpu hover:-translate-y-0.5 active:translate-y-0'}`}
               >
                 {copiado ? '✅ ' + t('pacientes.registro.link_copiado_boton') : '📋 ' + t('pacientes.registro.boton_copiar')}
               </motion.button>
@@ -793,7 +811,10 @@ export default function RegistroPaciente() {
                   setEnviado(false)
                   setCopiado(false)
                 }}
-                className="w-full mt-4 px-5 py-2 rounded-lg bg-white border border-gray-300 text-[#004080] hover:bg-gray-50 hover:shadow transition font-medium"
+                 className="w-full mt-4 px-5 py-2 rounded-lg bg-white border border-gray-300 text-[#004080]
+                            transition-all duration-200 font-medium
+                            shadow-sm hover:shadow-md hover:bg-gray-50
+                            transform-gpu hover:-translate-y-0.5 active:translate-y-0"
               >
                 {t('pacientes.registro.boton_nuevo')}
               </button>
