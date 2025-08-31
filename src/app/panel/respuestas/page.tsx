@@ -140,6 +140,7 @@ export default function PanelRespuestas() {
   const { t } = useTranslation()
   const [reglasClinicas, setReglasClinicas] = useState<ReglasClinicas>({ condiciones: [] })
   const [labelMap, setLabelMap] = useState<Record<string,string>>({});
+  const [recent, setRecent] = useState<Record<string, number>>({})
 
   const fetchRespuestas = async () => {
     try {
@@ -197,6 +198,15 @@ export default function PanelRespuestas() {
             const id = String(p.respuesta_id);
             if (!seenRef.current.has(id)) {
               seenRef.current.add(id);
+              // 🔔 marcar como "nuevo" por ~3s
+              setRecent(prev => ({ ...prev, [id]: Date.now() }));
+              setTimeout(() => {
+                setRecent(prev => {
+                  const copy = { ...prev };
+                  delete copy[id];
+                  return copy;
+                });
+              }, 3000);
               fetchRespuestas(); // recargar lista completo (simple/robusto)
             }
           } catch {}
@@ -802,6 +812,8 @@ export default function PanelRespuestas() {
         ).map((r) => (
         (() => {
           const { nivel, color } = resolveNivelYColor(r);
+          const markedAt = recent[String(r.id)];
+          const isNew = !!markedAt && (Date.now() - markedAt < 3200);
           return (
             <motion.div
               key={String(r.id)}
@@ -809,13 +821,16 @@ export default function PanelRespuestas() {
               className={[
                 "rounded-xl border p-3 md:p-4 bg-white",
                 "border-slate-200",
-                "transition-shadow",
+                "transition-shadow duration-500",
                 modoEdicion ? "" : "cursor-pointer hover:shadow-md shadow-sm"
               ].join(" ")}
               style={{
                 borderLeftColor: color,
                 borderLeftWidth: 6,
                 borderLeftStyle: 'solid',
+                boxShadow: isNew
+                  ? `0 0 0 3px ${color}22, 0 10px 18px ${color}26`
+                  : undefined,
               }}
               onClick={() => { if (!modoEdicion) toggleExpand(String(r.id)) }}
             >
@@ -843,6 +858,13 @@ export default function PanelRespuestas() {
                     <h2 className="font-medium text-slate-800 flex items-center gap-2">
                       📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
                       <AlertBadge nivel={nivel} />
+                      {isNew && ( 
+                        <span
+                          aria-label="nuevo"
+                          className="inline-block h-2.5 w-2.5 rounded-full animate-pulse"
+                          style={{ backgroundColor: color, boxShadow: `0 0 0 3px ${color}33` }}
+                        />
+                      )}
                     </h2>
                   );
                 })()}
