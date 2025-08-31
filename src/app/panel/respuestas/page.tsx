@@ -197,7 +197,7 @@ export default function PanelRespuestas() {
       if (filtros.transcripcion && !tieneTransc) return false;
 
       if (filtros.noRevisadas && estaRevisada(r)) return false;
-      
+
       return true;
     });
 
@@ -957,7 +957,7 @@ export default function PanelRespuestas() {
             filtros.transcripcion?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
           }`}
         >🗣️ {t('respuestas.filtro_transc') || 'Transcripción'}</button>
-      </div>
+      
 
       <button
         aria-pressed={filtros.noRevisadas}
@@ -968,7 +968,8 @@ export default function PanelRespuestas() {
       >
         ✅ {`Pendientes`}
       </button>
-
+    </div>
+    
       <div className="flex flex-col gap-4">
         {Array.isArray(respuestas) && aplicarFiltros(
           [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
