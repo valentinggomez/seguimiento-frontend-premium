@@ -688,31 +688,39 @@ export default function AnalyticsPage() {
             Exportar CSV
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left border-b">
+              <tr className="text-left bg-slate-50/80">
                 <Th>Fecha</Th><Th>Cirugía</Th><Th>Alerta</Th><Th>Dolor</Th><Th>Satisf.</Th>
               </tr>
             </thead>
             <tbody>
               {rows.length ? rows.map((r: any) => (
-                <tr key={r.id} className="border-b last:border-0">
+                <tr
+                  key={r.id}
+                  className="border-b last:border-0 odd:bg-white even:bg-slate-50/40 hover:bg-slate-50 transition-colors"
+                >
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
                  <Td>
-                    {(() => {
-                      const st = alertStyle(normNivel(r.nivel_alerta))
-                      return (
-                        <span
-                          className="px-2 py-0.5 rounded-full text-xs"
-                          style={{ background: st.bg, color: st.fg }}
-                        >
-                          {st.name === '—' ? '—' : st.name.split(' ')[1] /* muestra 'verde/amarillo/rojo' */}
-                        </span>
-                      )
-                    })()}
-                  </Td>
+                  {(() => {
+                    const st = alertStyle(normNivel(r.nivel_alerta))
+                    return (
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs ring-1 ring-inset"
+                        style={{
+                          background: st.bg,
+                          color: st.fg,
+                          // anillo del color principal con algo de transparencia
+                          boxShadow: `inset 0 0 0 1px ${st.hex}66`
+                        }}
+                      >
+                        {st.name === '—' ? '—' : st.name.split(' ')[1]}
+                      </span>
+                    )
+                  })()}
+                </Td>
                   <Td>{r.dolor ?? '-'}</Td>
                   <Td>{r.satisfaccion ?? '-'}</Td>
                 </tr>
