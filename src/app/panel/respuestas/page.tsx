@@ -112,6 +112,24 @@ function ModalConfirmacion({
   )
 }
 
+const ALERT_PILL = {
+  verde:    { bg: '#DCFCE7', fg: '#065F46', text: 'verde'    },
+  amarillo: { bg: '#FEF3C7', fg: '#92400E', text: 'amarillo' },
+  rojo:     { bg: '#FEE2E2', fg: '#B91C1C', text: 'rojo'     },
+} as const;
+
+function AlertBadge({ nivel }: { nivel: 'verde'|'amarillo'|'rojo' }) {
+  const c = ALERT_PILL[nivel];
+  return (
+    <span
+      className="px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset"
+      style={{ background: c.bg, color: c.fg, boxShadow: `inset 0 0 0 1px ${c.fg}22` }}
+    >
+      {c.text}
+    </span>
+  );
+}
+
 export default function PanelRespuestas() {
   const [respuestas, setRespuestas] = useState<Respuesta[]>([])
   const seenRef = useRef<Set<string>>(new Set())
@@ -792,14 +810,18 @@ export default function PanelRespuestas() {
           <motion.div
             key={String(r.id)}
             layout
-            className={`rounded-xl border p-4 shadow-sm ${modoEdicion ? '' : 'cursor-pointer'}`}
+            className={[
+              "rounded-xl border p-4 bg-white",
+              "border-slate-200",            // borde neutro
+              "transition-shadow",
+              modoEdicion ? "" : "cursor-pointer hover:shadow-md shadow-sm"
+            ].join(" ")}
             style={{
-              borderColor: cardColor,
-              backgroundColor: hexToRgba(cardColor, 0.10),
+              borderLeftColor: cardColor,    // ← color dinámico
+              borderLeftWidth: 6,            // ← solo borde izquierdo
+              borderLeftStyle: 'solid',
             }}
-            onClick={() => {
-              if (!modoEdicion) toggleExpand(String(r.id))
-            }}
+            onClick={() => { if (!modoEdicion) toggleExpand(String(r.id)) }}
           >
             <div className="flex justify-between items-center">
               <div>
@@ -820,9 +842,20 @@ export default function PanelRespuestas() {
                   />
                 )}
                 
-                <h2 className="font-semibold text-[#663300] flex items-center gap-2">
-                  📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
-                 </h2> 
+                {(() => {
+                  // reutilizamos la misma lógica de colores/nivel que ya tenés
+                  const color = getColorHex(r);
+                  // inferimos nivel por color (o, si preferís, usá evaluarRespuesta(r, reglasClinicas).nivel)
+                  const nivel: 'verde'|'amarillo'|'rojo' =
+                    color === '#EF4444' ? 'rojo' : color === '#F59E0B' ? 'amarillo' : 'verde';
+
+                  return (
+                    <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                      📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
+                      <AlertBadge nivel={nivel} />
+                    </h2>
+                  );
+                })()}
                   
 
                   <p className="text-sm text-gray-700">
