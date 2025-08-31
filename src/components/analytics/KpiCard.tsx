@@ -4,12 +4,12 @@ export function KpiCard({
   title,
   value,
   help,
-  accent = "#003466", // color superior
+  accent = "#003466",
   loading = false,
   spark,
 }: {
   title: string
-  value: string
+  value: string | number
   help?: string
   accent?: string
   loading?: boolean
@@ -18,11 +18,11 @@ export function KpiCard({
   return (
     <div
       className="relative rounded-2xl border bg-white p-4 shadow-sm min-h-[104px]
-                 transition-shadow duration-200 hover:shadow-md"
+                 overflow-hidden transition-shadow duration-200 hover:shadow-md"
     >
-      {/* barra superior de acento */}
+      {/* barra superior de acento (queda adentro del borde redondeado) */}
       <div
-        className="absolute inset-x-0 top-0 h-1 rounded-t-2xl"
+        className="absolute inset-x-0 top-0 h-1 pointer-events-none select-none"
         style={{ background: accent }}
         aria-hidden="true"
       />
@@ -41,14 +41,12 @@ export function KpiCard({
           {loading ? (
             <div className="animate-pulse bg-slate-200 h-6 w-16 rounded" />
           ) : (
-            value || "—"
+            (value ?? "—") as any
           )}
         </div>
-        {/* sparkline opcional */}
         {spark ? <div className="w-24">{spark}</div> : null}
       </div>
 
-      {/* micro-explicación */}
       {help && (
         <div className="mt-1 text-[11px] text-slate-500">{help}</div>
       )}
