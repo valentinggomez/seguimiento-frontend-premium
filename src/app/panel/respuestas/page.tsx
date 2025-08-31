@@ -146,18 +146,6 @@ export default function PanelRespuestas() {
     transcripcion: false,
   });
 
-  // 🔢 Paginación (client-side)
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20); // opciones: 10/20/30/50
-
-  // volver a página 1 cuando cambian filtros o el tamaño de la data
-  useEffect(() => { setPage(1); }, [filtros, respuestas.length]);
-
-  // ordenar + filtrar
-  const sorted = Array.isArray(respuestas)
-    ? [...respuestas].sort((a: any, b: any) => +new Date(b.creado_en) - +new Date(a.creado_en))
-    : [];
-
   const aplicarFiltros = (items: Respuesta[]) =>
     items.filter(r => {
       const { nivel } = resolveNivelYColor(r);
@@ -272,27 +260,6 @@ export default function PanelRespuestas() {
       try { es?.close(); } catch {}
     };
   }, []);
-
-  const filtered = aplicarFiltros(sorted);
-
-  // totales y ventana actual
-  const total = filtered.length;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const startIdx = (safePage - 1) * pageSize;
-  const endIdx = Math.min(startIdx + pageSize, total);
-  const pageItems = filtered.slice(startIdx, endIdx);
-
-  // páginas a mostrar (discreta)
-  const pagesToShow = (() => {
-    const maxBtns = 7;
-    if (pageCount <= maxBtns) return Array.from({ length: pageCount }, (_, i) => i + 1);
-    const windowSize = 5;
-    let start = Math.max(2, safePage - Math.floor(windowSize / 2));
-    let end = Math.min(pageCount - 1, start + windowSize - 1);
-    if (end - start + 1 < windowSize) start = Math.max(2, end - windowSize + 1);
-    return [1, ...(start > 2 ? ['…' as const] : []), ...Array.from({ length: end - start + 1 }, (_, i) => start + i), ...(end < pageCount - 1 ? ['…' as const] : []), pageCount];
-  })();
 
   useEffect(() => {
     (async () => {
@@ -497,16 +464,6 @@ export default function PanelRespuestas() {
     const b = parseInt(m[3], 16)
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
-
-
-  // === Severidad y colores por defecto ===
-  const NIVEL_COLOR_DEF: Record<'verde'|'amarillo'|'rojo', string> = {
-    verde: '#10B981',
-    amarillo: '#F59E0B',
-    rojo: '#EF4444',
-  }
-  const rank = (n: 'verde'|'amarillo'|'rojo') => (n === 'rojo' ? 2 : n === 'amarillo' ? 1 : 0)
-
 
   function resolveNivelYColor(r: Respuesta): { nivel: 'verde'|'amarillo'|'rojo', color: string } {
     // --- Backend: nivel/color guardados ---
@@ -753,6 +710,14 @@ export default function PanelRespuestas() {
     return p(b) - p(a) // descendente
   }
 
+  // === Severidad y colores por defecto ===
+  const NIVEL_COLOR_DEF: Record<'verde'|'amarillo'|'rojo', string> = {
+    verde: '#10B981',
+    amarillo: '#F59E0B',
+    rojo: '#EF4444',
+  }
+  const rank = (n: 'verde'|'amarillo'|'rojo') => (n === 'rojo' ? 2 : n === 'amarillo' ? 1 : 0)
+
   /**
    * Evalúa reglas sobre una respuesta y devuelve:
    * { nivel, sugerencias, color, hitRules }
@@ -761,7 +726,7 @@ export default function PanelRespuestas() {
    * - color: color para pintar la tarjeta (prioriza color de la regla más severa)
    * - hitRules: reglas que se cumplieron (para debug si querés)
    */
-  function evaluarRespuesta(r: Respuesta, reglas: ReglasClinicas) {
+  const evaluarRespuesta = (r: Respuesta, reglas: ReglasClinicas) => {
     // dataset: respuestas de formulario + campos personalizados
     const campos = getCamposPersonalizados(r)
     const form   = getRespuestasFormulario(r)
@@ -854,28 +819,14 @@ export default function PanelRespuestas() {
       </h1>
       <div className="flex justify-between items-center mb-3">
         <div className="text-xs md:text-sm text-slate-600">
-          {total > 0 ? `Mostrando ${startIdx + 1}–${endIdx} de ${total}` : 'Sin resultados'}
+          {Array.isArray(respuestas) ? `${respuestas.length} ${t('respuestas.registros') || 'registros'}` : ''}
         </div>
-
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-slate-600 hidden md:flex items-center gap-2">
-            <span>Por página</span>
-            <select
-              className="border rounded px-2 py-1 text-xs"
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            >
-              {[10, 20, 30, 50].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-
-          <button
-            onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
-            className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
-          >
-            {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
-          </button>
-        </div>
+        <button
+          onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
+          className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
+        >
+          {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-3">
@@ -917,7 +868,9 @@ export default function PanelRespuestas() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {pageItems.map((r) => (
+        {Array.isArray(respuestas) && aplicarFiltros(
+          [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
+        ).map((r) => (
         (() => {
           const { nivel, color } = resolveNivelYColor(r);
           const markedAt = recent[String(r.id)];
@@ -1180,65 +1133,6 @@ export default function PanelRespuestas() {
         })()
       ))}
       </div>
-      {/* 🔽 Paginación */}
-      {total > 0 && (
-        <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="text-xs md:text-sm text-slate-600">
-            {`Mostrando ${startIdx + 1}–${endIdx} de ${total}`}
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(1)}
-              disabled={safePage === 1}
-            >
-              «
-            </button>
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-            >
-              Anterior
-            </button>
-
-            {pagesToShow.map((p, i) =>
-              p === '…' ? (
-                <span key={`dots-${i}`} className="px-2 text-slate-500">…</span>
-              ) : (
-                <button
-                  key={p as number}
-                  onClick={() => setPage(p as number)}
-                  className={[
-                    "px-3 py-1 text-sm rounded border",
-                    p === safePage
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                  ].join(' ')}
-                >
-                  {p}
-                </button>
-              )
-            )}
-
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(p => Math.min(pageCount, p + 1))}
-              disabled={safePage === pageCount}
-            >
-              Siguiente
-            </button>
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(pageCount)}
-              disabled={safePage === pageCount}
-            >
-              »
-            </button>
-          </div>
-        </div>
-      )}
       {modoEdicion && seleccionadas.length > 0 && (
         <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-center space-y-3">
           <p className="text-sm text-red-700">
