@@ -432,8 +432,8 @@ export default function PanelRespuestas() {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  function getColorHex(r: Respuesta) {
-    // --- Backend: nivel/color que llegan guardados ---
+  function resolveNivelYColor(r: Respuesta): { nivel: 'verde'|'amarillo'|'rojo', color: string } {
+    // --- Backend: nivel/color guardados ---
     let raw: any = r.campos_personalizados;
     if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = null } }
 
@@ -442,13 +442,13 @@ export default function PanelRespuestas() {
 
     const beNivel = (r.nivel_alerta
       ? String(r.nivel_alerta).toLowerCase().trim()
-      : (beColor ? colorToNivel(beColor) : '')
+      : ''
     ) as 'verde'|'amarillo'|'rojo'|''
 
     const beColorFinal: string | undefined =
       beColor || (beNivel ? NIVEL_COLOR_DEF[beNivel] : undefined);
 
-    // --- Front: evaluación por reglas del panel (si existen) ---
+    // --- Front: reglas del panel ---
     let frNivel: 'verde'|'amarillo'|'rojo'|undefined;
     let frColor: string | undefined;
     if (Array.isArray(reglasClinicas?.condiciones) && reglasClinicas.condiciones.length > 0) {
@@ -457,14 +457,14 @@ export default function PanelRespuestas() {
       frColor = evalFront.color;
     }
 
-    // --- Heurística de seguridad por texto libre (transcripción + síntomas) ---
+    // --- Heurística por texto libre ---
     const heur = detectarNivelPorTexto(r);
     const heurNivel = heur.nivel;
     const heurColor = heur.color;
 
-    // --- Resolución: elegir SIEMPRE el peor nivel (no bajar nunca lo del backend) ---
+    // --- Elegir SIEMPRE el peor nivel ---
     const niveles: Array<'verde'|'amarillo'|'rojo'> = [];
-    if (beNivel)   niveles.push(beNivel as any);
+    if (beNivel)   niveles.push(beNivel);
     if (frNivel)   niveles.push(frNivel);
     if (heurNivel) niveles.push(heurNivel);
 
@@ -473,12 +473,12 @@ export default function PanelRespuestas() {
       'verde'
     );
 
-    // Color: usar el color de la fuente que aportó ese peor nivel; si no, map por defecto
-    if (peor === beNivel && beColorFinal) return beColorFinal;
-    if (peor === frNivel && frColor)      return frColor;
-    if (peor === heurNivel && heurColor)  return heurColor;
+    // Color de la misma fuente que aportó ese peor nivel; si no, default
+    if (peor === beNivel && beColorFinal) return { nivel: peor, color: beColorFinal };
+    if (peor === frNivel && frColor)      return { nivel: peor, color: frColor };
+    if (peor === heurNivel && heurColor)  return { nivel: peor, color: heurColor };
 
-    return NIVEL_COLOR_DEF[peor] || NIVEL_COLOR_DEF.verde;
+    return { nivel: peor, color: NIVEL_COLOR_DEF[peor] };
   }
 
   const getRespuestasFormulario = (r: Respuesta): Record<string, any> => {
@@ -804,27 +804,26 @@ export default function PanelRespuestas() {
           (a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en)
         ).map((r) => (
         (() => {
-          const cardColor = getColorHex(r);
+          const { nivel, color } = resolveNivelYColor(r);
           return (
-          
-          <motion.div
-            key={String(r.id)}
-            layout
-            className={[
-              "rounded-xl border p-4 bg-white",
-              "border-slate-200",            // borde neutro
-              "transition-shadow",
-              modoEdicion ? "" : "cursor-pointer hover:shadow-md shadow-sm"
-            ].join(" ")}
-            style={{
-              borderLeftColor: cardColor,    // ← color dinámico
-              borderLeftWidth: 6,            // ← solo borde izquierdo
-              borderLeftStyle: 'solid',
-            }}
-            onClick={() => { if (!modoEdicion) toggleExpand(String(r.id)) }}
-          >
-            <div className="flex justify-between items-center">
-              <div>
+            <motion.div
+              key={String(r.id)}
+              layout
+              className={[
+                "rounded-xl border p-4 bg-white",
+                "border-slate-200",
+                "transition-shadow",
+                modoEdicion ? "" : "cursor-pointer hover:shadow-md shadow-sm"
+              ].join(" ")}
+              style={{
+                borderLeftColor: color,
+                borderLeftWidth: 6,
+                borderLeftStyle: 'solid',
+              }}
+              onClick={() => { if (!modoEdicion) toggleExpand(String(r.id)) }}
+            >
+              <div className="flex justify-between items-center">
+                <div>
                 {modoEdicion && (
                   <input
                     type="checkbox"
@@ -843,12 +842,6 @@ export default function PanelRespuestas() {
                 )}
                 
                 {(() => {
-                  // reutilizamos la misma lógica de colores/nivel que ya tenés
-                  const color = getColorHex(r);
-                  // inferimos nivel por color (o, si preferís, usá evaluarRespuesta(r, reglasClinicas).nivel)
-                  const nivel: 'verde'|'amarillo'|'rojo' =
-                    color === '#EF4444' ? 'rojo' : color === '#F59E0B' ? 'amarillo' : 'verde';
-
                   return (
                     <h2 className="font-semibold text-slate-800 flex items-center gap-2">
                       📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
