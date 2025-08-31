@@ -858,7 +858,9 @@ export default function PanelRespuestas() {
     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       {/* Contador (se oculta en mobile si no hay espacio) */}
       <div className="text-xs md:text-sm text-slate-600 order-2 sm:order-1">
-        {total > 0 ? `Mostrando ${startIdx + 1}–${endIdx} de ${total}` : 'Sin resultados'}
+        {total > 0
+          ? t('respuestas.contador', { from: startIdx + 1, to: endIdx, total })
+          : t('respuestas.sin_resultados')}
       </div>
 
       {/* Paginación + Por página + Editar */}
@@ -870,7 +872,7 @@ export default function PanelRespuestas() {
               className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
               onClick={() => setPage(1)}
               disabled={safePage === 1}
-              aria-label="Primera página"
+              aria-label={t('respuestas.pag_aria_first')}
             >
               «
             </button>
@@ -912,7 +914,7 @@ export default function PanelRespuestas() {
               className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
               onClick={() => setPage(pageCount)}
               disabled={safePage === pageCount}
-              aria-label="Última página"
+              aria-label={t('respuestas.pag_aria_last')}
             >
               »
             </button>
@@ -921,7 +923,7 @@ export default function PanelRespuestas() {
 
         {/* Por página (pill) */}
         <label className="text-xs text-slate-600 hidden md:flex items-center gap-2">
-          <span>Por página</span>
+          <span>{t('respuestas.por_pagina')}</span>
           <select
             className="border rounded-full px-3 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-300"
             value={pageSize}
@@ -1043,7 +1045,7 @@ export default function PanelRespuestas() {
 
                   <p className="text-xs md:text-[13px] text-slate-600">
                     {r.tipo_cirugia}
-                    {r.anestesia ? ` • Anestesia: ${r.anestesia}` : ''}  {/* 👈 nuevo */}
+                    {r.anestesia ? ` • ${t('respuestas.label_anestesia')}: ${r.anestesia}` : ''}  {/* 👈 nuevo */}
                     {' '}• {r.edad} {t('respuestas.años')}<br />
                     {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
                   </p>
@@ -1209,7 +1211,7 @@ export default function PanelRespuestas() {
                     <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2 text-slate-800">
                         <span className="text-xl">💡</span>
-                        <h3 className="font-medium text-sm md:text-base tracking-wide">Sugerencias</h3>
+                        <h3 className="font-medium text-sm md:text-base tracking-wide">{t('respuestas.sugerencias')}</h3>
                       </div>
                       <ul className="mt-1 grid gap-2">
                         {unicos.map((sug, i) => {
@@ -1226,7 +1228,7 @@ export default function PanelRespuestas() {
                               <span className="text-slate-700">
                                 {sug.texto}
                                 {sug.fuente === 'backend' && (
-                                  <span className="ml-2 text-xs text-slate-500">(reglas clínica)</span>
+                                  <span className="ml-2 text-xs text-slate-500">{t('respuestas.badge_reglas_clinica')}</span>
                                 )}
                               </span>
                             </li>
