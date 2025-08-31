@@ -854,31 +854,92 @@ export default function PanelRespuestas() {
       <h1 className="text-xl md:text-2xl font-semibold mb-4 text-[#003366]">
         {t('respuestas.titulo')}
       </h1>
-      <div className="flex justify-between items-center mb-3">
-        <div className="text-xs md:text-sm text-slate-600">
-          {total > 0 ? `Mostrando ${startIdx + 1}–${endIdx} de ${total}` : 'Sin resultados'}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-slate-600 hidden md:flex items-center gap-2">
-            <span>Por página</span>
-            <select
-              className="border rounded px-2 py-1 text-xs"
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            >
-              {[10, 20, 30, 50].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-
-          <button
-            onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
-            className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
-          >
-            {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
-          </button>
-        </div>
+      {/* Toolbar compacta: contador + paginación + por-página + editar */}
+    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {/* Contador (se oculta en mobile si no hay espacio) */}
+      <div className="text-xs md:text-sm text-slate-600 order-2 sm:order-1">
+        {total > 0 ? `Mostrando ${startIdx + 1}–${endIdx} de ${total}` : 'Sin resultados'}
       </div>
+
+      {/* Paginación + Por página + Editar */}
+      <div className="order-1 sm:order-2 flex items-center gap-2 sm:gap-3 flex-wrap justify-between sm:justify-end">
+        {/* Paginación discreta */}
+        {total > 0 && (
+          <div className="flex items-center gap-1">
+            <button
+              className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
+              onClick={() => setPage(1)}
+              disabled={safePage === 1}
+              aria-label="Primera página"
+            >
+              «
+            </button>
+            <button
+              className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+            >
+              ‹
+            </button>
+
+            {pagesToShow.map((p, i) =>
+              p === '…' ? (
+                <span key={`dots-${i}`} className="px-2 text-slate-500 select-none">…</span>
+              ) : (
+                <button
+                  key={p as number}
+                  onClick={() => setPage(p as number)}
+                  className={[
+                    "h-8 min-w-8 px-3 text-sm rounded-full border transition",
+                    p === safePage
+                      ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                  ].join(' ')}
+                >
+                  {p}
+                </button>
+              )
+            )}
+
+            <button
+              className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
+              onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+              disabled={safePage === pageCount}
+            >
+              ›
+            </button>
+            <button
+              className="h-8 min-w-8 px-2 text-sm rounded-full border border-slate-300 bg-white disabled:opacity-50"
+              onClick={() => setPage(pageCount)}
+              disabled={safePage === pageCount}
+              aria-label="Última página"
+            >
+              »
+            </button>
+          </div>
+        )}
+
+        {/* Por página (pill) */}
+        <label className="text-xs text-slate-600 hidden md:flex items-center gap-2">
+          <span>Por página</span>
+          <select
+            className="border rounded-full px-3 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-300"
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+          >
+            {[10, 20, 30, 50].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+
+        {/* Editar */}
+        <button
+          onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
+          className="text-sm text-white bg-[#003366] px-4 py-2 rounded-full hover:bg-[#002244] transition"
+        >
+          {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
+        </button>
+      </div>
+    </div>
 
       <div className="flex flex-wrap gap-2 mb-3">
         {[
@@ -917,65 +978,6 @@ export default function PanelRespuestas() {
           }`}
         >🗣️ {t('respuestas.filtro_transc') || 'Transcripción'}</button>
       </div>
-      
-      {total > 0 && (
-        <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="text-xs md:text-sm text-slate-600">
-            {`Mostrando ${startIdx + 1}–${endIdx} de ${total}`}
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(1)}
-              disabled={safePage === 1}
-            >
-              «
-            </button>
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-            >
-              Anterior
-            </button>
-
-            {pagesToShow.map((p, i) =>
-              p === '…' ? (
-                <span key={`dots-${i}`} className="px-2 text-slate-500">…</span>
-              ) : (
-                <button
-                  key={p as number}
-                  onClick={() => setPage(p as number)}
-                  className={[
-                    "px-3 py-1 text-sm rounded border",
-                    p === safePage
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                  ].join(' ')}
-                >
-                  {p}
-                </button>
-              )
-            )}
-
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(p => Math.min(pageCount, p + 1))}
-              disabled={safePage === pageCount}
-            >
-              Siguiente
-            </button>
-            <button
-              className="px-2 py-1 text-sm rounded border border-slate-300 bg-white disabled:opacity-50"
-              onClick={() => setPage(pageCount)}
-              disabled={safePage === pageCount}
-            >
-              »
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex flex-col gap-4">
         {pageItems.map((r) => (
