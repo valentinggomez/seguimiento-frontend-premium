@@ -871,20 +871,12 @@ export default function PanelRespuestas() {
             filtros.transcripcion?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
           }`}
         >🗣️ {t('respuestas.filtro_transc') || 'Transcripción'}</button>
-
-        <button
-          aria-pressed={filtros.sintomas}
-          onClick={()=>setFiltros(f=>({...f,sintomas:!f.sintomas}))}
-          className={`px-3 py-1.5 rounded-full text-sm border ${
-            filtros.sintomas?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
-          }`}
-        >🧬 {t('respuestas.filtro_sintomas') || 'Síntomas'}</button>
       </div>
 
       <div className="flex flex-col gap-4">
         {Array.isArray(respuestas) && aplicarFiltros(
-            [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
-          ).map((r) => (
+          [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
+        ).map((r) => (
         (() => {
           const { nivel, color } = resolveNivelYColor(r);
           const markedAt = recent[String(r.id)];
