@@ -498,6 +498,16 @@ export default function PanelRespuestas() {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
+
+  // === Severidad y colores por defecto ===
+  const NIVEL_COLOR_DEF: Record<'verde'|'amarillo'|'rojo', string> = {
+    verde: '#10B981',
+    amarillo: '#F59E0B',
+    rojo: '#EF4444',
+  }
+  const rank = (n: 'verde'|'amarillo'|'rojo') => (n === 'rojo' ? 2 : n === 'amarillo' ? 1 : 0)
+
+
   function resolveNivelYColor(r: Respuesta): { nivel: 'verde'|'amarillo'|'rojo', color: string } {
     // --- Backend: nivel/color guardados ---
     let raw: any = r.campos_personalizados;
@@ -743,14 +753,6 @@ export default function PanelRespuestas() {
     return p(b) - p(a) // descendente
   }
 
-  // === Severidad y colores por defecto ===
-  const NIVEL_COLOR_DEF: Record<'verde'|'amarillo'|'rojo', string> = {
-    verde: '#10B981',
-    amarillo: '#F59E0B',
-    rojo: '#EF4444',
-  }
-  const rank = (n: 'verde'|'amarillo'|'rojo') => (n === 'rojo' ? 2 : n === 'amarillo' ? 1 : 0)
-
   /**
    * Evalúa reglas sobre una respuesta y devuelve:
    * { nivel, sugerencias, color, hitRules }
@@ -759,7 +761,7 @@ export default function PanelRespuestas() {
    * - color: color para pintar la tarjeta (prioriza color de la regla más severa)
    * - hitRules: reglas que se cumplieron (para debug si querés)
    */
-  const evaluarRespuesta = (r: Respuesta, reglas: ReglasClinicas) => {
+  function evaluarRespuesta(r: Respuesta, reglas: ReglasClinicas) {
     // dataset: respuestas de formulario + campos personalizados
     const campos = getCamposPersonalizados(r)
     const form   = getRespuestasFormulario(r)
