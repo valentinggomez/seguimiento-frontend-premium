@@ -111,38 +111,6 @@ function ModalConfirmacion({
   )
 }
 
-// === Campos opcionales útiles ===
-declare global {
-  interface Respuesta {
-    revisada?: boolean; // opcional, si el backend lo expone
-    telefono?: string;
-    paciente_telefono?: string;
-    email?: string;
-    paciente_email?: string;
-  }
-}
-
-// preferimos el flag del backend; si no, miramos en campos_personalizados._revisada
-const estaRevisada = (r: Respuesta) => {
-  try {
-    if (r.revisada === true) return true;
-    let cp: any = r.campos_personalizados;
-    if (typeof cp === 'string') cp = JSON.parse(cp);
-    return !!cp?._revisada;
-  } catch { return false; }
-};
-
-// best-effort para conseguir contacto
-const getContactoPreferido = (r: Respuesta) => {
-  const tel = (r as any).telefono || (r as any).paciente_telefono || (r as any).celular || (r as any).phone;
-  const mail = (r as any).email || (r as any).paciente_email || (r as any).correo;
-  return { tel: String(tel || '').trim(), mail: String(mail || '').trim() };
-};
-
-// normaliza número para WhatsApp: saca signos/espacios, mantiene +
-const normalizePhone = (raw: string) =>
-  raw.replace(/[^\d+]/g, '').replace(/^00/, '+');
-
 const ALERT_PILL = {
   verde:    { bg: '#DCFCE7', fg: '#065F46', text: 'verde'    },
   amarillo: { bg: '#FEF3C7', fg: '#92400E', text: 'amarillo' },
@@ -174,11 +142,9 @@ export default function PanelRespuestas() {
   const [recent, setRecent] = useState<Record<string, number>>({})
   const [filtros, setFiltros] = useState({
     nivel: 'all' as 'all'|'rojo'|'amarillo'|'verde',
-    last24h: false, 
+    last24h: false,
     transcripcion: false,
-    noRevisadas: false,
   });
-  const [savingById, setSavingById] = useState<Record<string, boolean>>({});
 
   const aplicarFiltros = (items: Respuesta[]) =>
     items.filter(r => {
@@ -195,8 +161,6 @@ export default function PanelRespuestas() {
       const tieneSint   = extraerSintomas(r, campos).length > 0;
 
       if (filtros.transcripcion && !tieneTransc) return false;
-
-      if (filtros.noRevisadas && estaRevisada(r)) return false;
 
       return true;
     });
@@ -847,62 +811,6 @@ export default function PanelRespuestas() {
     const { nivel, sugerencias } = evaluarRespuesta(r, reglasClinicas)
     return { nivel, sugerencias }
   }
-  
-  const toggleRevisada = async (r: Respuesta) => {
-    const id = String(r.id);
-    if (savingById[id]) return;
-    setSavingById(s => ({ ...s, [id]: true }));
-
-    // 🔄 Optimista: marcamos en UI primero
-    setRespuestas(prev =>
-      prev.map(x => x.id === r.id ? ({ ...x, revisada: !estaRevisada(x) }) : x)
-    );
-
-    // 🚀 PATCH best-effort (ajustá endpoint y payload a tu backend)
-    try {
-      const body = { revisada: !estaRevisada(r) };
-      const res = await fetchConToken(`/api/respuestas/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      // si tu back no tiene PATCH, guardá en campos_personalizados:
-      if (!res.ok) {
-        // fallback: intentar guardar “_revisada” en campos_personalizados
-        const res2 = await fetchConToken(`/api/respuestas/${encodeURIComponent(id)}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ campos_personalizados: { _revisada: body.revisada } }),
-        });
-        if (!res2.ok) throw new Error('PATCH no disponible');
-      }
-    } catch (e) {
-      // ⛔ revertir optimismo si falló
-      setRespuestas(prev =>
-        prev.map(x => x.id === r.id ? ({ ...x, revisada: estaRevisada(r) }) : x)
-      );
-      alert('No se pudo actualizar el estado de revisión.');
-    } finally {
-      setSavingById(s => {
-        const c = { ...s }; delete c[id]; return c;
-      });
-    }
-  };
-
-  const contactar = (r: Respuesta) => {
-    const { tel, mail } = getContactoPreferido(r);
-    if (tel) {
-      const n = normalizePhone(tel);
-      window.open(`https://wa.me/${encodeURIComponent(n)}`, '_blank');
-      return;
-    }
-    if (mail) {
-      window.location.href = `mailto:${mail}`;
-      return;
-    }
-    alert('No encontramos un teléfono o email para contactar.');
-  };
 
   return (
     <div className="p-6">
@@ -957,19 +865,8 @@ export default function PanelRespuestas() {
             filtros.transcripcion?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
           }`}
         >🗣️ {t('respuestas.filtro_transc') || 'Transcripción'}</button>
-      
+      </div>
 
-      <button
-        aria-pressed={filtros.noRevisadas}
-        onClick={()=>setFiltros(f=>({...f,noRevisadas:!f.noRevisadas}))}
-        className={`px-3 py-1.5 rounded-full text-sm border ${
-          filtros.noRevisadas?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
-        }`}
-      >
-        ✅ {`Pendientes`}
-      </button>
-    </div>
-    
       <div className="flex flex-col gap-4">
         {Array.isArray(respuestas) && aplicarFiltros(
           [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
@@ -995,13 +892,11 @@ export default function PanelRespuestas() {
                 boxShadow: isNew
                   ? `0 0 0 3px ${color}22, 0 10px 18px ${color}26`
                   : undefined,
-                  opacity: estaRevisada(r) ? 0.85 : 1,
-                  filter: estaRevisada(r) ? 'grayscale(6%)' : 'none',
               }}
               onClick={() => { if (!modoEdicion) toggleExpand(String(r.id)) }}
             >
-             <div className="flex justify-between items-center">
-              <div className="min-w-0">
+              <div className="flex justify-between items-center">
+                <div>
                 {modoEdicion && (
                   <input
                     type="checkbox"
@@ -1018,72 +913,41 @@ export default function PanelRespuestas() {
                     }}
                   />
                 )}
+                
+                {(() => {
+                  return (
+                    <h2 className="font-medium text-slate-800 flex items-center gap-2">
+                      📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
+                      <AlertBadge nivel={nivel} />
+                      {isNew && ( 
+                        <span
+                          aria-label="nuevo"
+                          className="inline-block h-2.5 w-2.5 rounded-full animate-pulse"
+                          style={{ backgroundColor: color, boxShadow: `0 0 0 3px ${color}33` }}
+                        />
+                      )}
+                    </h2>
+                  );
+                })()}
+                  
 
-                <h2 className="font-medium text-slate-800 flex items-center gap-2">
-                  {estaRevisada(r) ? '✅' : '📄'} {t('respuestas.seguimiento_de')} {r.paciente_nombre}
-                  <AlertBadge nivel={nivel} />
-                  {isNew && (
-                    <span
-                      aria-label="nuevo"
-                      className="inline-block h-2.5 w-2.5 rounded-full animate-pulse"
-                      style={{ backgroundColor: color, boxShadow: `0 0 0 3px ${color}33` }}
-                    />
-                  )}
-                </h2>
+                  <p className="text-xs md:text-[13px] text-slate-600">
+                    {r.tipo_cirugia}
+                    {r.anestesia ? ` • Anestesia: ${r.anestesia}` : ''}  {/* 👈 nuevo */}
+                    {' '}• {r.edad} {t('respuestas.años')}<br />
+                    {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
+                  </p>
 
-                <p className="text-xs md:text-[13px] text-slate-600">
-                  {r.tipo_cirugia}
-                  {r.anestesia ? ` • Anestesia: ${r.anestesia}` : ''}
-                  {' '}• {r.edad} {t('respuestas.años')}<br />
-                  {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
-                </p>
-
-                <div className="text-xs text-slate-500">
-                  {new Date(r.creado_en).toLocaleString('es-AR', {
-                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                  })}
-                </div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(r.creado_en).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
               </div>
-
-              {/* Acciones rápidas */}
-              {!modoEdicion && (
-                <div className="flex items-center gap-2 ml-3 shrink-0">
-                  {/* Ver detalle (expandir/colapsar) */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleExpand(String(r.id)); }}
-                    title={expandedId === String(r.id) ? 'Ocultar detalle' : 'Ver detalle'}
-                    aria-label={expandedId === String(r.id) ? 'Ocultar detalle' : 'Ver detalle'}
-                    className="rounded-lg border border-slate-200 px-2 py-1 text-sm hover:bg-slate-50"
-                  >
-                    🔎
-                  </button>
-
-                  {/* Marcar como revisada */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleRevisada(r); }}
-                    disabled={!!savingById[String(r.id)]}
-                    title={estaRevisada(r) ? 'Marcar como NO revisada' : 'Marcar como revisada'}
-                    aria-label={estaRevisada(r) ? 'Marcar como no revisada' : 'Marcar como revisada'}
-                    className={`rounded-lg border px-2 py-1 text-sm ${
-                      estaRevisada(r)
-                        ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
-                        : 'border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    {savingById[String(r.id)] ? '⏳' : '✔️'}
-                  </button>
-
-                  {/* Contactar */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); contactar(r); }}
-                    title="Contactar"
-                    aria-label="Contactar"
-                    className="rounded-lg border border-slate-200 px-2 py-1 text-sm hover:bg-slate-50"
-                  >
-                    ✉️
-                  </button>
-                </div>
-              )}
             </div>
 
             {expandedId === String(r.id) && (
