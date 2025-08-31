@@ -786,7 +786,7 @@ export default function PanelRespuestas() {
       </h1>
       <div className="flex justify-between items-center mb-4">
         <div className="text-sm text-slate-600">
-          {Array.isArray(respuestas) ? `${respuestas.length} ${t('respuestas.registros') || 'registros'}` : ''}
+          {t('respuestas.conteo', { count: Array.isArray(respuestas) ? respuestas.length : 0 })}
         </div>
         <button
           onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
