@@ -688,7 +688,7 @@ export default function AnalyticsPage() {
             Exportar CSV
           </button>
         </div>
-        <div className="overflow-x-auto rounded-xl border">
+        <div className="overflow-x-auto rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left bg-slate-50/80">
@@ -777,8 +777,12 @@ function Preset({ children, onClick, active=false, disabled=false }: any) {
     </button>
   )
 }
-function Th({ children }: any) { return <th className="py-2 pr-3">{children}</th> }
-function Td({ children }: any) { return <td className="py-2 pr-3">{children}</td> }
+function Th({ children }: any) {
+  return <th className="py-3 px-3 first:pl-4 last:pr-4">{children}</th>
+}
+function Td({ children }: any) {
+  return <td className="py-3 px-3 first:pl-4 last:pr-4 align-middle">{children}</td>
+}
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-slate-200 rounded ${className}`} />
 }
