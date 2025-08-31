@@ -138,6 +138,43 @@ function CleanTooltip({ active, payload, label }: any) {
   )
 }
 
+// —— helpers para nombre de archivo ——
+// quita acentos/espacios y deja solo [a-z0-9-]
+function slug(s?: string) {
+  return (s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function dtForFile(iso: string) {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}${m}${day}_${hh}${mm}`; // p.ej. 20250830_2012
+}
+
+function buildCsvName({
+  clinicaName, metric, groupBy, groupValue, alerta, from, to,
+}: {
+  clinicaName?: string, metric?: string, groupBy?: string, groupValue?: string,
+  alerta?: string, from: string, to: string
+}) {
+  const parts = [
+    'detalle',
+    slug(clinicaName) || 'clinica',
+    slug(metric) || 'metrica',
+    slug(groupBy) + (groupValue ? `-${slug(groupValue)}` : ''),
+    alerta ? `alerta-${slug(alerta)}` : null,
+    `${dtForFile(from)}--${dtForFile(to)}`
+  ].filter(Boolean);
+  return parts.join('_') + '.csv';
+}
+
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -679,10 +716,18 @@ export default function AnalyticsPage() {
       <Card title={`Detalle (${total})`} loading={pendingTable}>
         <div className="flex justify-end mb-2">
           <button
-            onClick={() => download(
-              `detalle_${new Date(from).toISOString()}_${new Date(to).toISOString()}.csv`,
-              toCSV(rows)
-            )}
+            onClick={() => {
+              const filename = buildCsvName({
+                clinicaName: (clinica as any)?.nombre || clinica?.id,
+                metric,
+                groupBy,
+                groupValue: selectedGroup || undefined,
+                alerta: alerta || undefined,
+                from,
+                to,
+              });
+              download(filename, toCSV(rows));
+            }}
             className="text-xs px-3 py-1 rounded border hover:bg-slate-50"
           >
             Exportar CSV
