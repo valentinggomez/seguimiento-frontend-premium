@@ -92,8 +92,13 @@ export default function AnalyticsPage() {
   const { clinica } = useClinica()
 
   // filtros visibles
-  const [from, setFrom]   = useState<string>(new Date(Date.now() - 7 * 86400_000).toISOString())
-  const [to, setTo]       = useState<string>(new Date().toISOString())
+  const [from, setFrom] = useState<string>(new Date(Date.now() - 7 * 86400_000).toISOString())
+  const [to, setTo] = useState<string>(new Date().toISOString())
+  const isPreset = (ms: number) => {
+    const now = Date.now();
+    const f = new Date(from).getTime(), t = new Date(to).getTime();
+    return (t <= now + 1500) && (Math.abs((now - ms) - f) < 1500); // tolerancia 1.5s
+  };
   const [alerta, setAlerta] = useState<string>('')
 
   // NUEVO: selector de métrica y agrupación
@@ -484,9 +489,24 @@ export default function AnalyticsPage() {
         </select>
 
         <div className="col-span-7 flex items-center gap-2">
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>Últimas 24h</Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Última semana</Preset>
-          <Preset onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>Último mes</Preset>
+          <Preset
+            active={isPreset(24 * 3600_000)}
+            disabled={refreshState === 'loading'}
+            onClick={() => { setFrom(new Date(Date.now() - 24 * 3600_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Últimas 24h
+          </Preset>
+          <Preset
+            active={isPreset(7 * 86400_000)}
+            disabled={refreshState === 'loading'}
+            onClick={() => { setFrom(new Date(Date.now() - 7 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Última semana
+          </Preset>
+          <Preset
+            active={isPreset(30 * 86400_000)}
+            disabled={refreshState === 'loading'}
+            onClick={() => { setFrom(new Date(Date.now() - 30 * 86400_000).toISOString()); setTo(new Date().toISOString()) }}>
+            Último mes
+          </Preset>
         </div>
       </div>
 
@@ -690,8 +710,22 @@ function Card({ title, children, loading }: any) {
     </div>
   )
 }
-function Preset({ children, onClick }: any) {
-  return <button onClick={onClick} className="px-3 py-2 rounded-xl border shadow-sm bg-white hover:bg-slate-50">{children}</button>
+function Preset({ children, onClick, active=false, disabled=false }: any) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "px-3 py-2 rounded-xl border shadow-sm",
+        "transition-colors",
+        disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-slate-50",
+        active ? "bg-[#003466] text-white border-[#003466]" : "bg-white"
+      ].join(" ")}
+      aria-pressed={active}
+    >
+      {children}
+    </button>
+  )
 }
 function Th({ children }: any) { return <th className="py-2 pr-3">{children}</th> }
 function Td({ children }: any) { return <td className="py-2 pr-3">{children}</td> }
