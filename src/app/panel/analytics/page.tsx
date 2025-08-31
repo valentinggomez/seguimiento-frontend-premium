@@ -117,6 +117,8 @@ export default function AnalyticsPage() {
   // Auto-refresh y sello de última actualización
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false)
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now())
+  const [refreshState, setRefreshState] = useState<'idle'|'loading'|'done'>('idle')
+
   const api = process.env.NEXT_PUBLIC_API_URL || ''
   const locale = locales[language] ?? es
   const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
@@ -178,8 +180,17 @@ export default function AnalyticsPage() {
   }
 
   async function refreshAll() {
-    await Promise.all([loadOverview(), loadTable()])
-    setLastUpdated(Date.now())
+    try {
+      setRefreshState('loading')
+      await Promise.all([loadOverview(), loadTable()])
+      setLastUpdated(Date.now())
+      setRefreshState('done')
+      // volver a "idle" luego de un ratito
+      setTimeout(() => setRefreshState('idle'), 1500)
+    } catch {
+      // si algo falla, igual salimos de loading
+      setRefreshState('idle')
+    }
   }
 
   // first load + deps
@@ -387,10 +398,27 @@ export default function AnalyticsPage() {
 
           <button
             onClick={refreshAll}
-            className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
-            disabled={pending || pendingTable}
+            className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52] disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+            disabled={refreshState === 'loading'}
+            aria-live="polite"
+            title={refreshState === 'done' ? `Actualizado hace ${secsSince}s` : undefined}
           >
-            {pending || pendingTable ? 'Actualizando…' : (t('respuestas.actualizar') || 'Actualizar')}
+            {refreshState === 'loading' && (
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" opacity=".25"/>
+                <path d="M22 12a10 10 0 0 1-10 10" fill="currentColor"/>
+              </svg>
+            )}
+            {refreshState === 'done' && (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {refreshState === 'loading'
+              ? 'Actualizando…'
+              : refreshState === 'done'
+                ? 'Actualizado'
+                : (t('respuestas.actualizar') || 'Actualizar')}
           </button>
         </div>
       </div>
