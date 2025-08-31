@@ -141,6 +141,35 @@ export default function PanelRespuestas() {
   const [reglasClinicas, setReglasClinicas] = useState<ReglasClinicas>({ condiciones: [] })
   const [labelMap, setLabelMap] = useState<Record<string,string>>({});
   const [recent, setRecent] = useState<Record<string, number>>({})
+  const [filtros, setFiltros] = useState({
+    nivel: 'all' as 'all'|'rojo'|'amarillo'|'verde',
+    last24h: false,
+    ia: false,
+    transcripcion: false,
+    sintomas: false,
+  });
+
+  const aplicarFiltros = (items: Respuesta[]) =>
+    items.filter(r => {
+      const { nivel } = resolveNivelYColor(r);
+      if (filtros.nivel !== 'all' && nivel !== filtros.nivel) return false;
+
+      if (filtros.last24h) {
+        const h24 = Date.now() - 24*60*60*1000;
+        if (new Date(r.creado_en).getTime() < h24) return false;
+      }
+
+      if (filtros.ia && !(r.score_ia != null || r.sugerencia_ia)) return false;
+
+      const campos = getCamposPersonalizados(r);
+      const tieneTransc = !!extraerTranscripcion(r, campos);
+      const tieneSint   = extraerSintomas(r, campos).length > 0;
+
+      if (filtros.transcripcion && !tieneTransc) return false;
+      if (filtros.sintomas && !tieneSint) return false;
+
+      return true;
+    });
 
   const fetchRespuestas = async () => {
     try {
@@ -806,10 +835,56 @@ export default function PanelRespuestas() {
         </button>
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-3">
+        {[
+          {k:'all',     label:t('respuestas.filtro_todos') || 'Todos'},
+          {k:'rojo',    label:t('respuestas.filtro_rojo') || 'Rojos'},
+          {k:'amarillo',label:t('respuestas.filtro_amarillo') || 'Amarillos'},
+          {k:'verde',   label:t('respuestas.filtro_verde') || 'Verdes'},
+        ].map(opt=>(
+          <button
+            key={opt.k}
+            aria-pressed={filtros.nivel===opt.k}
+            onClick={()=>setFiltros(f=>({...f,nivel: opt.k as any}))}
+            className={`px-3 py-1.5 rounded-full text-sm border ${
+              filtros.nivel===opt.k
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-white text-slate-700 border-slate-300'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+
+        <button
+          aria-pressed={filtros.last24h}
+          onClick={()=>setFiltros(f=>({...f,last24h:!f.last24h}))}
+          className={`px-3 py-1.5 rounded-full text-sm border ${
+            filtros.last24h?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
+          }`}
+        >🕓 {t('respuestas.filtro_24h') || 'Últimas 24 h'}</button>
+
+        <button
+          aria-pressed={filtros.transcripcion}
+          onClick={()=>setFiltros(f=>({...f,transcripcion:!f.transcripcion}))}
+          className={`px-3 py-1.5 rounded-full text-sm border ${
+            filtros.transcripcion?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
+          }`}
+        >🗣️ {t('respuestas.filtro_transc') || 'Transcripción'}</button>
+
+        <button
+          aria-pressed={filtros.sintomas}
+          onClick={()=>setFiltros(f=>({...f,sintomas:!f.sintomas}))}
+          className={`px-3 py-1.5 rounded-full text-sm border ${
+            filtros.sintomas?'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-300'
+          }`}
+        >🧬 {t('respuestas.filtro_sintomas') || 'Síntomas'}</button>
+      </div>
+
       <div className="flex flex-col gap-4">
-        {Array.isArray(respuestas) && [...respuestas].sort(
-          (a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en)
-        ).map((r) => (
+        {Array.isArray(respuestas) && aplicarFiltros(
+            [...respuestas].sort((a:any,b:any)=> +new Date(b.creado_en) - +new Date(a.creado_en))
+          ).map((r) => (
         (() => {
           const { nivel, color } = resolveNivelYColor(r);
           const markedAt = recent[String(r.id)];

@@ -289,7 +289,15 @@
       "transcripcion_voz": "Transcripción por voz",
       "sintomas_detectados_ia": "Síntomas detectados por IA",
       "actualizar": "Actualizar",
-      "registros": "respuestas"
+      "registros": "respuestas",
+      "filtro_todos":"Todos",
+      "filtro_rojo":"Rojos",
+      "filtro_amarillo":"Amarillos",
+      "filtro_verde":"Verdes",
+      "filtro_24h":"Últimas 24 h",
+      "filtro_ia":"Con IA",
+      "filtro_transc":"Transcripción",
+      "filtro_sintomas":"Síntomas"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
@@ -600,7 +608,15 @@
       "transcripcion_voz": "Voice transcription",
       "sintomas_detectados_ia": "Symptoms detected by AI",
       "actualizar": "Update",
-      "registros": "responses"
+      "registros": "responses",
+      "filtro_todos":"All",
+      "filtro_rojo":"Red",
+      "filtro_amarillo":"Yellow",
+      "filtro_verde":"Green",
+      "filtro_24h":"Last 24 h",
+      "filtro_ia":"With AI",
+      "filtro_transc":"Transcription",
+      "filtro_sintomas":"Symptoms"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
