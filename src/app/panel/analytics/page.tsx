@@ -691,7 +691,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left border-b">
+              <tr className="text-left bg-slate-50/80">
                 <Th>Fecha</Th><Th>Cirugía</Th><Th>Alerta</Th><Th>Dolor</Th><Th>Satisf.</Th>
               </tr>
             </thead>
@@ -785,4 +785,3 @@ function Skeleton({ className }: { className?: string }) {
 function Empty() {
   return <div className="h-[260px] flex items-center justify-center text-slate-500">No hay datos para estos filtros</div>
 }
-
