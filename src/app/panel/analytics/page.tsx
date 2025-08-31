@@ -86,6 +86,46 @@ const normNivel = (v: any): 'rojo' | 'amarillo' | 'verde' | null => {
   return s === 'rojo' || s === 'amarillo' || s === 'verde' ? (s as any) : null
 }
 
+function CleanTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+
+  // Decide formato según la serie
+  const formatValue = (p: any) => {
+    const key = p.dataKey as string
+    if (!Number.isFinite(p.value)) return '—'
+    // Series de alertas (cuentas) → enteros
+    if (key?.startsWith('a_')) return Math.round(p.value)
+    // Promedios → 1 decimal
+    return Number(p.value).toFixed(1)
+  }
+
+  return (
+    <div className="rounded-lg bg-white shadow-md border px-3 py-2 text-sm text-slate-700">
+      {/* Título del tooltip: fecha o grupo según el gráfico */}
+      <div className="font-medium text-slate-900 mb-1">{label}</div>
+
+      {/* Filas por cada serie */}
+      {payload.map((p: any, i: number) => (
+        <div key={i} className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: p.color }}
+            />
+            {/* Usa el name seteado en las series (ya lo definiste con name="...") */}
+            <span className="text-slate-600">{p.name}</span>
+          </span>
+
+          <span className="font-semibold text-slate-900 tabular-nums">
+            {formatValue(p)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -570,7 +610,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="grupo" tick={{ fontSize: 12 }} interval={0} height={50} />
               <YAxis />
-              <Tooltip contentStyle={{ borderRadius: 12 }} />
+              <Tooltip content={<CleanTooltip />} />
               <Legend />
               <Bar dataKey="val_prom" name={`${metricLabel.toLowerCase()} prom.`} radius={[6, 6, 0, 0]}>
                 {s.porGrupo.map((row, i) => (
@@ -611,7 +651,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="dayLabel" />
               <YAxis />
-              <Tooltip contentStyle={{ borderRadius: 12 }} />
+              <Tooltip content={<CleanTooltip />} />
               <Legend />
               <Area type="monotone" dataKey="a_verde"    name="Alerta verde"    fill="url(#gVerde)"    stroke={C.verde} stackId="1" />
               <Area type="monotone" dataKey="a_amarillo" name="Alerta amarillo" fill="url(#gAmarillo)" stroke={C.amarillo} stackId="1" />
