@@ -785,14 +785,11 @@ export default function PanelRespuestas() {
         {t('respuestas.titulo')}
       </h1>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-[#003366]">
-          {t('respuestas.titulo')}
-        </h2>
+        <div className="text-sm text-slate-600">
+          {Array.isArray(respuestas) ? `${respuestas.length} ${t('respuestas.registros') || 'registros'}` : ''}
+        </div>
         <button
-          onClick={() => {
-            setModoEdicion(!modoEdicion)
-            setSeleccionadas([])
-          }}
+          onClick={() => { setModoEdicion(!modoEdicion); setSeleccionadas([]); }}
           className="text-sm text-white bg-[#003366] px-4 py-2 rounded hover:bg-[#002244] transition"
         >
           {modoEdicion ? t('respuestas.cancelar_edicion') : `🗑️ ${t('respuestas.editar_respuestas')}`}
