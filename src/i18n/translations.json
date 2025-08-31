@@ -297,7 +297,16 @@
       "filtro_24h":"Últimas 24 h",
       "filtro_ia":"Con IA",
       "filtro_transc":"Transcripción",
-      "filtro_sintomas":"Síntomas"
+      "filtro_sintomas":"Síntomas",
+      "contador": "Mostrando {{from}}–{{to}} de {{total}}",
+      "sin_resultados": "Sin resultados",
+      "pag_aria_first": "Primera página",
+      "pag_aria_last": "Última página",
+      "por_pagina": "Por página",
+      "label_anestesia": "Anestesia",
+      "sin_campos": "Sin campos para mostrar.",
+      "sugerencias": "Sugerencias",
+      "badge_reglas_clinica": "(reglas clínica)"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
@@ -616,7 +625,16 @@
       "filtro_24h":"Last 24 h",
       "filtro_ia":"With AI",
       "filtro_transc":"Transcription",
-      "filtro_sintomas":"Symptoms"
+      "filtro_sintomas":"Symptoms",
+      "contador": "Showing {{from}}–{{to}} of {{total}}",
+      "sin_resultados": "No results",
+      "pag_aria_first": "First page",
+      "pag_aria_last": "Last page",
+      "por_pagina": "Per page",
+      "label_anestesia": "Anesthesia",
+      "sin_campos": "No fields to display.",
+      "sugerencias": "Suggestions",
+      "badge_reglas_clinica": "(clinic rules)"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
