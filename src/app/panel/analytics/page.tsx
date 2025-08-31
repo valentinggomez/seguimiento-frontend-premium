@@ -175,6 +175,35 @@ function buildCsvName({
   return parts.join('_') + '.csv';
 }
 
+// --- Segmentación rápida ---
+type Sexo = 'F' | 'M' | 'O'
+type EdadRange = '0-17' | '18-39' | '40-64' | '65+'  // podés ajustar los buckets
+
+const edadToRange = (edad?: number | null): EdadRange | null => {
+  if (edad == null || isNaN(edad as any)) return null
+  if (edad < 18) return '0-17'
+  if (edad < 40) return '18-39'
+  if (edad < 65) return '40-64'
+  return '65+'
+}
+
+function Chip({ active, children, onClick }: { active?: boolean; children: any; onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "text-xs px-2.5 py-1 rounded-full border transition-colors",
+        active
+          ? "bg-[#003466] text-white border-[#003466]"
+          : "bg-white hover:bg-slate-50"
+      ].join(" ")}
+      aria-pressed={!!active}
+    >
+      {children}
+    </button>
+  )
+}
+
 /* ===================== Página ===================== */
 export default function AnalyticsPage() {
   const { t, language } = useTranslation()
@@ -213,6 +242,11 @@ export default function AnalyticsPage() {
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now())
   const [refreshState, setRefreshState] = useState<'idle'|'loading'|'done'>('idle')
 
+  // Segmentación rápida (chips)
+  const [tiposSel, setTiposSel] = useState<string[]>([])    // ej. ["Colecistectomía", "Bypass"]
+  const [sexosSel, setSexosSel] = useState<Sexo[]>([])      // ej. ["F","M"]
+  const [edadesSel, setEdadesSel] = useState<EdadRange[]>([]) // ej. ["18-39","65+"]
+
   const api = process.env.NEXT_PUBLIC_API_URL || ''
   const locale = locales[language] ?? es
   const hostHeader = typeof window !== 'undefined' ? window.location.hostname.split(':')[0] : 'localhost'
@@ -225,8 +259,11 @@ export default function AnalyticsPage() {
       alerta: alerta || undefined,   // ← único parámetro
       metric, groupBy,
       groupValue: selectedGroup || undefined,
+      tipo_cirugia: tiposSel.join(',') || undefined,
+      sexo: sexosSel.join(',') || undefined,
+      edad_range: edadesSel.join(',') || undefined,
     }),
-    [clinicaId, from, to, alerta, metric, groupBy, selectedGroup]
+    [clinicaId, from, to, alerta, metric, groupBy, selectedGroup, tiposSel, sexosSel, edadesSel]
   )
 
   // load overview
@@ -367,11 +404,19 @@ export default function AnalyticsPage() {
     const m = g('metric') as any; if (m) setMetric(m)
     const gb = g('groupBy') as any; if (gb) setGroupBy(gb)
     const gv = g('groupValue'); if (gv) setSelectedGroup(gv)
+    const tc = g('tipo_cirugia'); if (tc) setTiposSel(tc.split(',').filter(Boolean))
+    const sx = g('sexo'); if (sx) setSexosSel(sx.split(',').filter(Boolean) as Sexo[])
+    const er = g('edad_range'); if (er) setEdadesSel(er.split(',').filter(Boolean) as EdadRange[])  
   }, [])
 
   // Sincronizar filtros hacia la URL
   useEffect(() => {
-    const params = qs({ from, to, alerta, metric, groupBy, groupValue: selectedGroup || undefined })
+    const params = qs({
+      from, to, alerta, metric, groupBy, groupValue: selectedGroup || undefined,
+      tipo_cirugia: tiposSel.join(',') || undefined,
+      sexo: sexosSel.join(',') || undefined,
+      edad_range: edadesSel.join(',') || undefined,
+    })
     const url = `${location.pathname}?${params}`
     window.history.replaceState(null, '', url)
   }, [from, to, alerta, metric, groupBy, selectedGroup])
@@ -597,6 +642,68 @@ export default function AnalyticsPage() {
             Último mes
           </Preset>
         </div>
+      </div>
+
+      {/* SEGMENTACIÓN RÁPIDA */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Tipo de cirugía (si tenés catálogo en meta, usalo; si no, lista corta) */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">Tipo de cirugía:</span>
+          {(['Colecistectomía','Bypass','Mastectomía','Otra'] as string[]).map(tipo => (
+            <Chip
+              key={tipo}
+              active={tiposSel.includes(tipo)}
+              onClick={() =>
+                setTiposSel(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo])
+              }
+            >
+              {tipo}
+            </Chip>
+          ))}
+        </div>
+
+        {/* Sexo */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">Sexo:</span>
+          {(['F','M','O'] as Sexo[]).map(sx => (
+            <Chip
+              key={sx}
+              active={sexosSel.includes(sx)}
+              onClick={() =>
+                setSexosSel(prev => prev.includes(sx) ? prev.filter(s => s !== sx) : [...prev, sx])
+              }
+            >
+              {sx}
+            </Chip>
+          ))}
+        </div>
+
+        {/* Rango de edad */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">Edad:</span>
+          {(['0-17','18-39','40-64','65+'] as EdadRange[]).map(er => (
+            <Chip
+              key={er}
+              active={edadesSel.includes(er)}
+              onClick={() =>
+                setEdadesSel(prev => prev.includes(er) ? prev.filter(e => e !== er) : [...prev, er])
+              }
+            >
+              {er}
+            </Chip>
+          ))}
+        </div>
+
+        {/* Botón limpiar */}
+        {(tiposSel.length || sexosSel.length || edadesSel.length) ? (
+          <button
+            onClick={() => { setTiposSel([]); setSexosSel([]); setEdadesSel([]) }}
+            className="text-xs px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200"
+            title="Quitar segmentación"
+          >
+            Limpiar filtros ✕
+          </button>
+        ) : null}
       </div>
 
       {/* KPIs */}
