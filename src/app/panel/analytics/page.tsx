@@ -53,6 +53,18 @@ const PALETTE = [
   '#F97316', '#0EA5E9', '#84CC16', '#F43F5E'
 ]
 
+// === Colores semánticos de alertas ===
+type Nivel = 'rojo' | 'amarillo' | 'verde'
+
+const ALERT = {
+  verde:    { hex: '#10B981', bg: '#DCFCE7', fg: '#065F46', name: 'Alerta verde' },
+  amarillo: { hex: '#F59E0B', bg: '#FEF3C7', fg: '#92400E', name: 'Alerta amarillo' },
+  rojo:     { hex: '#EF4444', bg: '#FEE2E2', fg: '#B91C1C', name: 'Alerta rojo' },
+} as const
+
+const alertStyle = (nivel?: Nivel | null) =>
+  nivel ? ALERT[nivel] : { hex: '#9CA3AF', bg: '#E5E7EB', fg: '#374151', name: '—' }
+
 /* Helpers */
 function qs(params: Record<string, any>) {
   const u = new URLSearchParams()
@@ -636,16 +648,16 @@ export default function AnalyticsPage() {
             <AreaChart data={s.porDia.map(d => ({ ...d, dayLabel: fmtDay(d.day) }))}>
               <defs>
                 <linearGradient id="gVerde" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.verde} stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor={C.verde} stopOpacity={0.05}/>
+                  <stop offset="5%"  stopColor={ALERT.verde.hex}    stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={ALERT.verde.hex}    stopOpacity={0.05}/>
                 </linearGradient>
                 <linearGradient id="gAmarillo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.amarillo} stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor={C.amarillo} stopOpacity={0.05}/>
+                  <stop offset="5%"  stopColor={ALERT.amarillo.hex} stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={ALERT.amarillo.hex} stopOpacity={0.05}/>
                 </linearGradient>
                 <linearGradient id="gRojo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.rojo} stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor={C.rojo} stopOpacity={0.05}/>
+                  <stop offset="5%"  stopColor={ALERT.rojo.hex}     stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={ALERT.rojo.hex}     stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
@@ -653,9 +665,9 @@ export default function AnalyticsPage() {
               <YAxis />
               <Tooltip content={<CleanTooltip />} />
               <Legend />
-              <Area type="monotone" dataKey="a_verde"    name="Alerta verde"    fill="url(#gVerde)"    stroke={C.verde} stackId="1" />
-              <Area type="monotone" dataKey="a_amarillo" name="Alerta amarillo" fill="url(#gAmarillo)" stroke={C.amarillo} stackId="1" />
-              <Area type="monotone" dataKey="a_rojo"     name="Alerta rojo"     fill="url(#gRojo)"     stroke={C.rojo} stackId="1" />
+              <Area type="monotone" dataKey="a_verde"    name={ALERT.verde.name}    fill="url(#gVerde)"    stroke={ALERT.verde.hex}    stackId="1" />
+              <Area type="monotone" dataKey="a_amarillo" name={ALERT.amarillo.name} fill="url(#gAmarillo)" stroke={ALERT.amarillo.hex} stackId="1" />
+              <Area type="monotone" dataKey="a_rojo"     name={ALERT.rojo.name}     fill="url(#gRojo)"     stroke={ALERT.rojo.hex}     stackId="1" />
               {/* línea de la métrica elegida */}
               <Area type="monotone" dataKey="val_prom"   name={`${metricLabel.toLowerCase()} prom.`} stroke={C.brand} fillOpacity={0} />
             </AreaChart>
@@ -688,25 +700,15 @@ export default function AnalyticsPage() {
                 <tr key={r.id} className="border-b last:border-0">
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
-                  <Td>
+                 <Td>
                     {(() => {
-                      const nivel = normNivel(r.nivel_alerta)
-                      const styles =
-                        nivel === 'rojo'
-                          ? { bg: '#FEE2E2', fg: '#B91C1C', label: 'rojo' }
-                          : nivel === 'amarillo'
-                            ? { bg: '#FEF3C7', fg: '#92400E', label: 'amarillo' }
-                            : nivel === 'verde'
-                              ? { bg: '#DCFCE7', fg: '#065F46', label: 'verde' }
-                              // ⬇️ sin nivel → badge gris (no lo pintes de verde)
-                              : { bg: '#E5E7EB', fg: '#374151', label: '—' }
-
+                      const st = alertStyle(normNivel(r.nivel_alerta))
                       return (
                         <span
                           className="px-2 py-0.5 rounded-full text-xs"
-                          style={{ background: styles.bg, color: styles.fg }}
+                          style={{ background: st.bg, color: st.fg }}
                         >
-                          {styles.label}
+                          {st.name === '—' ? '—' : st.name.split(' ')[1] /* muestra 'verde/amarillo/rojo' */}
                         </span>
                       )
                     })()}
