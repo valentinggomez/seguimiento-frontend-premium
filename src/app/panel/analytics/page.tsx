@@ -691,7 +691,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left bg-slate-50/80">
+              <tr className="text-left border-b">
                 <Th>Fecha</Th><Th>Cirugía</Th><Th>Alerta</Th><Th>Dolor</Th><Th>Satisf.</Th>
               </tr>
             </thead>
@@ -704,18 +704,23 @@ export default function AnalyticsPage() {
                   <Td>{new Date(r.creado_en).toLocaleString()}</Td>
                   <Td>{r.tipo_cirugia ?? '-'}</Td>
                  <Td>
-                    {(() => {
-                      const st = alertStyle(normNivel(r.nivel_alerta))
-                      return (
-                        <span
-                          className="px-2 py-0.5 rounded-full text-xs"
-                          style={{ background: st.bg, color: st.fg }}
-                        >
-                          {st.name === '—' ? '—' : st.name.split(' ')[1] /* muestra 'verde/amarillo/rojo' */}
-                        </span>
-                      )
-                    })()}
-                  </Td>
+                  {(() => {
+                    const st = alertStyle(normNivel(r.nivel_alerta))
+                    return (
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs ring-1 ring-inset"
+                        style={{
+                          background: st.bg,
+                          color: st.fg,
+                          // anillo del color principal con algo de transparencia
+                          boxShadow: `inset 0 0 0 1px ${st.hex}66`
+                        }}
+                      >
+                        {st.name === '—' ? '—' : st.name.split(' ')[1]}
+                      </span>
+                    )
+                  })()}
+                </Td>
                   <Td>{r.dolor ?? '-'}</Td>
                   <Td>{r.satisfaccion ?? '-'}</Td>
                 </tr>
@@ -780,3 +785,4 @@ function Skeleton({ className }: { className?: string }) {
 function Empty() {
   return <div className="h-[260px] flex items-center justify-center text-slate-500">No hay datos para estos filtros</div>
 }
+
