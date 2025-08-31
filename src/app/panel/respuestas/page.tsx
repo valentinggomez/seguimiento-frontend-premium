@@ -781,11 +781,11 @@ export default function PanelRespuestas() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-[#003366]">
+      <h1 className="text-xl md:text-2xl font-semibold mb-4 text-[#003366]">
         {t('respuestas.titulo')}
       </h1>
-      <div className="flex justify-between items-center mb-4">
-        <div className="text-sm text-slate-600">
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-xs md:text-sm text-slate-600">
           {Array.isArray(respuestas) ? `${respuestas.length} ${t('respuestas.registros') || 'registros'}` : ''}
         </div>
         <button
@@ -807,7 +807,7 @@ export default function PanelRespuestas() {
               key={String(r.id)}
               layout
               className={[
-                "rounded-xl border p-4 bg-white",
+                "rounded-xl border p-3 md:p-4 bg-white",
                 "border-slate-200",
                 "transition-shadow",
                 modoEdicion ? "" : "cursor-pointer hover:shadow-md shadow-sm"
@@ -840,7 +840,7 @@ export default function PanelRespuestas() {
                 
                 {(() => {
                   return (
-                    <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                    <h2 className="font-medium text-slate-800 flex items-center gap-2">
                       📄 {t('respuestas.seguimiento_de')} {r.paciente_nombre}
                       <AlertBadge nivel={nivel} />
                     </h2>
@@ -848,14 +848,14 @@ export default function PanelRespuestas() {
                 })()}
                   
 
-                  <p className="text-sm text-gray-700">
+                  <p className="text-xs md:text-[13px] text-slate-600">
                     {r.tipo_cirugia}
                     {r.anestesia ? ` • Anestesia: ${r.anestesia}` : ''}  {/* 👈 nuevo */}
                     {' '}• {r.edad} {t('respuestas.años')}<br />
                     {t('respuestas.sexo')}: {r.sexo} • {t('respuestas.peso')}: {r.peso}kg • {t('respuestas.altura')}: {r.altura}m • <span className="text-green-600 font-semibold">{t('respuestas.imc')}: {r.imc}</span>
                   </p>
 
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs text-slate-500">
                     {new Date(r.creado_en).toLocaleString('es-AR', {
                       day: '2-digit',
                       month: '2-digit',
@@ -939,13 +939,13 @@ export default function PanelRespuestas() {
                     return (
                       <>
                         {/* 🧾 Dos columnas prolijas */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1.5">
                           {filas.map(({ key, label, valor }) => (
-                            <div key={String(key)} className="text-[15px] leading-6">
-                              <span className="font-semibold text-slate-800">
+                            <div key={String(key)} className="text-[13px] md:text-[14px] leading-6">
+                              <span className="font-medium text-slate-800">
                                 {label}{label.endsWith('?') ? '' : ':'}
                               </span>{' '}
-                              <span className="text-slate-900">
+                              <span className="text-slate-700">
                                 {typeof valor === 'object' && valor !== null
                                   ? <code className="text-xs">{JSON.stringify(valor)}</code>
                                   : toYesNo(valor)}
@@ -970,9 +970,9 @@ export default function PanelRespuestas() {
                         <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-2xl p-6 mt-4 shadow-sm">
                           <div className="flex items-center gap-2 mb-2 text-blue-900">
                             <span className="text-xl">{'🗣️'}</span>
-                            <h3 className="font-semibold text-base tracking-wide">{t('respuestas.transcripcion_voz')}</h3>
+                            <h3 className="font-medium text-sm md:text-base tracking-wide">{t('respuestas.transcripcion_voz')}</h3>
                           </div>
-                          <blockquote className="text-base text-slate-800 italic leading-relaxed border-l-4 border-blue-400 pl-4 whitespace-pre-wrap">
+                          <blockquote className="text-sm md:text-base text-slate-800 italic leading-relaxed border-l-4 border-blue-400 pl-4 whitespace-pre-wrap">
                             {transcripcion}
                           </blockquote>
                         </div>
@@ -982,9 +982,9 @@ export default function PanelRespuestas() {
                         <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-6 mt-4 shadow-sm">
                           <div className="flex items-center gap-2 mb-2 text-slate-800">
                             <span className="text-xl">{'🧬'}</span>
-                            <h3 className="font-semibold text-base tracking-wide">{t('respuestas.sintomas_detectados_ia')}</h3>
+                            <h3 className="font-medium text-sm md:text-base tracking-wide">{t('respuestas.sintomas_detectados_ia')}</h3>
                           </div>
-                          <ul className="list-disc list-inside text-base text-slate-700 leading-relaxed ml-2">
+                          <ul className="list-disc list-inside text-sm md:text-base text-slate-700 leading-relaxed ml-2">
                             {sintomasIA.map((tag: string, i: number) => <li key={i}>{tag}</li>)}
                           </ul>
                         </div>
@@ -1016,7 +1016,7 @@ export default function PanelRespuestas() {
                     <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2 text-slate-800">
                         <span className="text-xl">💡</span>
-                        <h3 className="font-semibold text-base tracking-wide">Sugerencias</h3>
+                        <h3 className="font-medium text-sm md:text-base tracking-wide">Sugerencias</h3>
                       </div>
                       <ul className="mt-1 grid gap-2">
                         {unicos.map((sug, i) => {
