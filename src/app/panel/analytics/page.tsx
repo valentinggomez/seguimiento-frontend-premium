@@ -109,6 +109,10 @@ export default function AnalyticsPage() {
   const [hasNew, setHasNew] = useState<boolean>(false)
   // Drill-down por grupo (barra clickeada)
   const [selectedGroup, setSelectedGroup] = useState<string>('')
+  // tic de 1s para re-renderizar el indicador
+  const [nowTs, setNowTs] = useState<number>(Date.now())
+  // periodo de auto-refresh (el que ya usás en el setInterval)
+  const AUTO_MS = 90_000
 
   // Auto-refresh y sello de última actualización
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false)
@@ -293,6 +297,23 @@ export default function AnalyticsPage() {
     }
   }, [data?.meta?.metric, data?.meta?.groupBy, data?.meta?.metrics, data?.meta?.groups])
 
+  useEffect(() => {
+    let id: any;
+
+    const start = () => {
+      if (document.visibilityState === 'visible') {
+        id = setInterval(() => setNowTs(Date.now()), 1000);
+      }
+    };
+    const stop = () => { if (id) clearInterval(id); id = null; };
+
+    start();
+    const onVis = () => (document.visibilityState === 'visible' ? start() : stop());
+    document.addEventListener('visibilitychange', onVis);
+
+    return () => { stop(); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
+
   const fmtDay = (d: string) => formatInTimeZone(new Date(d), 'UTC', 'dd MMM', { locale })
 
 
@@ -335,6 +356,11 @@ export default function AnalyticsPage() {
 
   const alertAccent = accentForPct(alertPct)
 
+  const secsSince = Math.max(0, Math.floor((nowTs - lastUpdated) / 1000));
+  const secsToNext = autoRefresh
+    ? Math.max(0, Math.ceil((AUTO_MS - ((nowTs - lastUpdated) % AUTO_MS)) / 1000))
+    : null;
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* HEADER */}
@@ -346,17 +372,25 @@ export default function AnalyticsPage() {
 
         <div className="flex items-center gap-3 text-xs text-slate-600">
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={e => setAutoRefresh(e.target.checked)}
+            />
             Auto-refresh
           </label>
-          <span aria-live="polite">
-            act. hace {Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s
+
+          <span aria-live="polite" className="whitespace-nowrap">
+            act. hace <b>{secsSince}</b>s
+            {autoRefresh && <> · próx. en <b>{secsToNext}</b>s</>}
           </span>
+
           <button
             onClick={refreshAll}
             className="px-3 py-2 rounded-xl shadow-sm bg-[#003466] text-white hover:bg-[#002a52]"
+            disabled={pending || pendingTable}
           >
-            {t('respuestas.actualizar') || 'Actualizar'}
+            {pending || pendingTable ? 'Actualizando…' : (t('respuestas.actualizar') || 'Actualizar')}
           </button>
         </div>
       </div>
