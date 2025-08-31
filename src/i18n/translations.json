@@ -289,8 +289,7 @@
       "transcripcion_voz": "Transcripción por voz",
       "sintomas_detectados_ia": "Síntomas detectados por IA",
       "actualizar": "Actualizar",
-      "registros": "respuestas",
-      "conteo": "{{count}} {{count, plural, one {respuesta} other {respuestas}}}"
+      "registros": "respuestas"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Nivel de satisfacción (1 a 10)",
@@ -601,8 +600,7 @@
       "transcripcion_voz": "Voice transcription",
       "sintomas_detectados_ia": "Symptoms detected by AI",
       "actualizar": "Update",
-      "registros": "responses",
-      "conteo": "{{count}} {{count, plural, one {response} other {responses}}}"
+      "registros": "responses"
     },
     "campos_formulario": {
       "🌟 Nivel de satisfacción (1 a 10)": "🌟 Satisfaction level (1 to 10)",
